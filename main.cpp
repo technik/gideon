@@ -33,7 +33,7 @@
 #include <vector>
 
 //--------------------------------------------------------------------------------------------------
-void saveImage(size_t width, size_t height, const std::vector<float> img, const char* fileName)
+void saveImage(size_t width, size_t height, const std::vector<float>& img, const char* fileName)
 {
 	std::vector<uint8_t> tmpBuffer;
 	tmpBuffer.reserve(img.size());
@@ -47,8 +47,21 @@ void saveImage(size_t width, size_t height, const std::vector<float> img, const 
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr size_t imgWidth = 100u;
-	constexpr size_t imgHeight = 200u;
+	constexpr size_t nx = 400u;
+	constexpr size_t ny = 200u;
+
+	std::vector<float> outputBuffer;
+	outputBuffer.reserve(nx*ny*3);
+
+	for(int j = ny-1; j >= 0; j--)
+		for(int i = 0; i < nx; ++i)
+		{
+			outputBuffer.push_back(float(i)/nx); // r
+			outputBuffer.push_back(float(j)/ny); // g
+			outputBuffer.push_back(0.2f); // b
+		}
+
+	saveImage(nx, ny, outputBuffer, "Wiii.png");
 
 	return 0;
 }
