@@ -4,6 +4,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{7f60ce40-d2f8-4664-875c-32ae19d16d0f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\math">
+      <UniqueIdentifier>{e7143f45-cf4d-4a98-9831-cec7c277bcf7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\main.cpp">
@@ -18,7 +21,10 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\..\math\vector3.h">
-      <Filter>src</Filter>
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\math\ray.h">
+      <Filter>src\math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
