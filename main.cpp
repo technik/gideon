@@ -28,8 +28,27 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <vector>
+
+//--------------------------------------------------------------------------------------------------
+void saveImage(size_t width, size_t height, const std::vector<float> img, const char* fileName)
+{
+	std::vector<uint8_t> tmpBuffer;
+	tmpBuffer.reserve(img.size());
+	for(auto value : img)
+		tmpBuffer.push_back(uint8_t(std::max(0.f,std::min(value,1.f))*255)); // Clamp value to the range 0-1, and convert to byte
+
+	const int rowStride = 3*width;
+	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
+}
+
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
+	constexpr size_t imgWidth = 100u;
+	constexpr size_t imgHeight = 200u;
+
 	return 0;
 }
