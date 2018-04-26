@@ -58,6 +58,7 @@ namespace math {
 		// Basic properties
 		float norm() const { return std::sqrt(sqNorm()); }
 		float sqNorm() const;
+		void normalize() { *this*= (1.f/norm()); }
 
 		// Math operators
 		Vec3f operator-() const { return {-x(), -y(), -z()}; }
