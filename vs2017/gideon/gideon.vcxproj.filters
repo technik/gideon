@@ -17,5 +17,8 @@
     <ClInclude Include="..\..\stb_image_write.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\math\vector3.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

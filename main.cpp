@@ -32,6 +32,8 @@
 #include <cstddef>
 #include <vector>
 
+#include "math/vector3.h"
+
 //--------------------------------------------------------------------------------------------------
 void saveImage(size_t width, size_t height, const std::vector<float>& img, const char* fileName)
 {
