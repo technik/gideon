@@ -75,9 +75,19 @@ int main(int, const char**)
 	std::vector<Vec3f> outputBuffer;
 	outputBuffer.reserve(nx*ny*3);
 
+	Vec3f ll_corner { -2.f, -1.f, -1.f };
+	Vec3f horizontal {4.f, 0.f, 0.f };
+	Vec3f vertical { 0.f, 2.f, 0.f };
+	Vec3f origin(0.f);
+
 	for(int j = ny-1; j >= 0; j--)
 		for(int i = 0; i < nx; ++i)
-			outputBuffer.emplace_back(float(i)/nx, float(j)/ny, 0.2f);
+		{
+			float u = float(i)/nx;
+			float v = float(j)/ny;
+			Ray r = { origin, ll_corner + u*horizontal + v*vertical};
+			outputBuffer.push_back(color(r));
+		}
 
 	saveImage(nx, ny, outputBuffer, "Wiii.png");
 
