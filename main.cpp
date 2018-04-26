@@ -34,13 +34,23 @@
 
 #include "math/vector3.h"
 
+using namespace math;
+
+uint8_t floatToByteColor(float value)
+{
+	return uint8_t(std::max(0.f,std::min(value,1.f))*255); // Clamp value to the range 0-1, and convert to byte
+}
+
 //--------------------------------------------------------------------------------------------------
-void saveImage(size_t width, size_t height, const std::vector<float>& img, const char* fileName)
+void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const char* fileName)
 {
 	std::vector<uint8_t> tmpBuffer;
 	tmpBuffer.reserve(img.size());
-	for(auto value : img)
-		tmpBuffer.push_back(uint8_t(std::max(0.f,std::min(value,1.f))*255)); // Clamp value to the range 0-1, and convert to byte
+	for(auto c : img) {
+		tmpBuffer.push_back(floatToByteColor(c.r()));
+		tmpBuffer.push_back(floatToByteColor(c.g()));
+		tmpBuffer.push_back(floatToByteColor(c.b()));
+	}
 
 	const int rowStride = 3*width;
 	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
@@ -52,16 +62,12 @@ int main(int, const char**)
 	constexpr size_t nx = 400u;
 	constexpr size_t ny = 200u;
 
-	std::vector<float> outputBuffer;
+	std::vector<Vec3f> outputBuffer;
 	outputBuffer.reserve(nx*ny*3);
 
 	for(int j = ny-1; j >= 0; j--)
 		for(int i = 0; i < nx; ++i)
-		{
-			outputBuffer.push_back(float(i)/nx); // r
-			outputBuffer.push_back(float(j)/ny); // g
-			outputBuffer.push_back(0.2f); // b
-		}
+			outputBuffer.emplace_back(float(i)/nx, float(j)/ny, 0.2f);
 
 	saveImage(nx, ny, outputBuffer, "Wiii.png");
 
