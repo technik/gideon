@@ -58,8 +58,21 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 }
 
 //--------------------------------------------------------------------------------------------------
+bool hitSphere(const Vec3f& center, float radius, const Ray& r)
+{
+	auto ro = r.origin() - center; // Ray origin relative to sphere's center
+	float a = r.direction().sqNorm();
+	float b = 2 * dot(ro, r.direction());
+	float c = ro.sqNorm() - radius*radius;
+	auto discriminant = b*b-4*a*c;
+	return discriminant > 0;
+}
+
+//--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r)
 {
+	if(hitSphere({0.f,0.f,-1.f}, 0.5f, r))
+		return { 1.f, 0.f, 0.f };
 	auto unitDirection = normalize(r.direction());
 	float t = 0.5f + 0.5f * unitDirection.y();
 	constexpr Vec3f SkyColor = {0.5f, 0.7f, 1.f};
