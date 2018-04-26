@@ -57,36 +57,73 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
 }
 
-//--------------------------------------------------------------------------------------------------
-float hitSphere(const Vec3f& center, float radius, const Ray& r)
+struct HitRecord
 {
-	auto ro = r.origin() - center; // Ray origin relative to sphere's center
-	float a = r.direction().sqNorm();
-	float b = 2 * dot(ro, r.direction());
-	float c = ro.sqNorm() - radius*radius;
-	auto discriminant = b*b-4*a*c;
-	if(discriminant >= 0)
+	float t;
+	Vec3f p;
+	Vec3f normal;
+};
+
+class Hitable
+{
+public:
+	virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& collision) const = 0;
+};
+
+class Sphere : public Hitable
+{
+public:
+	Sphere(const Vec3f& center, float radius)
+		: mCenter(center)
+		, mSqRadius(radius*radius)
+	{}
+
+	bool hit(
+		const Ray& r,
+		float tMin,
+		float tMax,
+		HitRecord& collision
+	) const override
 	{
-		return (-b - sqrt(discriminant)) / (2*a);
+		auto ro = r.origin() - mCenter; // Ray origin relative to sphere's center
+		float a = r.direction().sqNorm();
+		float b = dot(ro, r.direction());
+		float c = ro.sqNorm() - mSqRadius;
+		auto discriminant = b*b-a*c;
+		if(discriminant >= 0)
+		{
+			float t = (-b - sqrt(discriminant)) / a;
+			if(t > tMin && t < tMax) {
+				collision.t = t;
+				collision.p = r.at(t);
+				collision.normal = normalize(collision.p - mCenter);
+				return true;
+			}
+		}
+		return false;
 	}
-	return -1.f;
-}
+
+private:
+	Vec3f mCenter;
+	float mSqRadius;
+};
 
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r)
 {
-	Vec3f sphereCenter {0.f,0.f,-1.f};
-	float t = hitSphere(sphereCenter, 0.5f, r);
-	if(t > 0)
+	Sphere s({0.f,0.f,-1.f}, 0.5f);
+	HitRecord hit;
+	if(s.hit(r, 0.f, INFINITY, hit))
 	{
-		//	return Vec3f(186.f, 39.f, 73.f) / 255.f; // Raspberry
-		auto normal = normalize(r.at(t) - sphereCenter);
-		return normal*0.5f + 0.5f;
+		return hit.normal*0.5f + 0.5f;
 	}
-	auto unitDirection = normalize(r.direction());
-	float f = 0.5f + 0.5f * unitDirection.y();
-	constexpr Vec3f SkyColor = {0.5f, 0.7f, 1.f};
-	return Vec3f(1.f-f) + f*SkyColor; // Blend between white & sky color
+	else
+	{
+		auto unitDirection = normalize(r.direction());
+		float f = 0.5f + 0.5f * unitDirection.y();
+		constexpr Vec3f SkyColor = {0.5f, 0.7f, 1.f};
+		return Vec3f(1.f-f) + f*SkyColor; // Blend between white & sky color
+	}
 }
 
 //--------------------------------------------------------------------------------------------------
