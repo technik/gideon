@@ -32,6 +32,7 @@
 #include <cstddef>
 #include <vector>
 
+#include "math/ray.h"
 #include "math/vector3.h"
 
 using namespace math;
@@ -54,6 +55,15 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 
 	const int rowStride = 3*width;
 	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
+}
+
+//--------------------------------------------------------------------------------------------------
+Vec3f color(const Ray& r)
+{
+	auto unitDirection = normalize(r.direction());
+	float t = 0.5f + 0.5f * unitDirection.y();
+	constexpr Vec3f SkyColor = {0.5f, 0.7f, 1.f};
+	return Vec3f(1.f-t) + t*SkyColor; // Blend between white & sky color
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -32,8 +32,9 @@ namespace math {
 	{
 	public:
 		Vec3f() = default;
-		Vec3f(std::array<float,3> _list) : m(_list) {}
-		Vec3f(float x, float y, float z) : m({x,y,z}) {}
+		constexpr Vec3f(std::array<float,3> _list) : m(_list) {}
+		constexpr Vec3f(float k) : m({k,k,k}) {}
+		constexpr Vec3f(float x, float y, float z) : m({x,y,z}) {}
 
 		// Vector accessors
 		float x() const { return m[0]; }
@@ -102,20 +103,6 @@ namespace math {
 		std::array<float,3> m;
 	};
 
-	float dot(const Vec3f& a, const Vec3f& b)
-	{
-		return a.x()*b.x() + a.y()*b.y() + a.z()*b.z();
-	}
-
-	Vec3f cross(const Vec3f& a, const Vec3f& b)
-	{
-		return {
-			a.y()*b.z()-a.z()*b.y(),
-			a.z()*b.x()-a.x()*b.z(),
-			a.x()*b.y()-a.y()*b.x()
-		};
-	}
-
 	// External operators
 	inline Vec3f operator+(const Vec3f& a, const Vec3f& b)
 	{
@@ -158,6 +145,24 @@ namespace math {
 	}
 
 	// Inline methods
+	inline float dot(const Vec3f& a, const Vec3f& b)
+	{
+		return a.x()*b.x() + a.y()*b.y() + a.z()*b.z();
+	}
+
+	inline Vec3f cross(const Vec3f& a, const Vec3f& b)
+	{
+		return {
+			a.y()*b.z()-a.z()*b.y(),
+			a.z()*b.x()-a.x()*b.z(),
+			a.x()*b.y()-a.y()*b.x()
+		};
+	}
+
 	inline float Vec3f::sqNorm() const { return dot(*this, *this); }
 
+	inline Vec3f normalize(const Vec3f& v)
+	{
+		return v * (1/v.norm());
+	}
 }
