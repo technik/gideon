@@ -124,6 +124,16 @@ namespace math {
 		return {a.x()/b.x(), a.y()/b.y(), a.z()/b.z() };
 	}
 
+	inline Vec3f operator+(const Vec3f& a, float b)
+	{
+		return {a.x()+b, a.y()+b, a.z()+b };
+	}
+
+	inline Vec3f operator-(const Vec3f& a, float b)
+	{
+		return {a.x()-b, a.y()-b, a.z()-b };
+	}
+
 	inline Vec3f operator*(const Vec3f& a, float b)
 	{
 		return {a.x()*b, a.y()*b, a.z()*b };

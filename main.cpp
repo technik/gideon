@@ -58,25 +58,35 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 }
 
 //--------------------------------------------------------------------------------------------------
-bool hitSphere(const Vec3f& center, float radius, const Ray& r)
+float hitSphere(const Vec3f& center, float radius, const Ray& r)
 {
 	auto ro = r.origin() - center; // Ray origin relative to sphere's center
 	float a = r.direction().sqNorm();
 	float b = 2 * dot(ro, r.direction());
 	float c = ro.sqNorm() - radius*radius;
 	auto discriminant = b*b-4*a*c;
-	return discriminant > 0;
+	if(discriminant >= 0)
+	{
+		return (-b - sqrt(discriminant)) / (2*a);
+	}
+	return -1.f;
 }
 
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r)
 {
-	if(hitSphere({0.f,0.f,-1.f}, 0.5f, r))
-		return { 1.f, 0.f, 0.f };
+	Vec3f sphereCenter {0.f,0.f,-1.f};
+	float t = hitSphere(sphereCenter, 0.5f, r);
+	if(t > 0)
+	{
+		//	return Vec3f(186.f, 39.f, 73.f) / 255.f; // Raspberry
+		auto normal = normalize(r.at(t) - sphereCenter);
+		return normal*0.5f + 0.5f;
+	}
 	auto unitDirection = normalize(r.direction());
-	float t = 0.5f + 0.5f * unitDirection.y();
+	float f = 0.5f + 0.5f * unitDirection.y();
 	constexpr Vec3f SkyColor = {0.5f, 0.7f, 1.f};
-	return Vec3f(1.f-t) + t*SkyColor; // Blend between white & sky color
+	return Vec3f(1.f-f) + f*SkyColor; // Blend between white & sky color
 }
 
 //--------------------------------------------------------------------------------------------------
