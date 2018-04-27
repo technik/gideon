@@ -30,10 +30,12 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <random>
 #include <vector>
 
 #include "math/ray.h"
 #include "math/vector3.h"
+#include "camera.h"
 
 using namespace math;
 
@@ -156,8 +158,9 @@ Vec3f color(const Ray& r, const Hitable& world)
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr size_t nx = 400u;
-	constexpr size_t ny = 200u;
+	constexpr size_t nx = 200u;
+	constexpr size_t ny = 100u;
+	constexpr size_t ns = 100u;
 
 	std::vector<Vec3f> outputBuffer;
 	outputBuffer.reserve(nx*ny*3);
@@ -167,18 +170,24 @@ int main(int, const char**)
 		new Sphere({0.f,-100.5f,-1.f}, 100.f)
 		});
 
-	Vec3f ll_corner { -2.f, -1.f, -1.f };
-	Vec3f horizontal {4.f, 0.f, 0.f };
-	Vec3f vertical { 0.f, 2.f, 0.f };
-	Vec3f origin(0.f);
+	auto engine = std::default_random_engine();
+	std::uniform_real_distribution<float> distrib;
+
+	Camera cam;
 
 	for(int j = ny-1; j >= 0; j--)
 		for(int i = 0; i < nx; ++i)
 		{
-			float u = float(i)/nx;
-			float v = float(j)/ny;
-			Ray r = { origin, ll_corner + u*horizontal + v*vertical};
-			outputBuffer.push_back(color(r, world));
+			Vec3f accum(0.f);
+			for(size_t s = 0; s < ns; ++s)
+			{
+				float u = float(i+distrib(engine))/nx;
+				float v = float(j+distrib(engine))/ny;
+				Ray r = cam.get_ray(u,v);
+				accum += color(r, world);
+			}
+
+			outputBuffer.push_back(accum/float(ns));
 		}
 
 	saveImage(nx, ny, outputBuffer, "Wiii.png");

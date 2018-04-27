@@ -22,6 +22,7 @@
     <ClCompile Include="..\..\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\camera.h" />
     <ClInclude Include="..\..\math\ray.h" />
     <ClInclude Include="..\..\math\vector3.h" />
     <ClInclude Include="..\..\stb_image.h" />

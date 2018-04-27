@@ -26,5 +26,8 @@
     <ClInclude Include="..\..\math\ray.h">
       <Filter>src\math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\camera.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
