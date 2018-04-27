@@ -70,6 +70,34 @@ public:
 	virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& collision) const = 0;
 };
 
+class HitableList : public Hitable
+{
+public:
+	HitableList(){}
+	HitableList(std::vector<Hitable*>&& lst) : mHitables(std::move(lst)) {}
+
+	bool hit(const Ray& r, float tMin, float tMax, HitRecord& collision) const override
+	{
+		float t = tMax;
+		bool hit_anything = false;
+		for(auto h : mHitables)
+		{
+			HitRecord tmp_hit;
+			if(h->hit(r, tMin, t, tmp_hit))
+			{
+				collision = tmp_hit;
+				t = tmp_hit.t;
+				hit_anything = true;
+			}
+		}
+
+		return hit_anything;
+	}
+
+private:
+	std::vector<Hitable*> mHitables;
+};
+
 class Sphere : public Hitable
 {
 public:
