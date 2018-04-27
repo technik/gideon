@@ -137,11 +137,10 @@ private:
 };
 
 //--------------------------------------------------------------------------------------------------
-Vec3f color(const Ray& r)
+Vec3f color(const Ray& r, const Hitable& world)
 {
-	Sphere s({0.f,0.f,-1.f}, 0.5f);
 	HitRecord hit;
-	if(s.hit(r, 0.f, INFINITY, hit))
+	if(world.hit(r, 0.f, INFINITY, hit))
 	{
 		return hit.normal*0.5f + 0.5f;
 	}
@@ -163,6 +162,11 @@ int main(int, const char**)
 	std::vector<Vec3f> outputBuffer;
 	outputBuffer.reserve(nx*ny*3);
 
+	auto world = HitableList({
+		new Sphere({0.f, 0.f, -1.f}, 0.5f),
+		new Sphere({0.f,-100.5f,-1.f}, 100.f)
+		});
+
 	Vec3f ll_corner { -2.f, -1.f, -1.f };
 	Vec3f horizontal {4.f, 0.f, 0.f };
 	Vec3f vertical { 0.f, 2.f, 0.f };
@@ -174,7 +178,7 @@ int main(int, const char**)
 			float u = float(i)/nx;
 			float v = float(j)/ny;
 			Ray r = { origin, ll_corner + u*horizontal + v*vertical};
-			outputBuffer.push_back(color(r));
+			outputBuffer.push_back(color(r, world));
 		}
 
 	saveImage(nx, ny, outputBuffer, "Wiii.png");
