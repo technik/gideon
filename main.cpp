@@ -39,6 +39,29 @@
 
 using namespace math;
 
+class RandomGenerator
+{
+public:
+	float scalar()
+	{
+		return distrib(engine);
+	}
+	Vec3f unit_vector()
+	{
+		Vec3f p;
+		do
+		{
+			p = 2*Vec3f(scalar(),scalar(),scalar())-1.f;
+		} while(p.sqNorm() >= 1.f);
+		return p;
+	}
+private:
+	std::default_random_engine engine;
+	std::uniform_real_distribution<float> distrib;
+};
+
+RandomGenerator random;
+
 uint8_t floatToByteColor(float value)
 {
 	return uint8_t(std::max(0.f,std::min(value,1.f))*255); // Clamp value to the range 0-1, and convert to byte
@@ -142,9 +165,10 @@ private:
 Vec3f color(const Ray& r, const Hitable& world)
 {
 	HitRecord hit;
-	if(world.hit(r, 0.f, INFINITY, hit))
+	if(world.hit(r, 1e-5f, INFINITY, hit))
 	{
-		return hit.normal*0.5f + 0.5f;
+		auto target = hit.p + hit.normal + random.unit_vector();
+		return 0.5f * color(Ray(hit.p, target-hit.p), world);
 	}
 	else
 	{
@@ -158,9 +182,9 @@ Vec3f color(const Ray& r, const Hitable& world)
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr size_t nx = 200u;
-	constexpr size_t ny = 100u;
-	constexpr size_t ns = 100u;
+	constexpr size_t nx = 1920u;
+	constexpr size_t ny = 1080u;
+	constexpr size_t ns = 400u;
 
 	std::vector<Vec3f> outputBuffer;
 	outputBuffer.reserve(nx*ny*3);
@@ -170,9 +194,6 @@ int main(int, const char**)
 		new Sphere({0.f,-100.5f,-1.f}, 100.f)
 		});
 
-	auto engine = std::default_random_engine();
-	std::uniform_real_distribution<float> distrib;
-
 	Camera cam;
 
 	for(int j = ny-1; j >= 0; j--)
@@ -181,13 +202,18 @@ int main(int, const char**)
 			Vec3f accum(0.f);
 			for(size_t s = 0; s < ns; ++s)
 			{
-				float u = float(i+distrib(engine))/nx;
-				float v = float(j+distrib(engine))/ny;
+				float u = float(i+random.scalar())/nx;
+				float v = float(j+random.scalar())/ny;
 				Ray r = cam.get_ray(u,v);
 				accum += color(r, world);
 			}
+			accum /= float(ns);
 
-			outputBuffer.push_back(accum/float(ns));
+			outputBuffer.push_back(Vec3f(
+				sqrt(accum.x()),
+				sqrt(accum.y()),
+				sqrt(accum.z())
+			));
 		}
 
 	saveImage(nx, ny, outputBuffer, "Wiii.png");
