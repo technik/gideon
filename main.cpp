@@ -94,6 +94,7 @@ struct HitRecord
 
 class Material
 {
+public:
 	virtual bool scatter(const Ray& in, HitRecord& record, Vec3f& attenuation, Ray& out) const = 0;
 };
 
@@ -115,16 +116,17 @@ public:
 class Metal : public Material
 {
 public:
-	Metal(const Vec3f& c) : albedo(c) {}
+	Metal(const Vec3f& c, float f) : albedo(c), fuzz(f) {}
 	bool scatter(const Ray& in, HitRecord& hit, Vec3f& attenuation, Ray& out) const override
 	{
 		auto reflected = reflect(normalize(in.direction()), hit.normal);
-		out = Ray(hit.p, reflected);
+		out = Ray(hit.p, reflected + random.unit_vector()*fuzz);
 		attenuation = albedo;
-		return true;
+		return dot(out.direction(), hit.normal) > 0.f;
 	}
 
 	Vec3f albedo;
+	float fuzz;
 };
 
 class Hitable
@@ -164,9 +166,10 @@ private:
 class Sphere : public Hitable
 {
 public:
-	Sphere(const Vec3f& center, float radius)
+	Sphere(const Vec3f& center, float radius, Material* mat)
 		: mCenter(center)
 		, mSqRadius(radius*radius)
+		, m(mat)
 	{}
 
 	bool hit(
@@ -188,6 +191,7 @@ public:
 				collision.t = t;
 				collision.p = r.at(t);
 				collision.normal = normalize(collision.p - mCenter);
+				collision.material = m;
 				return true;
 			}
 		}
@@ -197,18 +201,18 @@ public:
 private:
 	Vec3f mCenter;
 	float mSqRadius;
+	Material* m;
 };
 
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Hitable& world, int depth)
 {
-	Lambertian material(Vec3f(0.5));
 	HitRecord hit;
 	if(world.hit(r, 1e-5f, INFINITY, hit))
 	{
 		Ray scattered;
 		Vec3f attenuation;
-		if(depth < 50 && material.scatter(r, hit, attenuation, scattered))
+		if(depth < 50 && hit.material->scatter(r, hit, attenuation, scattered))
 			return attenuation * color(scattered, world, depth+1);
 		return Vec3f(0.f);
 	}
@@ -231,10 +235,25 @@ int main(int, const char**)
 	std::vector<Vec3f> outputBuffer;
 	outputBuffer.reserve(nx*ny*3);
 
-	auto world = HitableList({
-		new Sphere({0.f, 0.f, -1.f}, 0.5f),
-		new Sphere({0.f,-100.5f,-1.f}, 100.f)
-		});
+	std::vector<Hitable*>	sList;
+	sList.push_back(new Sphere({0.f, -1000.5f, 0.f}, 1000.f, new Lambertian(Vec3f(0.5f))));
+	for(int i = -10; i < 11; ++i)
+		for(int j = -10; j < 11; ++j)
+		{
+			Vec3f albedo = {random.scalar(), random.scalar(), random.scalar()};
+			Material* mat = nullptr;
+			float p = random.scalar();
+			if(p > 0.2f)
+				mat = new Lambertian(albedo);
+			else
+				mat = new Metal(albedo, random.scalar()*0.2f);
+			float h = 0.2f;
+			Vec3f center = Vec3f(float(i), h-0.5f, float(j)+-2.f) + Vec3f(0.8f*random.scalar(),0.f,0.8f*random.scalar());
+			auto s = new Sphere(center, h, mat);
+			sList.push_back(s);
+		}
+
+	auto world = HitableList(std::move(sList));
 
 	Camera cam;
 
@@ -247,7 +266,7 @@ int main(int, const char**)
 				float u = float(i+random.scalar())/nx;
 				float v = float(j+random.scalar())/ny;
 				Ray r = cam.get_ray(u,v);
-				accum += color(r, world);
+				accum += color(r, world, 0);
 			}
 			accum /= float(ns);
 
