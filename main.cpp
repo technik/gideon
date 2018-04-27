@@ -82,11 +82,34 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
 }
 
+class Material;
+
 struct HitRecord
 {
 	float t;
 	Vec3f p;
 	Vec3f normal;
+	Material* material;
+};
+
+class Material
+{
+	virtual bool scatter(const Ray& in, HitRecord& record, Vec3f& attenuation, Ray& out) const = 0;
+};
+
+class Lambertian : public Material
+{
+public:
+	Lambertian(const Vec3f& c) : albedo(c) {}
+	bool scatter(const Ray&, HitRecord& hit, Vec3f& attenuation, Ray& out) const override
+	{
+		auto target = hit.p + hit.normal + random.unit_vector();
+		out = Ray(hit.p, target-hit.p);
+		attenuation = albedo;
+		return true;
+	}
+
+	Vec3f albedo;
 };
 
 class Hitable
@@ -164,11 +187,15 @@ private:
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Hitable& world)
 {
+	Lambertian material(Vec3f(0.5));
 	HitRecord hit;
 	if(world.hit(r, 1e-5f, INFINITY, hit))
 	{
-		auto target = hit.p + hit.normal + random.unit_vector();
-		return 0.5f * color(Ray(hit.p, target-hit.p), world);
+		Ray scattered;
+		Vec3f attenuation;
+		if(material.scatter(r, hit, attenuation, scattered))
+			return attenuation * color(scattered, world);
+		return Vec3f(0.f);
 	}
 	else
 	{
@@ -182,9 +209,9 @@ Vec3f color(const Ray& r, const Hitable& world)
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr size_t nx = 1920u;
-	constexpr size_t ny = 1080u;
-	constexpr size_t ns = 400u;
+	constexpr size_t nx = 200u;
+	constexpr size_t ny = 100u;
+	constexpr size_t ns = 100u;
 
 	std::vector<Vec3f> outputBuffer;
 	outputBuffer.reserve(nx*ny*3);
