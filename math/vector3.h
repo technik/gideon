@@ -169,6 +169,11 @@ namespace math {
 		};
 	}
 
+	inline Vec3f reflect(const Vec3f& v, const Vec3f& n)
+	{
+		return v-2*dot(v,n)*n;
+	}
+
 	inline float Vec3f::sqNorm() const { return dot(*this, *this); }
 
 	inline Vec3f normalize(const Vec3f& v)

@@ -112,6 +112,21 @@ public:
 	Vec3f albedo;
 };
 
+class Metal : public Material
+{
+public:
+	Metal(const Vec3f& c) : albedo(c) {}
+	bool scatter(const Ray& in, HitRecord& hit, Vec3f& attenuation, Ray& out) const override
+	{
+		auto reflected = reflect(normalize(in.direction()), hit.normal);
+		out = Ray(hit.p, reflected);
+		attenuation = albedo;
+		return true;
+	}
+
+	Vec3f albedo;
+};
+
 class Hitable
 {
 public:
@@ -185,7 +200,7 @@ private:
 };
 
 //--------------------------------------------------------------------------------------------------
-Vec3f color(const Ray& r, const Hitable& world)
+Vec3f color(const Ray& r, const Hitable& world, int depth)
 {
 	Lambertian material(Vec3f(0.5));
 	HitRecord hit;
@@ -193,8 +208,8 @@ Vec3f color(const Ray& r, const Hitable& world)
 	{
 		Ray scattered;
 		Vec3f attenuation;
-		if(material.scatter(r, hit, attenuation, scattered))
-			return attenuation * color(scattered, world);
+		if(depth < 50 && material.scatter(r, hit, attenuation, scattered))
+			return attenuation * color(scattered, world, depth+1);
 		return Vec3f(0.f);
 	}
 	else
