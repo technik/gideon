@@ -62,8 +62,6 @@ private:
 	std::uniform_real_distribution<float> distrib;
 };
 
-RandomGenerator random;
-
 uint8_t floatToByteColor(float value)
 {
 	return uint8_t(std::max(0.f,std::min(value,1.f))*255); // Clamp value to the range 0-1, and convert to byte
@@ -97,14 +95,14 @@ struct HitRecord
 class Material
 {
 public:
-	virtual bool scatter(const Ray& in, HitRecord& record, Vec3f& attenuation, Ray& out) const = 0;
+	virtual bool scatter(const Ray& in, HitRecord& record, Vec3f& attenuation, Ray& out, RandomGenerator& random) const = 0;
 };
 
 class Lambertian : public Material
 {
 public:
 	Lambertian(const Vec3f& c) : albedo(c) {}
-	bool scatter(const Ray&, HitRecord& hit, Vec3f& attenuation, Ray& out) const override
+	bool scatter(const Ray&, HitRecord& hit, Vec3f& attenuation, Ray& out, RandomGenerator& random) const override
 	{
 		auto target = hit.p + hit.normal + random.unit_vector();
 		out = Ray(hit.p, target-hit.p);
@@ -119,7 +117,7 @@ class Metal : public Material
 {
 public:
 	Metal(const Vec3f& c, float f) : albedo(c), fuzz(f) {}
-	bool scatter(const Ray& in, HitRecord& hit, Vec3f& attenuation, Ray& out) const override
+	bool scatter(const Ray& in, HitRecord& hit, Vec3f& attenuation, Ray& out, RandomGenerator& random) const override
 	{
 		auto reflected = reflect(normalize(in.direction()), hit.normal);
 		out = Ray(hit.p, reflected + random.unit_vector()*fuzz);
@@ -208,15 +206,15 @@ private:
 };
 
 //--------------------------------------------------------------------------------------------------
-Vec3f color(const Ray& r, const Hitable& world, int depth)
+Vec3f color(const Ray& r, const Hitable& world, int depth, RandomGenerator& random)
 {
 	HitRecord hit;
 	if(world.hit(r, 1e-5f, INFINITY, hit))
 	{
 		Ray scattered;
 		Vec3f attenuation;
-		if(depth < 50 && hit.material->scatter(r, hit, attenuation, scattered))
-			return attenuation * color(scattered, world, depth+1);
+		if(depth < 50 && hit.material->scatter(r, hit, attenuation, scattered, random))
+			return attenuation * color(scattered, world, depth+1, random);
 		return Vec3f(0.f);
 	}
 	else
@@ -242,7 +240,7 @@ struct Rect
 };
 
 //--------------------------------------------------------------------------------------------------
-void traceImageSegment(const Camera& cam, const Hitable& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer)
+void traceImageSegment(const Camera& cam, const Hitable& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random)
 {
 	for(size_t j = w.y0; j < w.y1; ++j)
 		for(size_t i = w.x0; i < w.x1; ++i)
@@ -253,7 +251,7 @@ void traceImageSegment(const Camera& cam, const Hitable& world, Rect w, int tota
 				float u = float(i+random.scalar())/totalNx;
 				float v = 1.f-float(j+random.scalar())/totalNy;
 				Ray r = cam.get_ray(u,v);
-				accum += color(r, world, 0);
+				accum += color(r, world, 0, random);
 			}
 			accum /= float(N_SAMPLES);
 
@@ -273,11 +271,13 @@ void threadRoutine(
 	const std::vector<Rect>& tiles,
 	std::atomic<size_t>* tileCounter)
 {
+	RandomGenerator random;
+
 	size_t selfCounter = (*tileCounter)++;
 	while(selfCounter < tiles.size()) // Valid job
 	{
 		auto& tile = tiles[selfCounter];
-		traceImageSegment(cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer);
+		traceImageSegment(cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer, random);
 		selfCounter = (*tileCounter)++;
 	}
 }
@@ -285,6 +285,7 @@ void threadRoutine(
 //--------------------------------------------------------------------------------------------------
 std::vector<Hitable*> randomScene()
 {
+	RandomGenerator random;
 	std::vector<Hitable*>	sList;
 	Sphere* contSpheres = new Sphere[21*21]();
 	sList.push_back(new Sphere({0.f, -1000.5f, 0.f}, 1000.f, new Lambertian(Vec3f(0.5f))));
