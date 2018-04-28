@@ -129,41 +129,7 @@ public:
 	float fuzz;
 };
 
-class Hitable
-{
-public:
-	virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& collision) const = 0;
-};
-
-class HitableList : public Hitable
-{
-public:
-	HitableList(){}
-	HitableList(std::vector<Hitable*>&& lst) : mHitables(std::move(lst)) {}
-
-	bool hit(const Ray& r, float tMin, float tMax, HitRecord& collision) const override
-	{
-		float t = tMax;
-		bool hit_anything = false;
-		for(auto h : mHitables)
-		{
-			HitRecord tmp_hit;
-			if(h->hit(r, tMin, t, tmp_hit))
-			{
-				collision = tmp_hit;
-				t = tmp_hit.t;
-				hit_anything = true;
-			}
-		}
-
-		return hit_anything;
-	}
-
-private:
-	std::vector<Hitable*> mHitables;
-};
-
-class Sphere : public Hitable
+class Sphere
 {
 public:
 	Sphere(){}
@@ -178,7 +144,7 @@ public:
 		float tMin,
 		float tMax,
 		HitRecord& collision
-	) const override
+	) const
 	{
 		auto ro = r.origin() - mCenter; // Ray origin relative to sphere's center
 		float a = r.direction().sqNorm();
@@ -206,7 +172,36 @@ private:
 };
 
 //--------------------------------------------------------------------------------------------------
-Vec3f color(const Ray& r, const Hitable& world, int depth, RandomGenerator& random)
+class HitableList
+{
+public:
+	HitableList(){}
+	HitableList(std::vector<Sphere>&& lst) : mHitables(std::move(lst)) {}
+
+	bool hit(const Ray& r, float tMin, float tMax, HitRecord& collision) const
+	{
+		float t = tMax;
+		bool hit_anything = false;
+		for(const auto& h : mHitables)
+		{
+			HitRecord tmp_hit;
+			if(h.hit(r, tMin, t, tmp_hit))
+			{
+				collision = tmp_hit;
+				t = tmp_hit.t;
+				hit_anything = true;
+			}
+		}
+
+		return hit_anything;
+	}
+
+private:
+	std::vector<Sphere> mHitables;
+};
+
+//--------------------------------------------------------------------------------------------------
+Vec3f color(const Ray& r, const HitableList& world, int depth, RandomGenerator& random)
 {
 	HitRecord hit;
 	if(world.hit(r, 1e-5f, INFINITY, hit))
@@ -240,7 +235,7 @@ struct Rect
 };
 
 //--------------------------------------------------------------------------------------------------
-void traceImageSegment(const Camera& cam, const Hitable& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random)
+void traceImageSegment(const Camera& cam, const HitableList& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random)
 {
 	for(size_t j = w.y0; j < w.y1; ++j)
 		for(size_t i = w.x0; i < w.x1; ++i)
@@ -265,7 +260,7 @@ void traceImageSegment(const Camera& cam, const Hitable& world, Rect w, int tota
 //--------------------------------------------------------------------------------------------------
 void threadRoutine(
 	const Camera& cam,
-	const Hitable& world,
+	const HitableList& world,
 	Rect imgSize,
 	Vec3f* outputBuffer,
 	const std::vector<Rect>& tiles,
@@ -283,12 +278,11 @@ void threadRoutine(
 }
 
 //--------------------------------------------------------------------------------------------------
-std::vector<Hitable*> randomScene()
+std::vector<Sphere> randomScene()
 {
 	RandomGenerator random;
-	std::vector<Hitable*>	sList;
-	Sphere* contSpheres = new Sphere[21*21]();
-	sList.push_back(new Sphere({0.f, -1000.5f, 0.f}, 1000.f, new Lambertian(Vec3f(0.5f))));
+	std::vector<Sphere> sList;
+	sList.reserve(1+21*21);
 	for(int i = 0; i < 21; ++i)
 		for(int j = 0; j < 21; ++j)
 		{
@@ -301,10 +295,10 @@ std::vector<Hitable*> randomScene()
 				mat = new Metal(albedo, random.scalar()*0.2f);
 			float h = 0.2f;
 			Vec3f center = Vec3f(float(i-10), h-0.5f, float(j-10)+-2.f) + Vec3f(0.8f*random.scalar(),0.f,0.8f*random.scalar());
-			auto s = &contSpheres[j+21*i];
-			*s = Sphere(center, h, mat);
-			sList.push_back(s);
+			// Add the sphere
+			sList.emplace_back(center, h, mat);
 		}
+	sList.emplace_back(Vec3f(0.f, -1000.5f, 0.f), 1000.f, new Lambertian(Vec3f(0.5f)));
 	return sList;
 }
 
