@@ -29,9 +29,11 @@
 #include "stb_image_write.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <random>
 #include <vector>
+#include <thread>
 
 #include "math/ray.h"
 #include "math/vector3.h"
@@ -166,6 +168,7 @@ private:
 class Sphere : public Hitable
 {
 public:
+	Sphere(){}
 	Sphere(const Vec3f& center, float radius, Material* mat)
 		: mCenter(center)
 		, mSqRadius(radius*radius)
@@ -226,19 +229,67 @@ Vec3f color(const Ray& r, const Hitable& world, int depth)
 }
 
 //--------------------------------------------------------------------------------------------------
-int main(int, const char**)
+constexpr size_t N_SAMPLES = 100u;
+
+struct Rect
 {
-	constexpr size_t nx = 200u;
-	constexpr size_t ny = 100u;
-	constexpr size_t ns = 100u;
+	Rect() = default;
+	constexpr Rect(size_t _x0, size_t _y0, size_t _x1, size_t _y1)
+		:x0(_x0), y0(_y0), x1(_x1), y1(_y1)
+	{}
+	size_t x0, y0, x1, y1;
+	size_t nPixels() const { return (x1-x0)*(y1-y0); }
+};
 
-	std::vector<Vec3f> outputBuffer;
-	outputBuffer.reserve(nx*ny*3);
+//--------------------------------------------------------------------------------------------------
+void traceImageSegment(const Camera& cam, const Hitable& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer)
+{
+	for(size_t j = w.y0; j < w.y1; ++j)
+		for(size_t i = w.x0; i < w.x1; ++i)
+		{
+			Vec3f accum(0.f);
+			for(size_t s = 0; s < N_SAMPLES; ++s)
+			{
+				float u = float(i+random.scalar())/totalNx;
+				float v = 1.f-float(j+random.scalar())/totalNy;
+				Ray r = cam.get_ray(u,v);
+				accum += color(r, world, 0);
+			}
+			accum /= float(N_SAMPLES);
 
+			outputBuffer[i+totalNx*j] = Vec3f(
+				sqrt(accum.x()),
+				sqrt(accum.y()),
+				sqrt(accum.z()));
+		}
+}
+
+//--------------------------------------------------------------------------------------------------
+void threadRoutine(
+	const Camera& cam,
+	const Hitable& world,
+	Rect imgSize,
+	Vec3f* outputBuffer,
+	const std::vector<Rect>& tiles,
+	std::atomic<size_t>* tileCounter)
+{
+	size_t selfCounter = (*tileCounter)++;
+	while(selfCounter < tiles.size()) // Valid job
+	{
+		auto& tile = tiles[selfCounter];
+		traceImageSegment(cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer);
+		selfCounter = (*tileCounter)++;
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+std::vector<Hitable*> randomScene()
+{
 	std::vector<Hitable*>	sList;
+	Sphere* contSpheres = new Sphere[21*21]();
 	sList.push_back(new Sphere({0.f, -1000.5f, 0.f}, 1000.f, new Lambertian(Vec3f(0.5f))));
-	for(int i = -10; i < 11; ++i)
-		for(int j = -10; j < 11; ++j)
+	for(int i = 0; i < 11; ++i)
+		for(int j = 0; j < 11; ++j)
 		{
 			Vec3f albedo = {random.scalar(), random.scalar(), random.scalar()};
 			Material* mat = nullptr;
@@ -248,36 +299,56 @@ int main(int, const char**)
 			else
 				mat = new Metal(albedo, random.scalar()*0.2f);
 			float h = 0.2f;
-			Vec3f center = Vec3f(float(i), h-0.5f, float(j)+-2.f) + Vec3f(0.8f*random.scalar(),0.f,0.8f*random.scalar());
-			auto s = new Sphere(center, h, mat);
+			Vec3f center = Vec3f(float(i-5), h-0.5f, float(j-5)+-2.f) + Vec3f(0.8f*random.scalar(),0.f,0.8f*random.scalar());
+			auto s = &contSpheres[j+21*i];
+			*s = Sphere(center, h, mat);
 			sList.push_back(s);
 		}
+	return sList;
+}
 
-	auto world = HitableList(std::move(sList));
+//--------------------------------------------------------------------------------------------------
+int main(int, const char**)
+{
+	constexpr Rect size {0, 0, 1280, 640 };
+
+	std::vector<Vec3f> outputBuffer(size.nPixels());
+	auto world = HitableList(randomScene());
 
 	Camera cam;
-
-	for(int j = ny-1; j >= 0; j--)
-		for(int i = 0; i < nx; ++i)
+	// Divide the image in tiles that can be consumed as jobs
+	constexpr size_t yTiles = 8;
+	constexpr size_t xTiles = 2*yTiles;
+	static_assert(size.x1%xTiles == 0);
+	static_assert(size.y1%yTiles == 0);
+	std::vector<Rect> tiles;
+	tiles.reserve(xTiles*yTiles);
+	for(size_t j = 0; j < yTiles; ++j)
+		for(size_t i = 0; i < xTiles; ++i)
 		{
-			Vec3f accum(0.f);
-			for(size_t s = 0; s < ns; ++s)
-			{
-				float u = float(i+random.scalar())/nx;
-				float v = float(j+random.scalar())/ny;
-				Ray r = cam.get_ray(u,v);
-				accum += color(r, world, 0);
-			}
-			accum /= float(ns);
-
-			outputBuffer.push_back(Vec3f(
-				sqrt(accum.x()),
-				sqrt(accum.y()),
-				sqrt(accum.z())
-			));
+			size_t tileSx = size.x1/xTiles;
+			size_t tileSy = size.y1/yTiles;
+			tiles.emplace_back(i*tileSx, j*tileSy, tileSx*(i+1u), tileSy*(j+1u));
 		}
 
-	saveImage(nx, ny, outputBuffer, "Wiii.png");
+	// Allocate threads to consume
+	std::atomic<size_t> tileCounter = 0; // Atomic counter for lock-free jobs
+	const int nThreads = 16;
+	std::vector<std::thread> ts(nThreads);
+	// Run jos
+	for(int i = 0; i < nThreads; ++i)
+	{
+		ts[i] = std::thread(threadRoutine, cam, world, size, outputBuffer.data(), tiles, &tileCounter);
+		if(!ts[i].joinable())
+		{
+			return -1;
+		}
+	}
+	for(int i = 0; i < nThreads; ++i)
+		ts[i].join();
+
+	// Save final image
+	saveImage(size.x1, size.y1, outputBuffer, "Wiii.png");
 
 	return 0;
 }

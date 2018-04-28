@@ -35,7 +35,7 @@ public:
 		, origin(0)
 	{}
 
-	math::Ray get_ray(float u, float v)
+	math::Ray get_ray(float u, float v) const
 	{
 		return math::Ray(
 			origin,
