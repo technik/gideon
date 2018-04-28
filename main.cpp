@@ -213,7 +213,7 @@ Vec3f color(const Ray& r, const Hitable& world, int depth, RandomGenerator& rand
 	{
 		Ray scattered;
 		Vec3f attenuation;
-		if(depth < 50 && hit.material->scatter(r, hit, attenuation, scattered, random))
+		if(depth < 10 && hit.material->scatter(r, hit, attenuation, scattered, random))
 			return attenuation * color(scattered, world, depth+1, random);
 		return Vec3f(0.f);
 	}
@@ -256,9 +256,9 @@ void traceImageSegment(const Camera& cam, const Hitable& world, Rect w, int tota
 			accum /= float(N_SAMPLES);
 
 			outputBuffer[i+totalNx*j] = Vec3f(
-				sqrt(accum.x()),
-				sqrt(accum.y()),
-				sqrt(accum.z()));
+				std::pow(accum.x(), 1.f/2.23f),
+				std::pow(accum.y(), 1.f/2.23f),
+				std::pow(accum.z(), 1.f/2.23f));
 		}
 }
 
@@ -289,8 +289,8 @@ std::vector<Hitable*> randomScene()
 	std::vector<Hitable*>	sList;
 	Sphere* contSpheres = new Sphere[21*21]();
 	sList.push_back(new Sphere({0.f, -1000.5f, 0.f}, 1000.f, new Lambertian(Vec3f(0.5f))));
-	for(int i = 0; i < 11; ++i)
-		for(int j = 0; j < 11; ++j)
+	for(int i = 0; i < 21; ++i)
+		for(int j = 0; j < 21; ++j)
 		{
 			Vec3f albedo = {random.scalar(), random.scalar(), random.scalar()};
 			Material* mat = nullptr;
@@ -300,7 +300,7 @@ std::vector<Hitable*> randomScene()
 			else
 				mat = new Metal(albedo, random.scalar()*0.2f);
 			float h = 0.2f;
-			Vec3f center = Vec3f(float(i-5), h-0.5f, float(j-5)+-2.f) + Vec3f(0.8f*random.scalar(),0.f,0.8f*random.scalar());
+			Vec3f center = Vec3f(float(i-10), h-0.5f, float(j-10)+-2.f) + Vec3f(0.8f*random.scalar(),0.f,0.8f*random.scalar());
 			auto s = &contSpheres[j+21*i];
 			*s = Sphere(center, h, mat);
 			sList.push_back(s);
