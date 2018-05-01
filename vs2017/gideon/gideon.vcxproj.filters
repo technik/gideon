@@ -29,5 +29,8 @@
     <ClInclude Include="..\..\camera.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\background.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

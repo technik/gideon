@@ -21,12 +21,6 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// ------ Single header libraries ------
-#define STBI_MSC_SECURE_CRT
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
 
 #include <algorithm>
 #include <atomic>
@@ -37,9 +31,17 @@
 #include <vector>
 #include <thread>
 
+#include <background.h>
 #include "math/ray.h"
 #include "math/vector3.h"
 #include "camera.h"
+
+// ------ Single header libraries ------
+#define STBI_MSC_SECURE_CRT
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 using namespace math;
 using namespace std;
@@ -203,6 +205,8 @@ private:
 	std::vector<Sphere> mHitables;
 };
 
+GradientBackground skyBg({0.5f, 0.7f, 1.f}, Vec3f(1.f));
+
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const World& world, int depth, RandomGenerator& random)
 {
@@ -218,9 +222,7 @@ Vec3f color(const Ray& r, const World& world, int depth, RandomGenerator& random
 	else
 	{
 		auto unitDirection = normalize(r.direction());
-		float f = 0.5f + 0.5f * unitDirection.y();
-		constexpr Vec3f SkyColor = {0.5f, 0.7f, 1.f};
-		return Vec3f(1.f-f) + f*SkyColor; // Blend between white & sky color
+		return skyBg.sample(unitDirection); // Blend between white & sky color
 	}
 }
 
@@ -313,8 +315,8 @@ int main(int, const char**)
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto world = World(randomScene());
 
-	Vec3f camPos {0.f, 1.f, 1.f};
-	Vec3f camLookAt { 0.f, 0.f, 0.f };
+	Vec3f camPos {0.f, 0.f, 0.f};
+	Vec3f camLookAt { 0.f, 0.f, -1.f };
 	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
 	// Divide the image in tiles that can be consumed as jobs
 	constexpr size_t yTiles = 8;
@@ -356,7 +358,7 @@ int main(int, const char**)
 	cout << "Running time: " << seconds << "\nRays per second: " << numRays/seconds << "\n";
 
 	// Save final image
-	saveImage(size.x1, size.y1, outputBuffer, "Wiii.png");
+	saveImage(size.x1, size.y1, outputBuffer, "render.png");
 
 	return 0;
 }
