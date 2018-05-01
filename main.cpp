@@ -175,11 +175,11 @@ private:
 };
 
 //--------------------------------------------------------------------------------------------------
-class HitableList
+class World
 {
 public:
-	HitableList(){}
-	HitableList(std::vector<Sphere>&& lst) : mHitables(std::move(lst)) {}
+	World(){}
+	World(std::vector<Sphere>&& lst) : mHitables(std::move(lst)) {}
 
 	bool hit(const Ray& r, float tMin, float tMax, HitRecord& collision) const
 	{
@@ -204,7 +204,7 @@ private:
 };
 
 //--------------------------------------------------------------------------------------------------
-Vec3f color(const Ray& r, const HitableList& world, int depth, RandomGenerator& random)
+Vec3f color(const Ray& r, const World& world, int depth, RandomGenerator& random)
 {
 	HitRecord hit;
 	if(world.hit(r, 1e-5f, INFINITY, hit))
@@ -225,7 +225,7 @@ Vec3f color(const Ray& r, const HitableList& world, int depth, RandomGenerator& 
 }
 
 //--------------------------------------------------------------------------------------------------
-constexpr size_t N_SAMPLES = 100u;
+constexpr size_t N_SAMPLES = 64u;
 
 struct Rect
 {
@@ -238,7 +238,7 @@ struct Rect
 };
 
 //--------------------------------------------------------------------------------------------------
-void traceImageSegment(const Camera& cam, const HitableList& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random)
+void traceImageSegment(const Camera& cam, const World& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random)
 {
 	for(size_t j = w.y0; j < w.y1; ++j)
 		for(size_t i = w.x0; i < w.x1; ++i)
@@ -263,7 +263,7 @@ void traceImageSegment(const Camera& cam, const HitableList& world, Rect w, int 
 //--------------------------------------------------------------------------------------------------
 void threadRoutine(
 	const Camera& cam,
-	const HitableList& world,
+	const World& world,
 	Rect imgSize,
 	Vec3f* outputBuffer,
 	const std::vector<Rect>& tiles,
@@ -311,9 +311,11 @@ int main(int, const char**)
 	constexpr Rect size {0, 0, 512, 256 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
-	auto world = HitableList(randomScene());
+	auto world = World(randomScene());
 
-	Camera cam;
+	Vec3f camPos {0.f, 1.f, 1.f};
+	Vec3f camLookAt { 0.f, 0.f, 0.f };
+	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
 	// Divide the image in tiles that can be consumed as jobs
 	constexpr size_t yTiles = 8;
 	constexpr size_t xTiles = 2*yTiles;

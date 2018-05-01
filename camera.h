@@ -28,12 +28,24 @@
 class Camera
 {
 public:
-	Camera()
-		: ll_corner(-2.f, -1.f, -1.f)
-		, horizontal(4.f, 0.f, 0.f)
-		, vertical(0.f, 2.f, 0.f)
-		, origin(0)
-	{}
+	Camera(
+		const math::Vec3f& pos,
+		const math::Vec3f& lookAt,
+		float horFov,
+		size_t winX,
+		size_t winY
+	)
+		: origin(pos)
+	{
+		auto depth = normalize((lookAt - pos));
+		auto side = normalize(cross(depth, {0.f,1.f,0.f}));
+		auto up = cross(side, depth);
+		auto hLen = std::tan(horFov/2.f);
+		auto vLen = winY*hLen/winX;
+		ll_corner = depth - hLen * side - vLen * up;
+		horizontal = 2*hLen*side;
+		vertical = 2*vLen*up;
+	}
 
 	math::Ray get_ray(float u, float v) const
 	{
