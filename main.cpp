@@ -30,7 +30,9 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cstddef>
+#include <iostream>
 #include <random>
 #include <vector>
 #include <thread>
@@ -40,6 +42,7 @@
 #include "camera.h"
 
 using namespace math;
+using namespace std;
 
 class RandomGenerator
 {
@@ -305,7 +308,7 @@ std::vector<Sphere> randomScene()
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr Rect size {0, 0, 1280, 640 };
+	constexpr Rect size {0, 0, 512, 256 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto world = HitableList(randomScene());
@@ -330,7 +333,10 @@ int main(int, const char**)
 	std::atomic<size_t> tileCounter = 0; // Atomic counter for lock-free jobs
 	const int nThreads = 16;
 	std::vector<std::thread> ts(nThreads);
-	// Run jos
+	
+	// Run jobs
+	cout << "Running " << nThreads << " threads for " << tiles.size() << " tiles\n";
+	auto start = chrono::high_resolution_clock::now();
 	for(int i = 0; i < nThreads; ++i)
 	{
 		ts[i] = std::thread(threadRoutine, cam, world, size, outputBuffer.data(), tiles, &tileCounter);
@@ -341,6 +347,11 @@ int main(int, const char**)
 	}
 	for(int i = 0; i < nThreads; ++i)
 		ts[i].join();
+
+	chrono::duration<double> runningTime = chrono::high_resolution_clock::now() - start;
+	auto seconds = runningTime.count();
+	auto numRays = size.x1*size.y1*N_SAMPLES;
+	cout << "Running time: " << seconds << "\nRays per second: " << numRays/seconds << "\n";
 
 	// Save final image
 	saveImage(size.x1, size.y1, outputBuffer, "Wiii.png");
