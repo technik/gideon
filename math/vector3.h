@@ -33,6 +33,12 @@ namespace math {
 	public:
 		Vec3f() = default;
 		constexpr Vec3f(std::array<float,3> _list) : m(_list) {}
+		Vec3f(std::initializer_list<float> il)
+		{
+			auto iter = il.begin();
+			for(size_t i = 0; i < 3; ++i)
+				m[i] = *iter++;
+		}
 		constexpr Vec3f(float k) : m({k,k,k}) {}
 		constexpr Vec3f(float x, float y, float z) : m({x,y,z}) {}
 

@@ -176,12 +176,78 @@ private:
 	Material* m;
 };
 
+class Triangle
+{
+public:
+	Triangle() = default;
+	Triangle(
+		const Vec3f& v0,
+		const Vec3f& v1,
+		const Vec3f& v2)
+		: v({v0,v1,v2})
+	{
+		m = new Lambertian(Vec3f(0.9f, 0.7f,0.7f));
+	}
+
+	bool hit(
+		const Ray& r,
+		float tMin,
+		float tMax,
+		HitRecord& collision
+	) const
+	{
+		auto edge0 = v[1]-v[0];
+		auto edge1 = v[2]-v[1];
+		auto normal = normalize(cross(edge0,edge1));
+		auto planeOffset = dot(v[0],normal);
+
+		auto p0 = r.at(tMin);
+		auto p1 = r.at(tMax);
+
+		auto offset0 = dot(p0, normal);
+		auto offset1 = dot(p1, normal);
+
+		if((offset0-planeOffset)*(offset1-planeOffset) <= 0.f) // Line segment intersects the plane of the triangle
+		{
+			float t = tMin + (tMax-tMin)*(planeOffset-offset0)/(offset1-offset0);
+			auto p = r.at(t);
+
+			auto c0 = cross(edge0,p-v[0]);
+			auto c1 = cross(edge1,p-v[1]);
+			if(dot(c0,c1) >= 0.f)
+			{
+				auto edge2 = v[0]-v[2];
+				auto c2 = cross(edge2,p-v[2]);
+				if(dot(c1,c2) >= 0.f)
+				{
+					collision.t = t;
+					collision.p = p;
+					collision.normal = normal;
+					collision.material = m;
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	std::array<Vec3f,3> v;
+	Material* m;
+};
+
 //--------------------------------------------------------------------------------------------------
 class World
 {
 public:
 	World(){}
-	World(std::vector<Sphere>&& lst) : mHitables(std::move(lst)) {}
+	World(std::vector<Sphere>&& lst)
+		: mHitables(std::move(lst))
+		, tri(Vec3f(-1.f,-1.f,1.f),
+			Vec3f(1.f,-1.f,1.f),
+			Vec3f(0.f,1.f,1.f))
+	{
+	}
 
 	bool hit(const Ray& r, float tMin, float tMax, HitRecord& collision) const
 	{
@@ -198,10 +264,16 @@ public:
 			}
 		}
 
+		if(tri.hit(r, tMin, t, collision))
+		{
+			hit_anything = true;
+		}
+
 		return hit_anything;
 	}
 
 private:
+	Triangle tri;
 	std::vector<Sphere> mHitables;
 };
 
@@ -211,8 +283,9 @@ HDRBackground skyBg("monument.hdr");
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const World& world, int depth, RandomGenerator& random)
 {
+	constexpr float farPlane = 1e3f; // 1km
 	HitRecord hit;
-	if(world.hit(r, 1e-5f, INFINITY, hit))
+	if(world.hit(r, 1e-5f, farPlane, hit))
 	{
 		Ray scattered;
 		Vec3f attenuation;
@@ -228,7 +301,7 @@ Vec3f color(const Ray& r, const World& world, int depth, RandomGenerator& random
 }
 
 //--------------------------------------------------------------------------------------------------
-constexpr size_t N_SAMPLES = 2048u;
+constexpr size_t N_SAMPLES = 64u;
 
 struct Rect
 {
@@ -311,13 +384,13 @@ std::vector<Sphere> randomScene()
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr Rect size {0, 0, 1920, 1080 };
+	constexpr Rect size {0, 0, 640, 320 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto world = World(randomScene());
 
-	Vec3f camPos {0.f, 0.f, 0.f};
-	Vec3f camLookAt { 0.f, 0.f, -1.f };
+	Vec3f camPos {0.f, 0.f, -1.f};
+	Vec3f camLookAt { 0.f, 0.f, 1.f };
 	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
 	// Divide the image in tiles that can be consumed as jobs
 	constexpr size_t yTiles = 8;
