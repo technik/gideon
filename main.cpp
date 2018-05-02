@@ -205,7 +205,8 @@ private:
 	std::vector<Sphere> mHitables;
 };
 
-GradientBackground skyBg({0.5f, 0.7f, 1.f}, Vec3f(1.f));
+//GradientBackground skyBg({0.5f, 0.7f, 1.f}, Vec3f(1.f));
+HDRBackground skyBg("monument.hdr");
 
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const World& world, int depth, RandomGenerator& random)
@@ -227,7 +228,7 @@ Vec3f color(const Ray& r, const World& world, int depth, RandomGenerator& random
 }
 
 //--------------------------------------------------------------------------------------------------
-constexpr size_t N_SAMPLES = 64u;
+constexpr size_t N_SAMPLES = 2048u;
 
 struct Rect
 {
@@ -310,7 +311,7 @@ std::vector<Sphere> randomScene()
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr Rect size {0, 0, 512, 256 };
+	constexpr Rect size {0, 0, 1920, 1080 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto world = World(randomScene());
