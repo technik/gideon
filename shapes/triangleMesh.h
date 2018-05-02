@@ -27,6 +27,8 @@
 #include "shape.h"
 #include "triangle.h"
 
+#include <fx/gltf.h>
+
 class TriangleMesh : public Shape
 {
 public:
@@ -45,6 +47,10 @@ public:
 			auto i2 = indices[3*i+2];
 			mTris[i] = Triangle(vertices[i0], vertices[i1], vertices[i2]);
 		}
+	}
+
+	TriangleMesh(const char* fileName)
+	{
 	}
 
 	// Bruteforce approach
