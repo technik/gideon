@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\main.cpp" />
+    <ClCompile Include="..\..\shapes\triangleMesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\background.h" />
@@ -32,6 +33,7 @@
     <ClInclude Include="..\..\shapes\shape.h" />
     <ClInclude Include="..\..\shapes\sphere.h" />
     <ClInclude Include="..\..\shapes\triangle.h" />
+    <ClInclude Include="..\..\shapes\triangleMesh.h" />
     <ClInclude Include="..\..\stb_image.h" />
     <ClInclude Include="..\..\stb_image_write.h" />
   </ItemGroup>

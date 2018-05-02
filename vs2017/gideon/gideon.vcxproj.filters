@@ -15,6 +15,7 @@
     <ClCompile Include="..\..\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\shapes\triangleMesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\stb_image.h">
@@ -51,6 +52,9 @@
       <Filter>src\shapes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\shapes\sphere.h">
+      <Filter>src\shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shapes\triangleMesh.h">
       <Filter>src\shapes</Filter>
     </ClInclude>
   </ItemGroup>
