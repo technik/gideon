@@ -7,6 +7,9 @@
     <Filter Include="src\math">
       <UniqueIdentifier>{e7143f45-cf4d-4a98-9831-cec7c277bcf7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\shapes">
+      <UniqueIdentifier>{d7d3b321-aaad-4c7e-a8e8-211b334462bf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\main.cpp">
@@ -31,6 +34,24 @@
     </ClInclude>
     <ClInclude Include="..\..\background.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shapes\shape.h">
+      <Filter>src\shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\collision.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\material.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\random.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shapes\triangle.h">
+      <Filter>src\shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shapes\sphere.h">
+      <Filter>src\shapes</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

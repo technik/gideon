@@ -21,20 +21,22 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <iostream>
-#include <random>
 #include <vector>
 #include <thread>
 
 #include <background.h>
+#include "camera.h"
+#include "collision.h"
+#include "material.h"
 #include "math/ray.h"
 #include "math/vector3.h"
-#include "camera.h"
+#include "shapes/sphere.h"
+#include "shapes/triangle.h"
 
 // ------ Single header libraries ------
 #define STBI_MSC_SECURE_CRT
@@ -45,27 +47,6 @@
 
 using namespace math;
 using namespace std;
-
-class RandomGenerator
-{
-public:
-	float scalar()
-	{
-		return distrib(engine);
-	}
-	Vec3f unit_vector()
-	{
-		Vec3f p;
-		do
-		{
-			p = 2*Vec3f(scalar(),scalar(),scalar())-1.f;
-		} while(p.sqNorm() >= 1.f);
-		return p;
-	}
-private:
-	std::default_random_engine engine;
-	std::uniform_real_distribution<float> distrib;
-};
 
 uint8_t floatToByteColor(float value)
 {
@@ -86,155 +67,6 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 	const int rowStride = 3*width;
 	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
 }
-
-class Material;
-
-struct HitRecord
-{
-	float t;
-	Vec3f p;
-	Vec3f normal;
-	Material* material;
-};
-
-class Material
-{
-public:
-	virtual bool scatter(const Ray& in, HitRecord& record, Vec3f& attenuation, Ray& out, RandomGenerator& random) const = 0;
-};
-
-class Lambertian : public Material
-{
-public:
-	Lambertian(const Vec3f& c) : albedo(c) {}
-	bool scatter(const Ray&, HitRecord& hit, Vec3f& attenuation, Ray& out, RandomGenerator& random) const override
-	{
-		auto target = hit.p + hit.normal + random.unit_vector();
-		out = Ray(hit.p, target-hit.p);
-		attenuation = albedo;
-		return true;
-	}
-
-	Vec3f albedo;
-};
-
-class Metal : public Material
-{
-public:
-	Metal(const Vec3f& c, float f) : albedo(c), fuzz(f) {}
-	bool scatter(const Ray& in, HitRecord& hit, Vec3f& attenuation, Ray& out, RandomGenerator& random) const override
-	{
-		auto reflected = reflect(normalize(in.direction()), hit.normal);
-		out = Ray(hit.p, reflected + random.unit_vector()*fuzz);
-		attenuation = albedo;
-		return dot(out.direction(), hit.normal) > 0.f;
-	}
-
-	Vec3f albedo;
-	float fuzz;
-};
-
-class Sphere
-{
-public:
-	Sphere(){}
-	Sphere(const Vec3f& center, float radius, Material* mat)
-		: mCenter(center)
-		, mSqRadius(radius*radius)
-		, m(mat)
-	{}
-
-	bool hit(
-		const Ray& r,
-		float tMin,
-		float tMax,
-		HitRecord& collision
-	) const
-	{
-		auto ro = r.origin() - mCenter; // Ray origin relative to sphere's center
-		float a = r.direction().sqNorm();
-		float b = dot(ro, r.direction());
-		float c = ro.sqNorm() - mSqRadius;
-		auto discriminant = b*b-a*c;
-		if(discriminant >= 0)
-		{
-			float t = (-b - sqrt(discriminant)) / a;
-			if(t > tMin && t < tMax) {
-				collision.t = t;
-				collision.p = r.at(t);
-				collision.normal = normalize(collision.p - mCenter);
-				collision.material = m;
-				return true;
-			}
-		}
-		return false;
-	}
-
-private:
-	Vec3f mCenter;
-	float mSqRadius;
-	Material* m;
-};
-
-class Triangle
-{
-public:
-	Triangle() = default;
-	Triangle(
-		const Vec3f& v0,
-		const Vec3f& v1,
-		const Vec3f& v2)
-		: v({v0,v1,v2})
-	{
-		m = new Lambertian(Vec3f(0.9f, 0.7f,0.7f));
-	}
-
-	bool hit(
-		const Ray& r,
-		float tMin,
-		float tMax,
-		HitRecord& collision
-	) const
-	{
-		auto edge0 = v[1]-v[0];
-		auto edge1 = v[2]-v[1];
-		auto normal = normalize(cross(edge0,edge1));
-		auto planeOffset = dot(v[0],normal);
-
-		auto p0 = r.at(tMin);
-		auto p1 = r.at(tMax);
-
-		auto offset0 = dot(p0, normal);
-		auto offset1 = dot(p1, normal);
-
-		if((offset0-planeOffset)*(offset1-planeOffset) <= 0.f) // Line segment intersects the plane of the triangle
-		{
-			float t = tMin + (tMax-tMin)*(planeOffset-offset0)/(offset1-offset0);
-			auto p = r.at(t);
-
-			auto c0 = cross(edge0,p-v[0]);
-			auto c1 = cross(edge1,p-v[1]);
-			if(dot(c0,c1) >= 0.f)
-			{
-				auto edge2 = v[0]-v[2];
-				auto c2 = cross(edge2,p-v[2]);
-				if(dot(c1,c2) >= 0.f)
-				{
-					collision.t = t;
-					collision.p = p;
-					collision.normal = normal;
-					collision.material = m;
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	std::array<Vec3f,3> v;
-	Material* m;
-};
 
 //--------------------------------------------------------------------------------------------------
 class World
