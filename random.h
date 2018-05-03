@@ -23,6 +23,7 @@
 #pragma once
 
 #include <random>
+#include <math/constants.h>
 #include <math/vector3.h>
 
 class RandomGenerator
@@ -35,12 +36,13 @@ public:
 	
 	math::Vec3f unit_vector()
 	{
-		math::Vec3f p;
-		do
-		{
-			p = 2*math::Vec3f(scalar(),scalar(),scalar())-1.f;
-		} while(p.sqNorm() >= 1.f);
-		return p;
+		auto theta = math::TwoPi*scalar();
+		auto cosPhi = 2*scalar()-1;
+		auto sinPhi = sqrt(1-cosPhi*cosPhi);
+		return math::Vec3f(
+			cos(theta)*sinPhi,
+			sin(theta)*sinPhi,
+			cosPhi);
 	}
 private:
 	std::default_random_engine engine;
