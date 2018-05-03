@@ -57,5 +57,8 @@
     <ClInclude Include="..\..\shapes\triangleMesh.h">
       <Filter>src\shapes</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\scene.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

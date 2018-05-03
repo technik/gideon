@@ -32,11 +32,7 @@
 #include <background.h>
 #include "camera.h"
 #include "collision.h"
-#include "material.h"
-#include "math/ray.h"
-#include "math/vector3.h"
-#include "shapes/sphere.h"
-#include "shapes/triangle.h"
+#include "scene.h"
 
 // ------ Single header libraries ------
 #define STBI_MSC_SECURE_CRT
@@ -68,56 +64,16 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
 }
 
-//--------------------------------------------------------------------------------------------------
-class World
-{
-public:
-	World(){}
-	World(std::vector<Sphere>&& lst)
-		: mHitables(std::move(lst))
-		, tri(Vec3f(-1.f,-1.f,1.f),
-			Vec3f(1.f,-1.f,1.f),
-			Vec3f(0.f,1.f,1.f))
-	{
-	}
-
-	bool hit(const Ray& r, float tMin, float tMax, HitRecord& collision) const
-	{
-		float t = tMax;
-		bool hit_anything = false;
-		for(const auto& h : mHitables)
-		{
-			HitRecord tmp_hit;
-			if(h.hit(r, tMin, t, tmp_hit))
-			{
-				collision = tmp_hit;
-				t = tmp_hit.t;
-				hit_anything = true;
-			}
-		}
-
-		if(tri.hit(r, tMin, t, collision))
-		{
-			hit_anything = true;
-		}
-
-		return hit_anything;
-	}
-
-private:
-	Triangle tri;
-	std::vector<Sphere> mHitables;
-};
-
 //GradientBackground skyBg({0.5f, 0.7f, 1.f}, Vec3f(1.f));
 HDRBackground skyBg("monument.hdr");
 
 //--------------------------------------------------------------------------------------------------
-Vec3f color(const Ray& r, const World& world, int depth, RandomGenerator& random)
+Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
 {
+	constexpr float nearPlane = 1e-5f;
 	constexpr float farPlane = 1e3f; // 1km
 	HitRecord hit;
-	if(world.hit(r, 1e-5f, farPlane, hit))
+	if(world.hit(r, nearPlane, farPlane, hit))
 	{
 		Ray scattered;
 		Vec3f attenuation;
@@ -133,7 +89,7 @@ Vec3f color(const Ray& r, const World& world, int depth, RandomGenerator& random
 }
 
 //--------------------------------------------------------------------------------------------------
-constexpr size_t N_SAMPLES = 64u;
+constexpr size_t N_SAMPLES = 512u;
 
 struct Rect
 {
@@ -146,7 +102,7 @@ struct Rect
 };
 
 //--------------------------------------------------------------------------------------------------
-void traceImageSegment(const Camera& cam, const World& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random)
+void traceImageSegment(const Camera& cam, const Scene& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random)
 {
 	for(size_t j = w.y0; j < w.y1; ++j)
 		for(size_t i = w.x0; i < w.x1; ++i)
@@ -171,7 +127,7 @@ void traceImageSegment(const Camera& cam, const World& world, Rect w, int totalN
 //--------------------------------------------------------------------------------------------------
 void threadRoutine(
 	const Camera& cam,
-	const World& world,
+	const Scene& world,
 	Rect imgSize,
 	Vec3f* outputBuffer,
 	const std::vector<Rect>& tiles,
@@ -189,39 +145,17 @@ void threadRoutine(
 }
 
 //--------------------------------------------------------------------------------------------------
-std::vector<Sphere> randomScene()
-{
-	RandomGenerator random;
-	std::vector<Sphere> sList;
-	sList.reserve(1+21*21);
-	for(int i = 0; i < 21; ++i)
-		for(int j = 0; j < 21; ++j)
-		{
-			Vec3f albedo = {random.scalar(), random.scalar(), random.scalar()};
-			Material* mat = nullptr;
-			float p = random.scalar();
-			if(p > 0.2f)
-				mat = new Lambertian(albedo);
-			else
-				mat = new Metal(albedo, random.scalar()*0.2f);
-			float h = 0.2f;
-			Vec3f center = Vec3f(float(i-10), h-0.5f, float(j-10)+-2.f) + Vec3f(0.8f*random.scalar(),0.f,0.8f*random.scalar());
-			// Add the sphere
-			sList.emplace_back(center, h, mat);
-		}
-	sList.emplace_back(Vec3f(0.f, -1000.5f, 0.f), 1000.f, new Lambertian(Vec3f(0.5f)));
-	return sList;
-}
-
-//--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
 	constexpr Rect size {0, 0, 640, 320 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
-	auto world = World(randomScene());
+	auto generator = RandomGenerator();
+	//auto world = Scene(generator);
+	//auto world = Scene("DamagedHelmet.gltf");
+	auto world = Scene("box.gltf");
 
-	Vec3f camPos {0.f, 0.f, -1.f};
+	Vec3f camPos { 1.6f, 1.0f, -4.f};
 	Vec3f camLookAt { 0.f, 0.f, 1.f };
 	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
 	// Divide the image in tiles that can be consumed as jobs

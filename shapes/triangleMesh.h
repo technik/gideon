@@ -27,8 +27,6 @@
 #include "shape.h"
 #include "triangle.h"
 
-#include <fx/gltf.h>
-
 class TriangleMesh : public Shape
 {
 public:
@@ -40,6 +38,7 @@ public:
 		const std::vector<Idx>& indices)
 	{
 		auto nTris = indices.size() / 3;
+		mTris.resize(nTris);
 		for(size_t i = 0; i < nTris; ++i)
 		{
 			auto i0 = indices[3*i+0];
@@ -47,10 +46,6 @@ public:
 			auto i2 = indices[3*i+2];
 			mTris[i] = Triangle(vertices[i0], vertices[i1], vertices[i2]);
 		}
-	}
-
-	TriangleMesh(const char* fileName)
-	{
 	}
 
 	// Bruteforce approach

@@ -25,8 +25,9 @@
 #include <material.h>
 #include <math/ray.h>
 #include <math/vector3.h>
+#include "shape.h"
 
-class Sphere
+class Sphere : public Shape
 {
 public:
 	Sphere(){}
@@ -41,7 +42,7 @@ public:
 		float tMin,
 		float tMax,
 		HitRecord& collision
-	) const
+	) const override
 	{
 		auto ro = r.origin() - mCenter; // Ray origin relative to sphere's center
 		float a = r.direction().sqNorm();
