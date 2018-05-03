@@ -46,7 +46,9 @@ using namespace std;
 
 uint8_t floatToByteColor(float value)
 {
-	return uint8_t(std::max(0.f,std::min(value,1.f))*255); // Clamp value to the range 0-1, and convert to byte
+	auto clampedVal = std::clamp(value,0.f,1.f);
+	auto sRGBVal = std::pow(clampedVal, 1.f/2.23f);
+	return uint8_t(sRGBVal*255);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -117,10 +119,7 @@ void traceImageSegment(const Camera& cam, const Scene& world, Rect w, int totalN
 			}
 			accum /= float(N_SAMPLES);
 
-			outputBuffer[i+totalNx*j] = Vec3f(
-				std::pow(accum.x(), 1.f/2.23f),
-				std::pow(accum.y(), 1.f/2.23f),
-				std::pow(accum.z(), 1.f/2.23f));
+			outputBuffer[i+totalNx*j] = accum;
 		}
 }
 
