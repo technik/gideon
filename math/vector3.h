@@ -160,6 +160,13 @@ namespace math {
 		return {a.x()/b, a.y()/b, a.z()/b };
 	}
 
+	inline bool operator==(const Vec3f& a, const Vec3f& b)
+	{
+		return a.x()==b.x()
+			&& a.y()==b.y()
+			&& a.z()==b.z();
+	}
+
 	// Inline methods
 	inline float dot(const Vec3f& a, const Vec3f& b)
 	{
@@ -178,6 +185,24 @@ namespace math {
 	inline Vec3f reflect(const Vec3f& v, const Vec3f& n)
 	{
 		return v-2*dot(v,n)*n;
+	}
+
+	inline Vec3f min(const Vec3f& a, const Vec3f& b)
+	{
+		return {
+			std::min(a.x(), b.x()),
+			std::min(a.y(), b.y()),
+			std::min(a.z(), b.z())
+		};
+	}
+
+	inline Vec3f max(const Vec3f& a, const Vec3f& b)
+	{
+		return {
+			std::max(a.x(), b.x()),
+			std::max(a.y(), b.y()),
+			std::max(a.z(), b.z())
+		};
 	}
 
 	inline float Vec3f::sqNorm() const { return dot(*this, *this); }
