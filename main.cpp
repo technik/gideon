@@ -67,7 +67,7 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 }
 
 //GradientBackground skyBg({0.5f, 0.7f, 1.f}, Vec3f(1.f));
-HDRBackground skyBg("Ice.hdr");
+HDRBackground skyBg("Shiodome.hdr");
 
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
@@ -146,18 +146,18 @@ void threadRoutine(
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr Rect size {0, 0, 640, 320 };
+	constexpr Rect size {0, 0, 160, 80 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto generator = RandomGenerator();
-	auto world = Scene(generator);
-	//auto world = Scene("DamagedHelmet.gltf");
+	//auto world = Scene(generator);
+	auto world = Scene("DamagedHelmet.gltf");
 	//auto world = Scene("box.gltf");
 
-	//Vec3f camPos { 1.6f, 1.0f, -4.f};
-	//Vec3f camLookAt { 0.f, 0.f, 1.f };
-	Vec3f camPos { 0.f, 0.0f, 0.f};
-	Vec3f camLookAt { 0.f, 0.f, -1.f };
+	Vec3f camPos { 0.8f, 0.5f, -2.f};
+	Vec3f camLookAt { 0.f, 0.f, 1.f };
+	//Vec3f camPos { 0.f, 0.0f, 0.f};
+	//Vec3f camLookAt { 0.f, 0.f, -1.f };
 	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
 	// Divide the image in tiles that can be consumed as jobs
 	constexpr size_t yTiles = 8;

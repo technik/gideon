@@ -41,6 +41,27 @@ namespace math
 		const Vec3f& direction() const { return mDirection; }
 		Vec3f at(float t) const { return mOrigin + t * mDirection; }
 
+		// Implicit ray
+		struct Implicit {
+			Vec3f o; // -origin/dir
+			Vec3f n; // 1 / dir
+		};
+
+		// Compute an implicit representation of the ray. Useful for batched intersection tests.
+		Implicit implicit() const {
+			Vec3f invDir(
+				1.f / mDirection.x(),
+				1.f / mDirection.y(),
+				1.f / mDirection.z()
+			);
+			Vec3f origin(
+				mDirection.x() ? -mOrigin.x() * invDir.x() : 0.f,
+				mDirection.y() ? -mOrigin.y() * invDir.y() : 0.f,
+				mDirection.z() ? -mOrigin.z() * invDir.z() : 0.f
+			);
+			return Implicit{origin, invDir};
+		}
+
 	private:
 		Vec3f mOrigin;
 		Vec3f mDirection;
