@@ -59,6 +59,7 @@ public:
 			if(tri.hit(r,tMin,t,tmp_hit))
 			{
 				collision = tmp_hit;
+				t = tmp_hit.t;
 				hit_anything = true;
 			}
 		}
