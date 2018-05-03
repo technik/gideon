@@ -91,7 +91,7 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 }
 
 //--------------------------------------------------------------------------------------------------
-constexpr size_t N_SAMPLES = 512u;
+constexpr size_t N_SAMPLES = 64u;
 
 struct Rect
 {
@@ -137,8 +137,19 @@ void threadRoutine(
 	size_t selfCounter = (*tileCounter)++;
 	while(selfCounter < tiles.size()) // Valid job
 	{
+		// Start profiling
+		auto start = chrono::high_resolution_clock::now();
+
+		// Actual work
 		auto& tile = tiles[selfCounter];
 		traceImageSegment(cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer, random);
+
+		// Show profiled data
+		chrono::duration<double> runningTime = chrono::high_resolution_clock::now() - start;
+		auto seconds = runningTime.count();
+		auto numRays = tile.nPixels()*N_SAMPLES;
+		cout << "Tile " << selfCounter << ": Running time: " << seconds << ", Rays per second: " << numRays/seconds << "\n";
+
 		selfCounter = (*tileCounter)++;
 	}
 }
@@ -146,15 +157,16 @@ void threadRoutine(
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr Rect size {0, 0, 160, 80 };
+	constexpr Rect size {0, 0, 320, 160 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto generator = RandomGenerator();
 	//auto world = Scene(generator);
 	auto world = Scene("DamagedHelmet.gltf");
 	//auto world = Scene("box.gltf");
+	//auto world = Scene("BoomBox.gltf");
 
-	Vec3f camPos { 0.8f, 0.5f, -2.f};
+	Vec3f camPos { 0.0f, 0.0f, -4.f};
 	Vec3f camLookAt { 0.f, 0.f, 1.f };
 	//Vec3f camPos { 0.f, 0.0f, 0.f};
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };

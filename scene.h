@@ -67,7 +67,7 @@ public:
 				auto byteOffset = posAccessor.byteOffset;
 				auto count = posAccessor.count;
 				auto& bv = document.bufferViews[posAccessor.bufferView];
-				auto stride = bv.byteStride;
+				auto stride = bv.byteStride ? bv.byteStride : 12; // Assume tightly packed
 				auto viewData = &bufferData[bv.byteOffset];
 				vertices.resize(count);
 				for(size_t i = 0; i < count; ++i)
