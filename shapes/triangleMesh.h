@@ -24,6 +24,7 @@
 
 #include <vector>
 #include <math/vector3.h>
+#include <math/aabb.h>
 #include "shape.h"
 #include "triangle.h"
 
@@ -35,7 +36,9 @@ public:
 	template<typename Idx>
 	TriangleMesh(
 		const std::vector<math::Vec3f>& vertices,
-		const std::vector<Idx>& indices)
+		const std::vector<Idx>& indices,
+		const math::AABB& aabb)
+		: mBoundingVolume(aabb)
 	{
 		auto nTris = indices.size() / 3;
 		mTris.resize(nTris);
@@ -48,10 +51,12 @@ public:
 		}
 	}
 
-	// Bruteforce approach
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
 	{
+		if(!mBoundingVolume.intersect(r.implicit(), tMin, tMax, tMin))
+			return false;
 		float t = tMax;
+		// Bruteforce approach
 		bool hit_anything = false;
 		HitRecord tmp_hit;
 		for(auto& tri : mTris)
@@ -68,5 +73,6 @@ public:
 	}
 
 private:
+	math::AABB mBoundingVolume;
 	std::vector<Triangle> mTris;
 };

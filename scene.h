@@ -23,6 +23,7 @@
 #pragma once
 
 #include <math/vector3.h>
+#include <math/aabb.h>
 #include "random.h"
 #include "shapes/shape.h"
 #include "shapes/sphere.h"
@@ -62,6 +63,9 @@ public:
 			}
 
 			auto& posAccessor = document.accessors[primitive.attributes["POSITION"]];
+			auto bbox = math::AABB(
+				reinterpret_cast<math::Vec3f&>(*posAccessor.min.data()),
+				reinterpret_cast<math::Vec3f&>(*posAccessor.max.data()));
 			std::vector<math::Vec3f> vertices;
 			{
 				auto byteOffset = posAccessor.byteOffset;
@@ -76,7 +80,7 @@ public:
 				}
 			}
 
-			mShapes.push_back(new TriangleMesh(vertices, indices));
+			mShapes.push_back(new TriangleMesh(vertices, indices, bbox));
 		}
 	}
 

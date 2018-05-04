@@ -91,7 +91,8 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 }
 
 //--------------------------------------------------------------------------------------------------
-constexpr size_t N_SAMPLES = 64u;
+//constexpr size_t N_SAMPLES = 4u;
+constexpr size_t N_SAMPLES = 2048u;
 
 struct Rect
 {
@@ -137,27 +138,18 @@ void threadRoutine(
 	size_t selfCounter = (*tileCounter)++;
 	while(selfCounter < tiles.size()) // Valid job
 	{
-		// Start profiling
-		auto start = chrono::high_resolution_clock::now();
-
-		// Actual work
-		auto& tile = tiles[selfCounter];
+	auto& tile = tiles[selfCounter];
 		traceImageSegment(cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer, random);
-
-		// Show profiled data
-		chrono::duration<double> runningTime = chrono::high_resolution_clock::now() - start;
-		auto seconds = runningTime.count();
-		auto numRays = tile.nPixels()*N_SAMPLES;
-		cout << "Tile " << selfCounter << ": Running time: " << seconds << ", Rays per second: " << numRays/seconds << "\n";
-
 		selfCounter = (*tileCounter)++;
+		cout << selfCounter << "\n";
 	}
 }
 
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr Rect size {0, 0, 320, 160 };
+	constexpr Rect size {0, 0, 640, 320 };
+	//constexpr Rect size {0, 0, 64, 32 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto generator = RandomGenerator();
@@ -166,8 +158,8 @@ int main(int, const char**)
 	//auto world = Scene("box.gltf");
 	//auto world = Scene("BoomBox.gltf");
 
-	Vec3f camPos { 0.0f, 0.0f, -4.f};
-	Vec3f camLookAt { 0.f, 0.f, 1.f };
+	Vec3f camPos { 3.0f, 0.0f, 0.f};
+	Vec3f camLookAt { 0.f, 0.f, 0.f };
 	//Vec3f camPos { 0.f, 0.0f, 0.f};
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };
 	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
