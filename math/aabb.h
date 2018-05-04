@@ -38,8 +38,8 @@ namespace math
 		{ }
 
 		AABB(const Vector& _o, float _size)
-			:mMin(_o-_size*0.5*Vector(1.f,1.f,1.f))
-			,mMax(_o+_size*0.5*Vector(1.f,1.f,1.f))
+			:mMin(_o-_size*0.5f*Vector(1.f,1.f,1.f))
+			,mMax(_o+_size*0.5f*Vector(1.f,1.f,1.f))
 		{ }
 
 		// Size, position and volume

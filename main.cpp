@@ -66,8 +66,8 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
 }
 
-//GradientBackground skyBg({0.5f, 0.7f, 1.f}, Vec3f(1.f));
-HDRBackground skyBg("Shiodome.hdr");
+GradientBackground skyBg({0.5f, 0.7f, 1.f}, Vec3f(1.f));
+//HDRBackground skyBg("Shiodome.hdr");
 
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
@@ -91,8 +91,8 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 }
 
 //--------------------------------------------------------------------------------------------------
-//constexpr size_t N_SAMPLES = 4u;
-constexpr size_t N_SAMPLES = 2048u;
+constexpr size_t N_SAMPLES = 64u;
+//constexpr size_t N_SAMPLES = 2048u;
 
 struct Rect
 {
@@ -148,8 +148,8 @@ void threadRoutine(
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	constexpr Rect size {0, 0, 640, 320 };
-	//constexpr Rect size {0, 0, 64, 32 };
+	//constexpr Rect size {0, 0, 1280, 720 };
+	constexpr Rect size {0, 0, 200, 100 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto generator = RandomGenerator();
@@ -164,7 +164,7 @@ int main(int, const char**)
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };
 	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
 	// Divide the image in tiles that can be consumed as jobs
-	constexpr size_t yTiles = 8;
+	constexpr size_t yTiles = 10;
 	constexpr size_t xTiles = 2*yTiles;
 	static_assert(size.x1%xTiles == 0);
 	static_assert(size.y1%yTiles == 0);
