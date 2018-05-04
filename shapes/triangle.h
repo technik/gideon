@@ -83,6 +83,8 @@ public:
 		return false;
 	}
 
+	math::Vec3f centroid() const { return (v[0]+v[1]+v[2])/3.f; }
+
 	std::array<math::Vec3f,3> v;
 	Material* m;
 };

@@ -63,9 +63,6 @@ public:
 			}
 
 			auto& posAccessor = document.accessors[primitive.attributes["POSITION"]];
-			auto bbox = math::AABB(
-				reinterpret_cast<math::Vec3f&>(*posAccessor.min.data()),
-				reinterpret_cast<math::Vec3f&>(*posAccessor.max.data()));
 			std::vector<math::Vec3f> vertices;
 			{
 				auto byteOffset = posAccessor.byteOffset;
@@ -80,7 +77,7 @@ public:
 				}
 			}
 
-			mShapes.push_back(new TriangleMesh(vertices, indices, bbox));
+			mShapes.push_back(new TriangleMesh(vertices, indices));
 		}
 	}
 

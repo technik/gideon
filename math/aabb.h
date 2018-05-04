@@ -42,6 +42,12 @@ namespace math
 			,mMax(_o+_size*0.5f*Vector(1.f,1.f,1.f))
 		{ }
 
+		AABB(const AABB& a, const AABB& b)
+			: mMin(math::min(a.min(),b.min()))
+			, mMax(math::max(a.max(),b.max()))
+		{
+		}
+
 		// Size, position and volume
 		/// Make the Box empty
 		void clear() {
@@ -53,6 +59,12 @@ namespace math
 			return mMax.x() < mMin.x()
 				|| mMax.y() < mMin.y()
 				|| mMax.z() < mMin.z();
+		}
+
+		void add(const Vector& v)
+		{
+			mMin = math::min(mMin, v);
+			mMax = math::max(mMax, v);
 		}
 
 		const Vector& min() const { return mMin; }
