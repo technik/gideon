@@ -69,5 +69,8 @@
     <ClInclude Include="..\..\math\matrix.h">
       <Filter>src\math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\shapes\meshInstance.h">
+      <Filter>src\shapes</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

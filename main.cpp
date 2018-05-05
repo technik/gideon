@@ -92,9 +92,9 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 }
 
 //--------------------------------------------------------------------------------------------------
-//constexpr size_t N_SAMPLES = 64u;
+constexpr size_t N_SAMPLES = 64u;
 //constexpr size_t N_SAMPLES = 8096u;
-constexpr size_t N_SAMPLES = 256u;
+//constexpr size_t N_SAMPLES = 256u;
 
 struct Rect
 {
@@ -140,7 +140,7 @@ void threadRoutine(
 	size_t selfCounter = (*tileCounter)++;
 	while(selfCounter < tiles.size()) // Valid job
 	{
-	auto& tile = tiles[selfCounter];
+		auto& tile = tiles[selfCounter];
 		traceImageSegment(cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer, random);
 		cout << selfCounter << "\n";
 		selfCounter = (*tileCounter)++;
@@ -151,19 +151,20 @@ void threadRoutine(
 int main(int, const char**)
 {
 	//constexpr Rect size {0, 0, 1920, 1080 };
-	constexpr Rect size {0, 0, 640, 320 };
-	//constexpr Rect size {0, 0, 200, 100 };
+	//constexpr Rect size {0, 0, 640, 320 };
+	constexpr Rect size {0, 0, 200, 100 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto generator = RandomGenerator();
 	//auto world = Scene(generator);
-	//auto world = Scene("DamagedHelmet.gltf");
-	auto world = Scene("cabain.gltf");
+	auto world = Scene("DamagedHelmet.gltf");
+	//auto world = Scene("SimpleMeshes.gltf");
+	//auto world = Scene("cabain.gltf");
 	//auto world = Scene("box.gltf");
 	//auto world = Scene("BoomBox.gltf");
 
-	Vec3f camPos { 4.0f, 5.0f, 0.f};
-	Vec3f camLookAt { 0.f, 5.f, 0.f };
+	Vec3f camPos { -4.0f, 0.0f, 4.f};
+	Vec3f camLookAt { 0.f, 0.f, 0.f };
 	//Vec3f camPos { 0.f, 0.0f, 0.f};
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };
 	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
@@ -186,7 +187,7 @@ int main(int, const char**)
 	std::atomic<size_t> tileCounter = 0; // Atomic counter for lock-free jobs
 	const int nThreads = 16;
 	std::vector<std::thread> ts(nThreads);
-	
+
 	// Run jobs
 	cout << "Running " << nThreads << " threads for " << tiles.size() << " tiles\n";
 	auto start = chrono::high_resolution_clock::now();

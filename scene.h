@@ -25,9 +25,9 @@
 #include <math/vector3.h>
 #include <math/aabb.h>
 #include "random.h"
-#include "shapes/shape.h"
 #include "shapes/sphere.h"
 #include "shapes/triangleMesh.h"
+#include "shapes/meshInstance.h"
 #include <vector>
 #include <fx/gltf.h>
 #include <fstream>
@@ -42,12 +42,27 @@ public:
 
 		if(document.scene >= 0)
 		{
-			auto& mesh = document.meshes[0];
-			auto& primitive = mesh.primitives[0];
-			auto& idxAccessor = document.accessors[primitive.indices];
+			loadMeshes(document, document.meshes);
+			for(auto& node : document.nodes)
+			{
+				if(node.mesh >= 0)
+				{
+					math::Matrix34f xForm = node.matrix;
+					mShapes.push_back(new MeshInstance(*mMeshes[node.mesh], xForm));
+				}
+			}
+		}
+	}
 
-			std::vector<uint8_t> bufferData;
-			loadRawBuffer(document.buffers[0].uri.c_str(), bufferData);
+	void loadMeshes(const fx::gltf::Document& document, std::vector<fx::gltf::Mesh>& meshes)
+	{
+		std::vector<uint8_t> bufferData;
+		loadRawBuffer(document.buffers[0].uri.c_str(), bufferData);
+
+		for(auto& meshDesc : meshes)
+		{
+			auto& primitive = meshDesc.primitives[0];
+			auto& idxAccessor = document.accessors[primitive.indices];
 
 			std::vector<size_t> indices;
 			{
@@ -77,7 +92,7 @@ public:
 				}
 			}
 
-			mShapes.push_back(new TriangleMesh(vertices, indices));
+			mMeshes.push_back(new TriangleMesh(vertices, indices));
 		}
 	}
 
@@ -141,4 +156,5 @@ public:
 
 private:
 	std::vector<Shape*>	mShapes;
+	std::vector<TriangleMesh*>	mMeshes;
 };
