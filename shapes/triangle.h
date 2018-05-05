@@ -23,7 +23,6 @@
 #pragma once
 
 #include <array>
-#include <material.h>
 #include <math/ray.h>
 #include <math/vector3.h>
 
@@ -37,7 +36,6 @@ public:
 		const math::Vec3f& v2)
 		: v({v0,v1,v2})
 	{
-		m = new Lambertian(math::Vec3f(0.9f, 0.7f,0.7f));
 	}
 
 	bool hit(
@@ -74,7 +72,6 @@ public:
 					collision.t = t;
 					collision.p = p;
 					collision.normal = normal;
-					collision.material = m;
 					return true;
 				}
 			}
@@ -86,5 +83,4 @@ public:
 	math::Vec3f centroid() const { return (v[0]+v[1]+v[2])/3.f; }
 
 	std::array<math::Vec3f,3> v;
-	Material* m;
 };

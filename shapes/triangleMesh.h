@@ -24,6 +24,7 @@
 
 #include <cassert>
 #include <vector>
+#include <material.h>
 #include <math/vector3.h>
 #include <math/aabb.h>
 #include "shape.h"
@@ -51,11 +52,17 @@ public:
 		}
 
 		mBVH = AABBTree(triList);
+		m = new Lambertian(math::Vec3f(0.9f));
 	}
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
 	{
-		return mBVH.hit(r,tMin,tMax,collision);
+		if(mBVH.hit(r,tMin,tMax,collision))
+		{
+			collision.material = m;
+			return true;
+		}
+		return false;
 	}
 
 private:
@@ -101,16 +108,14 @@ private:
 		//--------------------------------------------------------------------------------------------------
 		bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
 		{
-			if(!mBoundingVolume.intersect(r.implicit(), tMin, tMax, tMax))
+			if(!mBoundingVolume.intersect(r.implicit(), tMin, tMax, tMin))
 				return false;
 
+			float t = tMax;
+			HitRecord tmp_hit;
 			if(mTris.empty())
 			{
 				assert(a && b);
-				float t = tMax;
-				// Bruteforce approach
-				bool hit_anything = false;
-				HitRecord tmp_hit;
 				bool hit_a = a->hit(r,tMin,t,tmp_hit);
 				if(hit_a)
 				{
@@ -128,9 +133,7 @@ private:
 			else
 			{
 				assert(!a && !b);
-				float t = tMax;
 				bool hit_anything = false;
-				HitRecord tmp_hit;
 				for(auto& tri : mTris)
 				{
 					if(tri.hit(r,tMin,t,tmp_hit))
@@ -147,4 +150,5 @@ private:
 	};
 
 	AABBTree mBVH;
+	Material* m;
 };

@@ -66,8 +66,9 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
 }
 
-GradientBackground skyBg({0.5f, 0.7f, 1.f}, Vec3f(1.f));
+//GradientBackground skyBg({0.5f, 0.7f, 1.f}, Vec3f(1.f));
 //HDRBackground skyBg("Shiodome.hdr");
+HDRBackground skyBg("monument.hdr");
 
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
@@ -91,8 +92,9 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 }
 
 //--------------------------------------------------------------------------------------------------
-constexpr size_t N_SAMPLES = 64u;
-//constexpr size_t N_SAMPLES = 2048u;
+//constexpr size_t N_SAMPLES = 64u;
+//constexpr size_t N_SAMPLES = 8096u;
+constexpr size_t N_SAMPLES = 256u;
 
 struct Rect
 {
@@ -148,13 +150,15 @@ void threadRoutine(
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	//constexpr Rect size {0, 0, 1280, 720 };
-	constexpr Rect size {0, 0, 200, 100 };
+	//constexpr Rect size {0, 0, 1920, 1080 };
+	constexpr Rect size {0, 0, 640, 320 };
+	//constexpr Rect size {0, 0, 200, 100 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto generator = RandomGenerator();
 	//auto world = Scene(generator);
-	auto world = Scene("DamagedHelmet.gltf");
+	//auto world = Scene("DamagedHelmet.gltf");
+	auto world = Scene("cabain.gltf");
 	//auto world = Scene("box.gltf");
 	//auto world = Scene("BoomBox.gltf");
 
