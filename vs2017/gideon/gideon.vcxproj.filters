@@ -66,5 +66,8 @@
     <ClInclude Include="..\..\math\aabb.h">
       <Filter>src\math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\math\matrix.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

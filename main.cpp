@@ -162,8 +162,8 @@ int main(int, const char**)
 	//auto world = Scene("box.gltf");
 	//auto world = Scene("BoomBox.gltf");
 
-	Vec3f camPos { 3.0f, 0.0f, 0.f};
-	Vec3f camLookAt { 0.f, 0.f, 0.f };
+	Vec3f camPos { 4.0f, 5.0f, 0.f};
+	Vec3f camLookAt { 0.f, 5.f, 0.f };
 	//Vec3f camPos { 0.f, 0.0f, 0.f};
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };
 	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
