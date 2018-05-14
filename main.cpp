@@ -78,13 +78,14 @@ int factorial(int x)
 
 float shNorm(int l, int m)
 {
-	auto num = (2*l-1)*factorial(l-abs(m));
+	auto num = (2*l+1)*factorial(l-abs(m));
 	auto den = 4*math::Constants<float>::pi*factorial(l+abs(m));
 	return sqrt(num/den);
 }
 
 float legendre(int l, int m, float sinTheta, float z)
 {
+	assert(m <= l);
 	if(m == 0 && l == 0)
 	{
 		return 1.f;
@@ -142,6 +143,16 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 		return skyBg->sample(unitDirection); // Blend between white & sky color
 	}*/
 	// Spherical harmonics coefficients
+	auto dir =r.direction();
+	dir.normalize();
+	auto phi = atan2(dir.y(),dir.x());
+	auto cTheta = dir.z();
+	auto shVal = sh(4,1,cTheta,phi);
+	Vec3f c;
+	c.r() = max(0.f,shVal);
+	c.g() = abs(shVal)>1.001f?1.f:0.f;
+	c.b() = max(0.f,-shVal);
+	return c;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -302,7 +313,7 @@ int main(int _argc, const char** _argv)
 	Camera* cam = nullptr;
 	if(params.sphericalRender)
 	{
-		cam = new SphericalCamera(camPos, camLookAt, {0.f,1.f,0.f});
+		cam = new SphericalCamera(camPos, camLookAt, {0.f,0.f,1.f});
 	}else
 		cam = new FrustumCamera(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
 

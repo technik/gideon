@@ -52,9 +52,10 @@ public:
 		auto sinPhi = std::sin(phi);
 		return math::Ray(
 			origin,
-			-cosTheta*up +
+			math::Vec3f(sinTheta*cosPhi,sinTheta*sinPhi,-cosTheta)
+			/*-cosTheta*up +
 			sinTheta*cosPhi*fwd+
-			sinTheta*sinPhi*side
+			sinTheta*sinPhi*side*/
 		);
 	}
 
