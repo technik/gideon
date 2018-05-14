@@ -66,9 +66,7 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
 }
 
-//GradientBackground skyBg({0.5f, 0.7f, 1.f}, Vec3f(1.f));
-//HDRBackground skyBg("Shiodome.hdr");
-HDRBackground skyBg("monument.hdr");
+Background* skyBg = nullptr;
 
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
@@ -87,15 +85,11 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 	else
 	{
 		auto unitDirection = normalize(r.direction());
-		return skyBg.sample(unitDirection); // Blend between white & sky color
+		return skyBg->sample(unitDirection); // Blend between white & sky color
 	}
 }
 
 //--------------------------------------------------------------------------------------------------
-//constexpr size_t N_SAMPLES = 64u;
-constexpr size_t N_SAMPLES = 8096u;
-//constexpr size_t N_SAMPLES = 256u;
-
 struct Rect
 {
 	Rect() = default;
@@ -107,20 +101,20 @@ struct Rect
 };
 
 //--------------------------------------------------------------------------------------------------
-void traceImageSegment(const Camera& cam, const Scene& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random)
+void traceImageSegment(const Camera& cam, const Scene& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random, unsigned nSamples)
 {
 	for(size_t j = w.y0; j < w.y1; ++j)
 		for(size_t i = w.x0; i < w.x1; ++i)
 		{
 			Vec3f accum(0.f);
-			for(size_t s = 0; s < N_SAMPLES; ++s)
+			for(size_t s = 0; s < nSamples; ++s)
 			{
 				float u = float(i+random.scalar())/totalNx;
 				float v = 1.f-float(j+random.scalar())/totalNy;
 				Ray r = cam.get_ray(u,v);
 				accum += color(r, world, 0, random);
 			}
-			accum /= float(N_SAMPLES);
+			accum /= float(nSamples);
 
 			outputBuffer[i+totalNx*j] = accum;
 		}
@@ -133,7 +127,8 @@ void threadRoutine(
 	Rect imgSize,
 	Vec3f* outputBuffer,
 	const std::vector<Rect>& tiles,
-	std::atomic<size_t>* tileCounter)
+	std::atomic<size_t>* tileCounter,
+	unsigned nSamples)
 {
 	RandomGenerator random;
 
@@ -141,45 +136,124 @@ void threadRoutine(
 	while(selfCounter < tiles.size()) // Valid job
 	{
 		auto& tile = tiles[selfCounter];
-		traceImageSegment(cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer, random);
+		traceImageSegment(cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer, random, nSamples);
 		cout << selfCounter << "\n";
 		selfCounter = (*tileCounter)++;
 	}
 }
 
-//--------------------------------------------------------------------------------------------------
-int main(int, const char**)
+struct CmdLineParams
 {
-	constexpr Rect size {0, 0, 1920, 1080 };
-	//constexpr Rect size {0, 0, 640, 320 };
-	//constexpr Rect size {0, 0, 200, 100 };
+	string scene;
+	string background;
+	unsigned sx = 640;
+	unsigned sy = 480;
+	unsigned ns = 16;
+	unsigned tileSize = 20;
+
+	int process(const vector<string>& args, int i)
+	{
+		auto& arg = args[i];
+		if(arg == "-bg") {
+			background = args[i+1];
+			return 2;
+		}
+		if(arg == "-scene")
+		{
+			scene = args[i+1];
+			return 2;
+		}
+		if(arg == "-s") // samples per pixel
+		{
+			ns = atoi(args[i+1].c_str());
+			return 2;
+		}
+		if(arg == "-w")
+		{
+			sx = atoi(args[i+1].c_str());
+			return 2;
+		}
+		if(arg == "-h")
+		{
+			sy = atoi(args[i+1].c_str());
+			return 2;
+		}
+		if(arg == "-tile")
+		{
+			tileSize = atoi(args[i+1].c_str());
+			return 2;
+		}
+		if(arg == "-fullHD")
+		{
+			sx = 1920;
+			sy = 1080;
+			return 1;
+		}
+		return 1;
+	}
+
+	CmdLineParams(int _argc, const char** _argv)
+	{
+		vector<string> args(_argc);
+		// Read all params
+		int i = 0;
+		for(auto& s : args)
+			s = _argv[i++];
+		i = 0;
+		while(i < _argc)
+			i += process(args, i);
+	}
+};
+
+//--------------------------------------------------------------------------------------------------
+int main(int _argc, const char** _argv)
+{
+	CmdLineParams params(_argc, _argv);
+	Rect size {0, 0, params.sx, params.sy };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
-	auto generator = RandomGenerator();
-	//auto world = Scene(generator);
-	auto world = Scene("DamagedHelmet.gltf");
-	//auto world = Scene("SimpleMeshes.gltf");
-	//auto world = Scene("cabain.gltf");
-	//auto world = Scene("box.gltf");
-	//auto world = Scene("BoomBox.gltf");
 
+	// Scene
+	Scene* world = nullptr;
+	if(params.scene.empty())
+	{
+		auto generator = RandomGenerator();
+		world = new Scene(generator);
+	} else {
+		world = new Scene(params.scene.c_str());
+	}
+
+	// Background
+	if(params.background.empty())
+	{
+		skyBg = new GradientBackground ({0.5f, 0.7f, 1.f}, Vec3f(1.f));
+	}
+	else
+	{
+		skyBg = new HDRBackground(params.background.c_str());
+	}
+
+	// Camera
 	Vec3f camPos { -4.0f, 0.0f, 4.f};
 	Vec3f camLookAt { 0.f, 0.f, 0.f };
 	//Vec3f camPos { 0.f, 0.0f, 0.f};
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };
 	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
+
 	// Divide the image in tiles that can be consumed as jobs
-	constexpr size_t tileSize = 20;
-	static_assert(size.x1%tileSize == 0);
-	static_assert(size.y1%tileSize == 0);
-    const auto xTiles = size.x1 / tileSize;
-    const auto yTiles = size.y1 / tileSize;
+	if(!(size.x1%params.tileSize == 0) ||
+		!(size.y1%params.tileSize == 0))
+	{
+		std::cout << "Incompatible tile and image size. Image size (" << size.x1 << "x" << size.y1 << ") must be an exact multiple of tile size (" << params.tileSize << ")\n";
+	}
+    const auto xTiles = size.x1 / params.tileSize;
+    const auto yTiles = size.y1 / params.tileSize;
 	std::vector<Rect> tiles;
 	tiles.reserve(xTiles*yTiles);
 	for(size_t j = 0; j < yTiles; ++j)
 		for(size_t i = 0; i < xTiles; ++i)
 		{
-			tiles.emplace_back(i*tileSize, j*tileSize, tileSize*(i+1u), tileSize*(j+1u));
+			tiles.emplace_back(i*params.tileSize, j*params.tileSize, params.tileSize*(i+1u), params.tileSize*(j+1u));
 		}
 
 	// Allocate threads to consume
@@ -192,7 +266,7 @@ int main(int, const char**)
 	auto start = chrono::high_resolution_clock::now();
 	for(int i = 0; i < nThreads; ++i)
 	{
-		ts[i] = std::thread(threadRoutine, cam, world, size, outputBuffer.data(), tiles, &tileCounter);
+		ts[i] = std::thread(threadRoutine, cam, *world, size, outputBuffer.data(), tiles, &tileCounter, params.ns);
 		if(!ts[i].joinable())
 		{
 			return -1;
@@ -203,7 +277,7 @@ int main(int, const char**)
 
 	chrono::duration<double> runningTime = chrono::high_resolution_clock::now() - start;
 	auto seconds = runningTime.count();
-	auto numRays = size.x1*size.y1*N_SAMPLES;
+	auto numRays = size.x1*size.y1*params.ns;
 	cout << "Running time: " << seconds << "\nRays per second: " << numRays/seconds << "\n";
 
 	// Save final image
