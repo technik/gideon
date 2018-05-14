@@ -69,10 +69,63 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 
 Background* skyBg = nullptr;
 
+int factorial(int x)
+{
+	if(x <= 1)
+		return 1;
+	return x*factorial(x-1);
+}
+
+float shNorm(int l, int m)
+{
+	auto num = (2*l-1)*factorial(l-abs(m));
+	auto den = 4*math::Constants<float>::pi*factorial(l+abs(m));
+	return sqrt(num/den);
+}
+
+float legendre(int l, int m, float sinTheta, float z)
+{
+	if(m == 0 && l == 0)
+	{
+		return 1.f;
+	}
+	else
+	{
+		float zp = z*pow(sinTheta,m);
+		if(m == l)
+		{
+			return (1-2*m)*legendre(l-1,m-1,sinTheta,z);
+		}
+		else if(l == m+1)
+		{
+			return (2*m+1)*zp*legendre(m,m,sinTheta, z);
+		} else
+		{
+			auto num = (2*l-1)*zp*legendre(l-1,m,sinTheta, z) - (l+m-1)*legendre(l-2,m,sinTheta,z);
+			auto den = l-m;
+			return num/den;
+		}
+	}
+}
+
+float sh(int l, int m, float cosTheta, float phi)
+{
+	float sinTheta = sqrt(1-cosTheta*cosTheta);
+	if(m > 0)
+	{
+		return sqrt(2.f)*shNorm(l,m)*cos(m*phi)*legendre(l,m,sinTheta,cosTheta);
+	}else if(m < 0)
+	{
+		return sqrt(2.f)*shNorm(l,m)*sin(abs(m)*phi)*legendre(l,abs(m),sinTheta,cosTheta);
+	}
+	else
+		return shNorm(l,0)*legendre(l,0,sinTheta,cosTheta);
+}
+
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
 {
-	constexpr float nearPlane = 1e-5f;
+	/*constexpr float nearPlane = 1e-5f;
 	constexpr float farPlane = 1e3f; // 1km
 	HitRecord hit;
 	if(world.hit(r, nearPlane, farPlane, hit))
@@ -87,7 +140,8 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 	{
 		auto unitDirection = normalize(r.direction());
 		return skyBg->sample(unitDirection); // Blend between white & sky color
-	}
+	}*/
+	// Spherical harmonics coefficients
 }
 
 //--------------------------------------------------------------------------------------------------
