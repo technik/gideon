@@ -30,7 +30,8 @@
 #include <thread>
 
 #include <background.h>
-#include "camera.h"
+#include "camera/frustumCamera.h"
+#include "camera/sphericalCamera.h"
 #include "collision.h"
 #include "scene.h"
 
@@ -122,7 +123,7 @@ void traceImageSegment(const Camera& cam, const Scene& world, Rect w, int totalN
 
 //--------------------------------------------------------------------------------------------------
 void threadRoutine(
-	const Camera& cam,
+	const Camera* cam,
 	const Scene& world,
 	Rect imgSize,
 	Vec3f* outputBuffer,
@@ -136,7 +137,7 @@ void threadRoutine(
 	while(selfCounter < tiles.size()) // Valid job
 	{
 		auto& tile = tiles[selfCounter];
-		traceImageSegment(cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer, random, nSamples);
+		traceImageSegment(*cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer, random, nSamples);
 		cout << selfCounter << "\n";
 		selfCounter = (*tileCounter)++;
 	}
@@ -148,8 +149,9 @@ struct CmdLineParams
 	string background;
 	unsigned sx = 640;
 	unsigned sy = 480;
-	unsigned ns = 16;
+	unsigned ns = 4;
 	unsigned tileSize = 20;
+	bool sphericalRender = true;
 
 	int process(const vector<string>& args, int i)
 	{
@@ -187,6 +189,11 @@ struct CmdLineParams
 		{
 			sx = 1920;
 			sy = 1080;
+			return 1;
+		}
+		if(arg == "-spherical")
+		{
+			sphericalRender = true;
 			return 1;
 		}
 		return 1;
@@ -238,7 +245,12 @@ int main(int _argc, const char** _argv)
 	Vec3f camLookAt { 0.f, 0.f, 0.f };
 	//Vec3f camPos { 0.f, 0.0f, 0.f};
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };
-	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
+	Camera* cam = nullptr;
+	if(params.sphericalRender)
+	{
+		cam = new SphericalCamera(camPos, camLookAt, {0.f,1.f,0.f});
+	}else
+		cam = new FrustumCamera(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
 
 	// Divide the image in tiles that can be consumed as jobs
 	if(!(size.x1%params.tileSize == 0) ||

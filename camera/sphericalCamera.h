@@ -22,42 +22,45 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
+#include "camera.h"
 #include <math/ray.h>
 #include <math/vector3.h>
+#include <math/constants.h>
 
-class Camera
+class SphericalCamera : public Camera
 {
 public:
-	Camera(
-		const math::Vec3f& pos,
-		const math::Vec3f& lookAt,
-		float horFov,
-		size_t winX,
-		size_t winY
+	SphericalCamera(
+		const math::Vec3f& _pos,
+		const math::Vec3f& _lookAt,
+		const math::Vec3f& _up
 	)
-		: origin(pos)
+		: origin(_pos)
 	{
-		auto depth = normalize((lookAt - pos));
-		auto side = normalize(cross(depth, {0.f,1.f,0.f}));
-		auto up = cross(side, depth);
-		auto hLen = std::tan(horFov/2.f);
-		auto vLen = winY*hLen/winX;
-		ll_corner = depth - hLen * side - vLen * up;
-		horizontal = 2*hLen*side;
-		vertical = 2*vLen*up;
+		fwd = normalize((_lookAt - _pos));
+		side = normalize(cross(fwd, _up));
+		up = cross(side, fwd);
 	}
 
-	math::Ray get_ray(float u, float v) const
+	math::Ray get_ray(float u, float v) const override
 	{
+		auto phi = (math::Constants<float>::twoPi * u);
+		auto theta = (math::Constants<float>::pi * v);
+		auto cosTheta = std::cos(theta);
+		auto sinTheta = std::sin(theta);
+		auto cosPhi = std::cos(phi);
+		auto sinPhi = std::sin(phi);
 		return math::Ray(
 			origin,
-			ll_corner + u*horizontal + v*vertical
-			);
+			-cosTheta*up +
+			sinTheta*cosPhi*fwd+
+			sinTheta*sinPhi*side
+		);
 	}
 
 private:
-	math::Vec3f ll_corner;
-	math::Vec3f horizontal;
-	math::Vec3f vertical;
 	math::Vec3f origin;
+	math::Vec3f up;
+	math::Vec3f fwd;
+	math::Vec3f side;
 };

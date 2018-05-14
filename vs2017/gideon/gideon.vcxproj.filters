@@ -10,6 +10,9 @@
     <Filter Include="src\shapes">
       <UniqueIdentifier>{d7d3b321-aaad-4c7e-a8e8-211b334462bf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\camera">
+      <UniqueIdentifier>{8e5488ac-6821-45ce-a4b5-32022cdef57f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\main.cpp">
@@ -29,9 +32,6 @@
     </ClInclude>
     <ClInclude Include="..\..\math\ray.h">
       <Filter>src\math</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\camera.h">
-      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\..\background.h">
       <Filter>src</Filter>
@@ -71,6 +71,15 @@
     </ClInclude>
     <ClInclude Include="..\..\shapes\meshInstance.h">
       <Filter>src\shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\camera\camera.h">
+      <Filter>src\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\camera\frustumCamera.h">
+      <Filter>src\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\camera\sphericalCamera.h">
+      <Filter>src\camera</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

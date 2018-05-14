@@ -24,7 +24,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\background.h" />
-    <ClInclude Include="..\..\camera.h" />
+    <ClInclude Include="..\..\camera\camera.h" />
+    <ClInclude Include="..\..\camera\frustumCamera.h" />
+    <ClInclude Include="..\..\camera\sphericalCamera.h" />
     <ClInclude Include="..\..\collision.h" />
     <ClInclude Include="..\..\material.h" />
     <ClInclude Include="..\..\math\aabb.h" />
