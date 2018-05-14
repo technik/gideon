@@ -92,8 +92,8 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 }
 
 //--------------------------------------------------------------------------------------------------
-constexpr size_t N_SAMPLES = 64u;
-//constexpr size_t N_SAMPLES = 8096u;
+//constexpr size_t N_SAMPLES = 64u;
+constexpr size_t N_SAMPLES = 8096u;
 //constexpr size_t N_SAMPLES = 256u;
 
 struct Rect
@@ -150,9 +150,9 @@ void threadRoutine(
 //--------------------------------------------------------------------------------------------------
 int main(int, const char**)
 {
-	//constexpr Rect size {0, 0, 1920, 1080 };
+	constexpr Rect size {0, 0, 1920, 1080 };
 	//constexpr Rect size {0, 0, 640, 320 };
-	constexpr Rect size {0, 0, 200, 100 };
+	//constexpr Rect size {0, 0, 200, 100 };
 
 	std::vector<Vec3f> outputBuffer(size.nPixels());
 	auto generator = RandomGenerator();
@@ -169,18 +169,17 @@ int main(int, const char**)
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };
 	Camera cam(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
 	// Divide the image in tiles that can be consumed as jobs
-	constexpr size_t yTiles = 10;
-	constexpr size_t xTiles = 2*yTiles;
-	static_assert(size.x1%xTiles == 0);
-	static_assert(size.y1%yTiles == 0);
+	constexpr size_t tileSize = 20;
+	static_assert(size.x1%tileSize == 0);
+	static_assert(size.y1%tileSize == 0);
+    const auto xTiles = size.x1 / tileSize;
+    const auto yTiles = size.y1 / tileSize;
 	std::vector<Rect> tiles;
 	tiles.reserve(xTiles*yTiles);
 	for(size_t j = 0; j < yTiles; ++j)
 		for(size_t i = 0; i < xTiles; ++i)
 		{
-			size_t tileSx = size.x1/xTiles;
-			size_t tileSy = size.y1/yTiles;
-			tiles.emplace_back(i*tileSx, j*tileSy, tileSx*(i+1u), tileSy*(j+1u));
+			tiles.emplace_back(i*tileSize, j*tileSize, tileSize*(i+1u), tileSize*(j+1u));
 		}
 
 	// Allocate threads to consume
