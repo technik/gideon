@@ -31,15 +31,23 @@ public:
 	MeshInstance(const TriangleMesh& mesh, const math::Matrix34f& transform)
 		: mMesh(mesh)
 	{
+		mXForm = transform;
 		mXFormInv = transform.inverse();
 	}
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
 	{
 		math::Ray localRay (mXFormInv.transformPos(r.origin()), mXFormInv.transformDir(r.direction()));
-		return mMesh.hit(localRay, tMin, tMax, collision);
+		if(mMesh.hit(localRay, tMin, tMax, collision))
+		{
+			collision.normal = mXForm.transformDir(collision.normal);
+			collision.p = mXForm.transformPos(collision.p);
+			return true;
+		}
+		return false;
 	}
 private:
 	const TriangleMesh& mMesh;
+	math::Matrix34f mXForm;
 	math::Matrix34f mXFormInv;
 };

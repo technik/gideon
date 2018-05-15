@@ -134,7 +134,9 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 		Ray scattered;
 		Vec3f attenuation;
 		if(depth < 10 && hit.material->scatter(r, hit, attenuation, scattered, random))
+		{
 			return attenuation * color(scattered, world, depth+1, random);
+		}
 		return Vec3f(0.f);
 	}
 	else
@@ -215,6 +217,7 @@ struct CmdLineParams
 	unsigned sx = 640;
 	unsigned sy = 480;
 	unsigned ns = 4;
+	float fov = 45.f;
 	unsigned tileSize = 20;
 	bool sphericalRender = false;
 
@@ -243,6 +246,11 @@ struct CmdLineParams
 		if(arg == "-h")
 		{
 			sy = atoi(args[i+1].c_str());
+			return 2;
+		}
+		if(arg == "-fov")
+		{
+			fov = atof(args[i+1].c_str());
 			return 2;
 		}
 		if(arg == "-tile")
@@ -306,7 +314,7 @@ int main(int _argc, const char** _argv)
 	}
 
 	// Camera
-	Vec3f camPos { -2.0f, 0.0f, 4.f};
+	Vec3f camPos { -1.0f, 0.0f, 4.f};
 	Vec3f camLookAt { 0.f, 0.f, 0.f };
 	//Vec3f camPos { 0.f, 0.0f, 0.f};
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };
@@ -315,7 +323,7 @@ int main(int _argc, const char** _argv)
 	{
 		cam = new SphericalCamera(camPos, camLookAt, {0.f,0.f,1.f});
 	}else
-		cam = new FrustumCamera(camPos, camLookAt, 3.14159f*90/180, size.x1, size.y1);
+		cam = new FrustumCamera(camPos, camLookAt, 3.14159f*params.fov/180, size.x1, size.y1);
 
 	// Divide the image in tiles that can be consumed as jobs
 	if(!(size.x1%params.tileSize == 0) ||
