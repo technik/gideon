@@ -22,8 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include <math/vector3.h>
 #include <math/aabb.h>
+#include <math/vector3.h>
+#include <math/quaterrnion.h>
 #include "random.h"
 #include "shapes/sphere.h"
 #include "shapes/triangleMesh.h"
@@ -48,7 +49,11 @@ public:
 				if(node.mesh >= 0)
 				{
 					math::Matrix34f xForm = node.matrix;
-					mShapes.push_back(new MeshInstance(*mMeshes[node.mesh], xForm));
+					math::Matrix34f composedXForm = math::Quatf(node.rotation).rotationMtx();
+					// TODO: Support scales
+					//math::Vec3f scale = node.scale;
+					composedXForm.position() = node.translation;
+					mShapes.push_back(new MeshInstance(*mMeshes[node.mesh], xForm*composedXForm));
 				}
 			}
 		}

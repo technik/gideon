@@ -306,7 +306,7 @@ int main(int _argc, const char** _argv)
 	}
 
 	// Camera
-	Vec3f camPos { -4.0f, 0.0f, 4.f};
+	Vec3f camPos { -2.0f, 0.0f, 4.f};
 	Vec3f camLookAt { 0.f, 0.f, 0.f };
 	//Vec3f camPos { 0.f, 0.0f, 0.f};
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };

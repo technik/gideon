@@ -46,13 +46,19 @@ namespace math
 					inv(i,j) = (*this)(j,i);
 				}
 			}
+			inv(3,0) = 0.f;
+			inv(3,1) = 0.f;
+			inv(3,2) = 0.f;
+			inv(3,3) = 1.f;
 			auto invPos = -(inv.transformDir(position()));
 			inv.position() = invPos;
 			return inv;
 		}
 
-		Vec3f& position() { return reinterpret_cast<Vec3f&>(m[0,3]); }
-		Vec3f position() const { return reinterpret_cast<const Vec3f&>(m[0,3]); }
+		Vec3f& position() { return reinterpret_cast<Vec3f&>((*this)(0,3)); }
+		Vec3f position() const {
+			return reinterpret_cast<const Vec3f&>(m[4*3]);
+		}
 
 		Matrix34f operator*(const Matrix34f& b) const
 		{
@@ -68,6 +74,10 @@ namespace math
 						(*this)(i,3);
 				}
 			}
+			res(3,0) = 0.f;
+			res(3,1) = 0.f;
+			res(3,2) = 0.f;
+			res(3,3) = 1.f;
 			return res;
 		}
 
@@ -100,12 +110,12 @@ namespace math
 
 		float& operator()(int i, int j)
 		{
-			return m[j+4*i];
+			return m[4*j+i];
 		}
 
 		float operator()(int i, int j) const
 		{
-			return m[j+4*i];
+			return m[4*j+i];
 		}
 
 	private:

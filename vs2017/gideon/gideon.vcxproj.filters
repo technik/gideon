@@ -81,5 +81,8 @@
     <ClInclude Include="..\..\camera\sphericalCamera.h">
       <Filter>src\camera</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\math\quaterrnion.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

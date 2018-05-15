@@ -32,6 +32,7 @@
     <ClInclude Include="..\..\math\aabb.h" />
     <ClInclude Include="..\..\math\constants.h" />
     <ClInclude Include="..\..\math\matrix.h" />
+    <ClInclude Include="..\..\math\quaterrnion.h" />
     <ClInclude Include="..\..\math\ray.h" />
     <ClInclude Include="..\..\math\vector3.h" />
     <ClInclude Include="..\..\random.h" />

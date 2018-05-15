@@ -20,26 +20,50 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include "triangleMesh.h"
-#include <math/matrix.h>
-#include <math/ray.h>
-#include "shape.h"
+#include <array>
+#include "matrix.h"
+#include "vector3.h"
+#include <cmath>
 
-class MeshInstance : public Shape
+namespace math
 {
-public:
-	MeshInstance(const TriangleMesh& mesh, const math::Matrix34f& transform)
-		: mMesh(mesh)
+	class Quatf
 	{
-		mXFormInv = transform.inverse();
-	}
+	public:
+		Quatf() = default;
+		constexpr Quatf(std::array<float,4> _list) : m(_list) {}
+		Quatf(std::initializer_list<float> il)
+		{
+			auto iter = il.begin();
+			for(size_t i = 0; i < 4; ++i)
+				m[i] = *iter++;
+		}
 
-	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
-	{
-		math::Ray localRay (mXFormInv.transformPos(r.origin()), mXFormInv.transformDir(r.direction()));
-		return mMesh.hit(localRay, tMin, tMax, collision);
-	}
-private:
-	const TriangleMesh& mMesh;
-	math::Matrix34f mXFormInv;
-};
+		Matrix34f rotationMtx() const
+		{
+			auto& x = m[0];
+			auto& y = m[1];
+			auto& z = m[2];
+			auto& w = m[3];
+			auto a2 = w*w;
+			auto b2 = x*x;
+			auto c2 = y*y;
+			auto d2 = z*z;
+			auto ab = w*x;
+			auto ac = w*y;
+			auto ad = w*z;
+			auto bc = x*y;
+			auto bd = x*z;
+			auto cd = y*z;
+			return Matrix34f({
+				a2+b2-c2-d2,2*(bc+ad), 2*(bd-ac), 0.f, // Column 0
+				2*(bc-ad),a2-b2+c2-d2, 2*(cd+ab), 0.f, // Column 1
+				2*(bd+ac), 2*(cd-ab), a2-b2-c2+d2, 0.f, // Column 2
+				0.f, 0.f, 0.f, 1.f
+				});
+		}
+
+	private:
+		std::array<float,4> m;
+	};
+}
