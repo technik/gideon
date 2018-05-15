@@ -126,7 +126,7 @@ float sh(int l, int m, float cosTheta, float phi)
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
 {
-	/*constexpr float nearPlane = 1e-5f;
+	constexpr float nearPlane = 1e-5f;
 	constexpr float farPlane = 1e3f; // 1km
 	HitRecord hit;
 	if(world.hit(r, nearPlane, farPlane, hit))
@@ -141,9 +141,9 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 	{
 		auto unitDirection = normalize(r.direction());
 		return skyBg->sample(unitDirection); // Blend between white & sky color
-	}*/
+	}
 	// Spherical harmonics coefficients
-	auto dir =r.direction();
+	/*auto dir =r.direction();
 	dir.normalize();
 	auto phi = atan2(dir.y(),dir.x());
 	auto cTheta = dir.z();
@@ -152,7 +152,7 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 	c.r() = max(0.f,shVal);
 	c.g() = abs(shVal)>1.001f?1.f:0.f;
 	c.b() = max(0.f,-shVal);
-	return c;
+	return c;*/
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -216,7 +216,7 @@ struct CmdLineParams
 	unsigned sy = 480;
 	unsigned ns = 4;
 	unsigned tileSize = 20;
-	bool sphericalRender = true;
+	bool sphericalRender = false;
 
 	int process(const vector<string>& args, int i)
 	{
