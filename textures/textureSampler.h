@@ -35,8 +35,18 @@ class BilinearTextureSampler
 public:
 	using img_ptr = std::shared_ptr<Image>;
 
+	BilinearTextureSampler(img_ptr img)
+		: mImg(img)
+		, uWrapper(img->width())
+		, vWrapper(img->height())
+	{}
+
+	BilinearTextureSampler(const char* imgFileName)
+		: BilinearTextureSampler(std::make_shared<Image>(imgFileName))
+	{}
+
 	/// Texture coordinates start at the upper left corner
-	virtual math::Vec3f sample(float u, float v) const
+	math::Vec3f sample(float u, float v) const
 	{
 		// transform u-v coordinates
 		u = u*mImg->width();
@@ -46,15 +56,15 @@ public:
 		auto v0 = (size_t)floor(v);
 		auto v1 = v0+1;
 		// Get the relevant pixels
-		auto& a = mImg.pixel(uWrapper(u0),vWrapper(v0));
-		auto& b = mImg.pixel(uWrapper(u1),vWrapper(v0));
-		auto& c = mImg.pixel(uWrapper(u0),vWrapper(v1));
-		auto& d = mImg.pixel(uWrapper(u1),vWrapper(v1));
+		auto& a = mImg->pixel(uWrapper(u0),vWrapper(v0));
+		auto& b = mImg->pixel(uWrapper(u1),vWrapper(v0));
+		auto& c = mImg->pixel(uWrapper(u0),vWrapper(v1));
+		auto& d = mImg->pixel(uWrapper(u1),vWrapper(v1));
 		auto du = u-u0;
 		auto dv = v-v0;
 		auto top = a*(1-du)+b*du;
 		auto bottom = c*(1-du)+d*du;
-		return top(1-dv)+bottom*dv;
+		return top*(1-dv)+bottom*dv;
 	}
 
 private:

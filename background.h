@@ -23,8 +23,8 @@
 #pragma once
 
 #include <math/vector3.h>
-#include <stb_image.h>
-
+#include <textures/image.h>
+#include <textures/textureSampler.h>
 #include <cmath>
 
 //--------------------------------------------------------------------------------------------------
@@ -58,29 +58,26 @@ class HDRBackground : public Background
 {
 public:
 	HDRBackground(const char* fileName)
+		: mSampler(fileName)
 	{
-		int nComponents;
-		auto rawData = stbi_loadf(fileName, &sx, &sy, &nComponents, 3);
-		data = reinterpret_cast<math::Vec3f*>(rawData);
 	}
 
 	math::Vec3f sample(const math::Vec3f& direction) const override
 	{
 		// Transform direction into uv coordinates
-		int u, v;
+		float u, v;
 		sampleSpherical(direction, u, v);
-		return data[u+sx*v];
+		return mSampler.sample(u,v);
 	}
 
 private:
-	void sampleSpherical(const math::Vec3f& dir, int& x, int& y) const
+	using Sampler = BilinearTextureSampler<RepeatWrap,ClampWrap>;
+
+	void sampleSpherical(const math::Vec3f& dir, float& u, float& v) const
 	{
-		float u = atan2(dir.z(), -dir.x()) * 0.1591f + 0.5f;
-		float v = asin(-dir.y()) * 0.3183f + 0.5f;
-		x = int(std::clamp(u, 0.f, 1.f)*sx);
-		y = int(std::clamp(v, 0.f, 1.f)*sy);
+		u = atan2(dir.z(), -dir.x()) * 0.1591f + 0.5f;
+		v = asin(dir.y()) * 0.3183f + 0.5f;
 	}
 
-	int sx, sy;
-	math::Vec3f* data;
+	Sampler mSampler;
 };
