@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
+#include <cassert>
 #include <cmath>
 #include <functional>
 #include <math/vector3.h>
@@ -37,14 +38,17 @@ public:
 	Image(const char* fileName)
 	{
 		int nComponents;
-		auto rawData = stbi_loadf(fileName, &sx, &sy, &nComponents, 3);
+		int isx, isy;
+		auto rawData = stbi_loadf(fileName, &isx, &isy, &nComponents, 3);
+		assert(isx >= 0 && isy >= 0);
+		sx = size_t(isx);
+		sy = size_t(isy);
 		mData = data_ptr(reinterpret_cast<math::Vec3f*>(rawData), stbi_image_free);
 	}
 
 	// Coordinates starting in the upper left corner
-	const math::Vec3f& pixel(int x, int y) const
+	const math::Vec3f& pixel(size_t x, size_t y) const
 	{
-		// Transform direction into uv coordinates
 		return mData[x+sx*y];
 	}
 
@@ -62,6 +66,6 @@ private:
 		y = int(std::clamp(v, 0.f, 1.f)*sy);
 	}
 
-	int sx, sy;
+	size_t sx, sy;
 	data_ptr mData;
 };
