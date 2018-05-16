@@ -32,6 +32,7 @@
 #include <background.h>
 #include "camera/frustumCamera.h"
 #include "camera/sphericalCamera.h"
+#include "math/rectangle.h"
 #include "collision.h"
 #include "scene.h"
 
@@ -64,7 +65,7 @@ void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const
 	}
 
 	const int rowStride = 3*width;
-	stbi_write_png(fileName, width, height, 3, tmpBuffer.data(), rowStride);
+	stbi_write_png(fileName, (int)width, (int)height, 3, tmpBuffer.data(), rowStride);
 }
 
 Background* skyBg = nullptr;
@@ -157,16 +158,7 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 	return c;*/
 }
 
-//--------------------------------------------------------------------------------------------------
-struct Rect
-{
-	Rect() = default;
-	constexpr Rect(size_t _x0, size_t _y0, size_t _x1, size_t _y1)
-		:x0(_x0), y0(_y0), x1(_x1), y1(_y1)
-	{}
-	size_t x0, y0, x1, y1;
-	size_t nPixels() const { return (x1-x0)*(y1-y0); }
-};
+using Rect = math::Rectangle<size_t>;
 
 //--------------------------------------------------------------------------------------------------
 void traceImageSegment(const Camera& cam, const Scene& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random, unsigned nSamples)
@@ -250,7 +242,7 @@ struct CmdLineParams
 		}
 		if(arg == "-fov")
 		{
-			fov = atof(args[i+1].c_str());
+			fov = (float)atof(args[i+1].c_str());
 			return 2;
 		}
 		if(arg == "-tile")
@@ -291,7 +283,7 @@ int main(int _argc, const char** _argv)
 	CmdLineParams params(_argc, _argv);
 	Rect size {0, 0, params.sx, params.sy };
 
-	std::vector<Vec3f> outputBuffer(size.nPixels());
+	std::vector<Vec3f> outputBuffer(size.area());
 
 	// Scene
 	Scene* world = nullptr;

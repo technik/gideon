@@ -13,6 +13,9 @@
     <Filter Include="src\camera">
       <UniqueIdentifier>{8e5488ac-6821-45ce-a4b5-32022cdef57f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\textures">
+      <UniqueIdentifier>{00bf8d78-96df-48c5-b6f0-7f4d140b8504}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\main.cpp">
@@ -82,6 +85,9 @@
       <Filter>src\camera</Filter>
     </ClInclude>
     <ClInclude Include="..\..\math\quaterrnion.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\math\rectangle.h">
       <Filter>src\math</Filter>
     </ClInclude>
   </ItemGroup>
