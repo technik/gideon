@@ -108,13 +108,13 @@ private:
 
 	void interpolateData(const TriangleHit& tri, HitRecord& hit) const
 	{
-		/*auto& v0 = mVtxData[3*tri.ndx];
+		auto& v0 = mVtxData[3*tri.ndx];
 		auto& v1 = mVtxData[3*tri.ndx+1];
 		auto& v2 = mVtxData[3*tri.ndx+2];
 		auto a = v0.lerp(v1,tri.f0);
-		auto res = a.lerp(v2,tri.f1);*/
-		hit.u = tri.f0;
-		hit.v = tri.f1;
+		auto res = a.lerp(v2,tri.f1);
+		hit.u = res.u;
+		hit.v = res.v;
 	}
 
 	struct AABBTree
@@ -197,7 +197,7 @@ private:
 						collision.f0 = f0;
 						collision.f1 = f1;
 						collision.normal = tri_hit.normal;
-						tri.ndx;
+						collision.ndx = tri.ndx;
 						hit_anything = true;
 					}
 				}

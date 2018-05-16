@@ -124,12 +124,27 @@ public:
 				auto byteOffset = posAccessor.byteOffset;
 				auto count = posAccessor.count;
 				auto& bv = document.bufferViews[posAccessor.bufferView];
-				auto stride = bv.byteStride ? bv.byteStride : 12; // Assume tightly packed
+				auto stride = bv.byteStride ? bv.byteStride : 12; // Assume tightly packed vec3fs
 				auto viewData = &bufferData[bv.byteOffset];
 				vertices.resize(count);
 				for(size_t i = 0; i < count; ++i)
 				{
 					vertices[i].position = reinterpret_cast<math::Vec3f&>(viewData[stride*i+byteOffset]);
+				}
+			}
+			auto& uvAccessor = document.accessors[primitive.attributes["TEXCOORD_0"]];
+			// uvs
+			{
+				auto byteOffset = uvAccessor.byteOffset;
+				auto count = uvAccessor.count;
+				auto& bv = document.bufferViews[uvAccessor.bufferView];
+				auto stride = bv.byteStride ? bv.byteStride : 8; // Assume tightly packed vec2fs
+				auto viewData = &bufferData[bv.byteOffset];
+				vertices.resize(count);
+				for(size_t i = 0; i < count; ++i)
+				{
+					vertices[i].u = reinterpret_cast<float&>(viewData[stride*i+byteOffset+0]);
+					vertices[i].v = reinterpret_cast<float&>(viewData[stride*i+byteOffset+4]);
 				}
 			}
 
