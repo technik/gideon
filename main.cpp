@@ -35,6 +35,7 @@
 #include "math/rectangle.h"
 #include "collision.h"
 #include "scene.h"
+#include "textures/image.h"
 
 // ------ Single header libraries ------
 #define STBI_MSC_SECURE_CRT

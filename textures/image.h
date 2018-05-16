@@ -33,7 +33,7 @@
 class Image
 {
 	using img_deleter = std::function<void(void*)>;
-	using data_ptr = std::unique_ptr<math::Vec3f, img_deleter>;
+	using data_ptr = std::unique_ptr<math::Vec3f[], img_deleter>;
 public:
 	Image(const char* fileName)
 	{
