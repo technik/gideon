@@ -90,5 +90,8 @@
     <ClInclude Include="..\..\math\rectangle.h">
       <Filter>src\math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\textures\image.h">
+      <Filter>src\textures</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
