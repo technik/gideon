@@ -28,8 +28,9 @@ class Material;
 
 struct HitRecord
 {
-	float t;
-	math::Vec3f p;
-	math::Vec3f normal;
 	Material* material;
+	math::Vec3f p;
+	float t;
+	math::Vec3f normal;
+	float u, v;
 };

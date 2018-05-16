@@ -122,7 +122,7 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 	else
 	{
 		auto unitDirection = normalize(r.direction());
-		return skyBg->sample(unitDirection); // Blend between white & sky color
+		return skyBg->sample(unitDirection);
 	}
 	// Spherical harmonics coefficients
 	/*auto dir =r.direction();

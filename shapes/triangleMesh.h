@@ -38,10 +38,16 @@ public:
 	struct VtxInfo
 	{
 		math::Vec3f position;
-		math::Vec3f normal;
-		math::Vec3f tangent;
-		math::Vec3f bitangent;
 		float u, v;
+
+		VtxInfo lerp(const VtxInfo& b, float x) const { 
+			VtxInfo res;
+			auto x0 = 1-x;
+			res.position = position*x0+b.position*x;
+			res.u = u*x0+b.u*x;
+			res.v = v*x0+b.v*x;
+			return res;
+		}
 	};
 
 	template<typename Idx>
@@ -79,6 +85,7 @@ public:
 			collision.p = hitInfo.pos;
 			collision.normal = hitInfo.normal;
 			collision.t = hitInfo.t;
+			interpolateData(hitInfo, collision);
 			return true;
 		}
 		return false;
@@ -98,6 +105,17 @@ private:
 		float t;
 		float f0, f1; // Interpolation factors
 	};
+
+	void interpolateData(const TriangleHit& tri, HitRecord& hit) const
+	{
+		/*auto& v0 = mVtxData[3*tri.ndx];
+		auto& v1 = mVtxData[3*tri.ndx+1];
+		auto& v2 = mVtxData[3*tri.ndx+2];
+		auto a = v0.lerp(v1,tri.f0);
+		auto res = a.lerp(v2,tri.f1);*/
+		hit.u = tri.f0;
+		hit.v = tri.f1;
+	}
 
 	struct AABBTree
 	{
