@@ -93,5 +93,8 @@
     <ClInclude Include="..\..\textures\image.h">
       <Filter>src\textures</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\textures\textureSampler.h">
+      <Filter>src\textures</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -46,6 +46,7 @@
     <ClInclude Include="..\..\stb_image.h" />
     <ClInclude Include="..\..\stb_image_write.h" />
     <ClInclude Include="..\..\textures\image.h" />
+    <ClInclude Include="..\..\textures\textureSampler.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
