@@ -314,7 +314,8 @@ int main(int _argc, const char** _argv)
 	}
 
 	// Camera
-	Vec3f camPos { -1.0f, 0.0f, 4.f};
+	Vec3f camPos { -1.0f, 0.0f, 4.f}; // Damaged helmet
+	//Vec3f camPos { 189.95187377929688f, 579.0979614257813f, -386.1866149902344f }; // Reciprocating saw
 	Vec3f camLookAt { 0.f, 0.f, 0.f };
 	//Vec3f camPos { 0.f, 0.0f, 0.f};
 	//Vec3f camLookAt { 0.f, 0.f, -1.f };

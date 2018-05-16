@@ -43,20 +43,55 @@ public:
 
 		if(document.scene >= 0)
 		{
+			std::vector<math::Matrix34f> transforms(document.nodes.size());
+			if(!loadTransforms(document, transforms))
+				return;
 			loadMeshes(document, document.meshes);
-			for(auto& node : document.nodes)
+			for(int i = 0; i < document.nodes.size(); ++i)
 			{
+				const auto& node = document.nodes[i];
 				if(node.mesh >= 0)
 				{
-					math::Matrix34f xForm = node.matrix;
-					math::Matrix34f composedXForm = math::Quatf(node.rotation).rotationMtx();
-					// TODO: Support scales
-					//math::Vec3f scale = node.scale;
-					composedXForm.position() = node.translation;
-					mShapes.push_back(new MeshInstance(*mMeshes[node.mesh], xForm*composedXForm));
+					mShapes.push_back(new MeshInstance(*mMeshes[node.mesh], transforms[i]));
 				}
 			}
 		}
+	}
+
+	bool loadTransforms(const fx::gltf::Document& document, std::vector<math::Matrix34f>& transforms)
+	{
+		// Build index of parent nodes
+		std::vector<int> parentIndices(document.nodes.size());
+		for(auto& i : parentIndices)
+			i = -1; // No parent
+		for(int i = 0; i < document.nodes.size(); ++i)
+		{
+			auto& node = document.nodes[i];
+			auto xForm = readTransform(node);
+			auto parent = parentIndices[i];
+			if(parent >= 0)
+			{
+				xForm = transforms[parent] * xForm;
+			}
+			transforms[i] = xForm;
+			for(auto c : node.children)
+			{
+				if(c < i)
+					return false; // Nodes are expected in depth-first order
+				parentIndices[c] = i;
+			}
+		}
+		return true;
+	}
+
+	math::Matrix34f readTransform(const fx::gltf::Node& node)
+	{
+		math::Matrix34f xForm = node.matrix;
+		math::Matrix34f composedXForm = math::Quatf(node.rotation).rotationMtx();
+		// TODO: Support scales
+		//math::Vec3f scale = node.scale;
+		composedXForm.position() = node.translation;
+		return xForm*composedXForm;
 	}
 
 	void loadMeshes(const fx::gltf::Document& document, std::vector<fx::gltf::Mesh>& meshes)

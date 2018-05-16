@@ -38,7 +38,7 @@ public:
 	)
 		: origin(pos)
 	{
-		auto depth = normalize((lookAt - pos));
+		auto depth = normalize(lookAt - pos);
 		auto side = normalize(cross(depth, {0.f,1.f,0.f}));
 		auto up = cross(side, depth);
 		auto hLen = std::tan(horFov/2.f);
