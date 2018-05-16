@@ -35,20 +35,35 @@ class TriangleMesh : public Shape
 public:
 	TriangleMesh() = default;
 
+	struct VtxInfo
+	{
+		math::Vec3f position;
+		math::Vec3f normal;
+		math::Vec3f tangent;
+		math::Vec3f bitangent;
+		float u, v;
+	};
+
 	template<typename Idx>
 	TriangleMesh(
-		const std::vector<math::Vec3f>& vertices,
+		const std::vector<VtxInfo>& vertices,
 		const std::vector<Idx>& indices)
 	{
 		auto nTris = indices.size() / 3;
-		std::vector<Triangle> triList(nTris);
+		std::vector<TriInfo> triList(nTris);
+		mVtxData.resize(3*nTris);
 
 		for(size_t i = 0; i < nTris; ++i)
 		{
 			auto i0 = indices[3*i+0];
 			auto i1 = indices[3*i+1];
 			auto i2 = indices[3*i+2];
-			triList[i] = Triangle(vertices[i0], vertices[i1], vertices[i2]);
+			auto* vtx = &mVtxData[3*i];
+			vtx[0] = vertices[i0];
+			vtx[1] = vertices[i1];
+			vtx[2] = vertices[i2];
+			triList[i].ndx = i;
+			triList[i].tri = Triangle(vtx[0].position, vtx[1].position, vtx[2].position);
 		}
 
 		mBVH = AABBTree(triList);
@@ -57,26 +72,44 @@ public:
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
 	{
-		if(mBVH.hit(r,tMin,tMax,collision))
+		TriangleHit hitInfo;
+		if(mBVH.hit(r,tMin,tMax,hitInfo))
 		{
 			collision.material = m;
+			collision.p = hitInfo.pos;
+			collision.normal = hitInfo.normal;
+			collision.t = hitInfo.t;
 			return true;
 		}
 		return false;
 	}
 
 private:
+	struct TriInfo {
+		Triangle tri;
+		int ndx;
+	};
+
+	struct TriangleHit
+	{
+		size_t ndx;
+		math::Vec3f pos;
+		math::Vec3f normal;
+		float t;
+		float f0, f1; // Interpolation factors
+	};
+
 	struct AABBTree
 	{
 		math::AABB mBoundingVolume;
 		AABBTree* a = nullptr;
 		AABBTree* b = nullptr;
-		std::vector<Triangle> mTris;
+		std::vector<TriInfo> mTris;
 
 		AABBTree() = default;
 
 		//--------------------------------------------------------------------------------------------------
-		AABBTree(const std::vector<Triangle>& triangleList, int partitionAxis = 0)
+		AABBTree(const std::vector<TriInfo>& triangleList, int partitionAxis = 0)
 		{
 			if(triangleList.size() <= 8)
 			{
@@ -84,35 +117,35 @@ private:
 				mBoundingVolume.clear();
 				for(auto& t : mTris)
 				{
-					mBoundingVolume.add(t.v[0]);
-					mBoundingVolume.add(t.v[1]);
-					mBoundingVolume.add(t.v[2]);
+					mBoundingVolume.add(t.tri.v[0]);
+					mBoundingVolume.add(t.tri.v[1]);
+					mBoundingVolume.add(t.tri.v[2]);
 				}
 			}
 			else
 			{
 				math::Vec3f axis(0.f);
 				axis[partitionAxis] = 1.f;
-				std::vector<Triangle> sortedList = triangleList;
+				std::vector<TriInfo> sortedList = triangleList;
 				std::sort(sortedList.begin(), sortedList.end(), 
-					[axis](const Triangle& a, const Triangle& b) {
-						return dot(a.centroid()-b.centroid(), axis) < 0.f;
+					[axis](const TriInfo& a, const TriInfo& b) {
+						return dot(a.tri.centroid()-b.tri.centroid(), axis) < 0.f;
 				});
 				auto middle = triangleList.size() / 2;
-				a = new AABBTree(std::vector<Triangle>(triangleList.begin(), triangleList.begin() + middle), (partitionAxis+1)%3);
-				b = new AABBTree(std::vector<Triangle>(triangleList.begin() + middle, triangleList.end()), (partitionAxis+1)%3);
+				a = new AABBTree(std::vector<TriInfo>(triangleList.begin(), triangleList.begin() + middle), (partitionAxis+1)%3);
+				b = new AABBTree(std::vector<TriInfo>(triangleList.begin() + middle, triangleList.end()), (partitionAxis+1)%3);
 				mBoundingVolume = math::AABB(a->mBoundingVolume, b->mBoundingVolume);
 			}
 		}
 
 		//--------------------------------------------------------------------------------------------------
-		bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
+		bool hit(const math::Ray & r, float tMin, float tMax, TriangleHit & collision) const
 		{
 			if(!mBoundingVolume.intersect(r.implicit(), tMin, tMax, tMin))
 				return false;
 
 			float t = tMax;
-			HitRecord tmp_hit;
+			TriangleHit tmp_hit;
 			if(mTris.empty())
 			{
 				assert(a && b);
@@ -136,10 +169,17 @@ private:
 				bool hit_anything = false;
 				for(auto& tri : mTris)
 				{
-					if(tri.hit(r,tMin,t,tmp_hit))
+					HitRecord tri_hit;
+					float f0, f1;
+					if(tri.tri.hit(r,tMin,t,tri_hit,f0,f1))
 					{
-						collision = tmp_hit;
-						t = tmp_hit.t;
+						collision.pos = tri_hit.p;
+						t = tri_hit.t;
+						collision.t = t;
+						collision.f0 = f0;
+						collision.f1 = f1;
+						collision.normal = tri_hit.normal;
+						tri.ndx;
 						hit_anything = true;
 					}
 				}
@@ -150,5 +190,6 @@ private:
 	};
 
 	AABBTree mBVH;
+	std::vector<VtxInfo> mVtxData;
 	Material* m;
 };

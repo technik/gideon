@@ -42,7 +42,8 @@ public:
 		const math::Ray& r,
 		float tMin,
 		float tMax,
-		HitRecord& collision
+		HitRecord& collision,
+		float& f0, float& f1 // Interpolation factors along the edges
 	) const
 	{
 		auto edge0 = v[1]-v[0];
@@ -69,6 +70,9 @@ public:
 				auto c2 = cross(edge2,p-v[2]);
 				if(dot(c1,c2) >= 0.f)
 				{
+					f0 = dot(p-v[0],edge0) * 1/(edge0.sqNorm());
+					f1 = dot(p-v[1],edge1) * 1/(edge1.sqNorm());
+
 					collision.t = t;
 					collision.p = p;
 					collision.normal = normal;
@@ -80,6 +84,11 @@ public:
 		return false;
 	}
 
+	math::Vec3f normal() const {
+		auto edge0 = v[1]-v[0];
+		auto edge1 = v[2]-v[1];
+		return normalize(cross(edge0,edge1));
+	}
 	math::Vec3f centroid() const { return (v[0]+v[1]+v[2])/3.f; }
 
 	std::array<math::Vec3f,3> v;

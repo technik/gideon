@@ -118,7 +118,8 @@ public:
 			}
 
 			auto& posAccessor = document.accessors[primitive.attributes["POSITION"]];
-			std::vector<math::Vec3f> vertices;
+			using Vtx = TriangleMesh::VtxInfo;
+			std::vector<Vtx> vertices;
 			{
 				auto byteOffset = posAccessor.byteOffset;
 				auto count = posAccessor.count;
@@ -128,7 +129,7 @@ public:
 				vertices.resize(count);
 				for(size_t i = 0; i < count; ++i)
 				{
-					vertices[i] = reinterpret_cast<math::Vec3f&>(viewData[stride*i+byteOffset]);
+					vertices[i].position = reinterpret_cast<math::Vec3f&>(viewData[stride*i+byteOffset]);
 				}
 			}
 
