@@ -47,28 +47,6 @@
 using namespace math;
 using namespace std;
 
-uint8_t floatToByteColor(float value)
-{
-	auto clampedVal = std::clamp(value,0.f,1.f);
-	auto sRGBVal = std::pow(clampedVal, 1.f/2.23f);
-	return uint8_t(sRGBVal*255);
-}
-
-//--------------------------------------------------------------------------------------------------
-void saveImage(size_t width, size_t height, const std::vector<Vec3f>& img, const char* fileName)
-{
-	std::vector<uint8_t> tmpBuffer;
-	tmpBuffer.reserve(img.size());
-	for(auto c : img) {
-		tmpBuffer.push_back(floatToByteColor(c.r()));
-		tmpBuffer.push_back(floatToByteColor(c.g()));
-		tmpBuffer.push_back(floatToByteColor(c.b()));
-	}
-
-	const int rowStride = 3*width;
-	stbi_write_png(fileName, (int)width, (int)height, 3, tmpBuffer.data(), rowStride);
-}
-
 Background* skyBg = nullptr;
 
 int factorial(int x)
@@ -162,42 +140,56 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 using Rect = math::Rectangle<size_t>;
 
 //--------------------------------------------------------------------------------------------------
-void traceImageSegment(const Camera& cam, const Scene& world, Rect w, int totalNx, size_t totalNy, Vec3f* outputBuffer, RandomGenerator& random, unsigned nSamples)
+void traceImageSegment(
+	const Camera& cam,
+	const Scene& world,
+	Rect window,
+	Image& dst,
+	RandomGenerator& random,
+	unsigned nSamples)
 {
-	for(size_t j = w.y0; j < w.y1; ++j)
-		for(size_t i = w.x0; i < w.x1; ++i)
+	const auto totalNx = dst.width();
+	const auto totalNy = dst.height();
+	for(size_t i = window.y0; i < window.y1; ++i)
+		for(size_t j = window.x0; j < window.x1; ++j)
 		{
 			Vec3f accum(0.f);
 			for(size_t s = 0; s < nSamples; ++s)
 			{
-				float u = float(i+random.scalar())/totalNx;
-				float v = 1.f-float(j+random.scalar())/totalNy;
+				float u = float(j+random.scalar())/totalNx;
+				float v = 1.f-float(i+random.scalar())/totalNy;
 				Ray r = cam.get_ray(u,v);
 				accum += color(r, world, 0, random);
 			}
 			accum /= float(nSamples);
 
-			outputBuffer[i+totalNx*j] = accum;
+			dst.pixel(j,i) = accum;
 		}
 }
 
 //--------------------------------------------------------------------------------------------------
+// Would prefer to pass things by reference, but std::thread creates local copies of the objects in that case
 void threadRoutine(
 	const Camera* cam,
-	const Scene& world,
-	Rect imgSize,
-	Vec3f* outputBuffer,
-	const std::vector<Rect>& tiles,
+	const Scene* world,
+	Image* dst,
+	const std::vector<Rect>* tiles,
 	std::atomic<size_t>* tileCounter,
 	unsigned nSamples)
 {
+	assert(cam);
+	assert(world);
+	assert(dst);
+	assert(tiles);
+	assert(tileCounter);
+
 	RandomGenerator random;
 
 	size_t selfCounter = (*tileCounter)++;
-	while(selfCounter < tiles.size()) // Valid job
+	while(selfCounter < tiles->size()) // Valid job
 	{
-		auto& tile = tiles[selfCounter];
-		traceImageSegment(*cam, world, tile, imgSize.x1, imgSize.y1, outputBuffer, random, nSamples);
+		auto& tile = (*tiles)[selfCounter];
+		traceImageSegment(*cam, *world, tile, *dst, random, nSamples);
 		cout << selfCounter << "\n";
 		selfCounter = (*tileCounter)++;
 	}
@@ -207,6 +199,7 @@ struct CmdLineParams
 {
 	string scene;
 	string background;
+	string output = "render.png";
 	unsigned sx = 640;
 	unsigned sy = 480;
 	unsigned ns = 4;
@@ -224,6 +217,11 @@ struct CmdLineParams
 		if(arg == "-scene")
 		{
 			scene = args[i+1];
+			return 2;
+		}
+		if(arg == "-o")
+		{
+			output = args[i+1];
 			return 2;
 		}
 		if(arg == "-s") // samples per pixel
@@ -284,7 +282,7 @@ int main(int _argc, const char** _argv)
 	CmdLineParams params(_argc, _argv);
 	Rect size {0, 0, params.sx, params.sy };
 
-	std::vector<Vec3f> outputBuffer(size.area());
+	Image outputImage(params.sx, params.sy);
 
 	// Scene
 	Scene* world = nullptr;
@@ -345,7 +343,7 @@ int main(int _argc, const char** _argv)
 	auto start = chrono::high_resolution_clock::now();
 	for(int i = 0; i < nThreads; ++i)
 	{
-		ts[i] = std::thread(threadRoutine, cam, *world, size, outputBuffer.data(), tiles, &tileCounter, params.ns);
+		ts[i] = std::thread(threadRoutine, cam, world, &outputImage, &tiles, &tileCounter, params.ns);
 		if(!ts[i].joinable())
 		{
 			return -1;
@@ -360,7 +358,7 @@ int main(int _argc, const char** _argv)
 	cout << "Running time: " << seconds << "\nRays per second: " << numRays/seconds << "\n";
 
 	// Save final image
-	saveImage(size.x1, size.y1, outputBuffer, "render.png");
+	outputImage.saveAsSRGB(params.output.c_str());
 
 	return 0;
 }

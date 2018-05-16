@@ -28,6 +28,7 @@
 #include <math/vector3.h>
 #include <memory>
 #include <stb_image.h>
+#include <stb_image_write.h>
 
 //--------------------------------------------------------------------------------------------------
 class Image
@@ -46,24 +47,52 @@ public:
 		mData = data_ptr(reinterpret_cast<math::Vec3f*>(rawData), stbi_image_free);
 	}
 
+	Image(size_t nx, size_t ny)
+		: sx(nx)
+		, sy(ny)
+	{
+		mData = data_ptr(new math::Vec3f[nx*ny], [](void* x){ delete[] reinterpret_cast<math::Vec3f*>(x);});
+	}
+
+	auto area() const { return sx*sy; }
+	auto width() const { return sx; }
+	auto height() const { return sy; }
+
 	// Coordinates starting in the upper left corner
 	const math::Vec3f& pixel(size_t x, size_t y) const
 	{
 		return mData[x+sx*y];
 	}
 
-	math::Vec3f& pixel(int x, int y)
+	math::Vec3f& pixel(size_t x, size_t y)
 	{
 		return const_cast<math::Vec3f&>(((const Image*)this)->pixel(x,y));
 	}
 
-private:
-	void sampleSpherical(const math::Vec3f& dir, int& x, int& y) const
+	void saveAsSRGB(const char* fileName) const
 	{
-		float u = atan2(dir.z(), -dir.x()) * 0.1591f + 0.5f;
-		float v = asin(-dir.y()) * 0.3183f + 0.5f;
-		x = int(std::clamp(u, 0.f, 1.f)*sx);
-		y = int(std::clamp(v, 0.f, 1.f)*sy);
+		std::vector<uint8_t> tmpBuffer;
+		const auto nPixels = area();
+		tmpBuffer.reserve(nPixels);
+		for(size_t i = 0; i < nPixels; ++i) 
+		{
+			auto& c = mData[i];
+			tmpBuffer.push_back(floatToByteColor(c.r()));
+			tmpBuffer.push_back(floatToByteColor(c.g()));
+			tmpBuffer.push_back(floatToByteColor(c.b()));
+		}
+
+		const int rowStride = int(3*sx);
+		stbi_write_png(fileName, (int)sx, (int)sy, 3, tmpBuffer.data(), rowStride);
+	}
+
+private:
+
+	static uint8_t floatToByteColor(float value)
+	{
+		auto clampedVal = std::clamp(value,0.f,1.f);
+		auto sRGBVal = std::pow(clampedVal, 1.f/2.23f);
+		return uint8_t(sRGBVal*255);
 	}
 
 	size_t sx, sy;
