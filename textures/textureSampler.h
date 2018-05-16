@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include "image.h"
 #include <math/vector3.h>
@@ -29,7 +30,7 @@
 
 //--------------------------------------------------------------------------------------------------
 template<class UPolicy, class VPolicy>
-class TextureSampler
+class BilinearTextureSampler
 {
 public:
 	using img_ptr = std::shared_ptr<Image>;
@@ -45,10 +46,10 @@ public:
 		auto v0 = (size_t)floor(v);
 		auto v1 = v0+1;
 		// Get the relevant pixels
-		auto& a = mImg.pixel(u0,v0);
-		auto& b = mImg.pixel(u1,v0);
-		auto& c = mImg.pixel(u0,v1);
-		auto& d = mImg.pixel(u1,v1);
+		auto& a = mImg.pixel(uWrapper(u0),vWrapper(v0));
+		auto& b = mImg.pixel(uWrapper(u1),vWrapper(v0));
+		auto& c = mImg.pixel(uWrapper(u0),vWrapper(v1));
+		auto& d = mImg.pixel(uWrapper(u1),vWrapper(v1));
 		auto du = u-u0;
 		auto dv = v-v0;
 		auto top = a*(1-du)+b*du;
@@ -60,4 +61,22 @@ private:
 	img_ptr mImg;
 	UPolicy uWrapper;
 	VPolicy vWrapper;
+};
+
+//--------------------------------------------------------------------------------------------------
+struct RepeatWrap
+{
+	RepeatWrap(size_t x) : mSize(x) {}
+	size_t operator()(size_t x) const { return x%mSize; }
+
+	size_t mSize;
+};
+
+//--------------------------------------------------------------------------------------------------
+struct ClampWrap
+{
+	ClampWrap(size_t x) : mSize(x) {}
+	size_t operator()(size_t x) const { return std::clamp(x, size_t(0), mSize-1); }
+
+	size_t mSize;
 };
