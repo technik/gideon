@@ -56,10 +56,10 @@ public:
 		auto v0 = floor(v);
 		auto v1 = v0+1;
 		// Get the relevant pixels
-		auto& a = mImg->pixel(uWrapper(u0),vWrapper(v0));
-		auto& b = mImg->pixel(uWrapper(u1),vWrapper(v0));
-		auto& c = mImg->pixel(uWrapper(u0),vWrapper(v1));
-		auto& d = mImg->pixel(uWrapper(u1),vWrapper(v1));
+		auto& a = mImg->pixel(uWrapper(u0/mImg->width()),vWrapper(v0/mImg->height()));
+		auto& b = mImg->pixel(uWrapper(u1/mImg->width()),vWrapper(v0/mImg->height()));
+		auto& c = mImg->pixel(uWrapper(u0/mImg->width()),vWrapper(v1/mImg->height()));
+		auto& d = mImg->pixel(uWrapper(u1/mImg->width()),vWrapper(v1/mImg->height()));
 		auto du = u-u0;
 		auto dv = v-v0;
 		auto top = a*(1-du)+b*du;

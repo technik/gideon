@@ -144,7 +144,7 @@ public:
 				for(size_t i = 0; i < count; ++i)
 				{
 					vertices[i].u = reinterpret_cast<float&>(viewData[stride*i+byteOffset+0]);
-					vertices[i].v = reinterpret_cast<float&>(viewData[stride*i+byteOffset+4]);
+					vertices[i].v = -reinterpret_cast<float&>(viewData[stride*i+byteOffset+4]);
 				}
 			}
 
