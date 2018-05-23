@@ -50,10 +50,10 @@ public:
 	{
 		// transform u-v coordinates
 		u = u*mImg->width();
-		auto u0 = (size_t)floor(u);
+		auto u0 = floor(u);
 		auto u1 = u0+1;
 		v = (1.f-v)*mImg->height(); // Invert v to properly read in image coordinates
-		auto v0 = (size_t)floor(v);
+		auto v0 = floor(v);
 		auto v1 = v0+1;
 		// Get the relevant pixels
 		auto& a = mImg->pixel(uWrapper(u0),vWrapper(v0));
@@ -77,8 +77,14 @@ private:
 struct RepeatWrap
 {
 	RepeatWrap(size_t x) : mSize(x) {}
-	size_t operator()(size_t x) const { return x%mSize; }
 
+	size_t operator()(float x) const
+	{
+		auto mod = int(std::floorf(x*mSize));
+		return mod%mSize;
+	}
+
+private:
 	size_t mSize;
 };
 
@@ -86,7 +92,14 @@ struct RepeatWrap
 struct ClampWrap
 {
 	ClampWrap(size_t x) : mSize(x) {}
-	size_t operator()(size_t x) const { return std::clamp(x, size_t(0), mSize-1); }
 
+	size_t operator()(float x) const
+	{
+		return std::min(
+			(size_t)std::min(x, 0.f),
+			mSize-1);
+	}
+
+private:
 	size_t mSize;
 };

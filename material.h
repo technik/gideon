@@ -26,6 +26,7 @@
 #include <math/vector3.h>
 #include "collision.h"
 #include "random.h"
+#include "textures/textureSampler.h"
 
 class Material
 {
@@ -49,6 +50,26 @@ public:
 	}
 
 	math::Vec3f albedo;
+};
+
+class PBRMaterial : public Material
+{
+public:
+	using Sampler = BilinearTextureSampler<RepeatWrap,RepeatWrap>;
+	PBRMaterial(const math::Vec3f& baseColor, const std::shared_ptr<Sampler>& baseClrMap) : albedo(baseColor), albedoMap(baseClrMap) {}
+	bool scatter(const math::Ray&, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
+	{
+		auto target = hit.p + hit.normal + random.unit_vector();
+		out = math::Ray(hit.p, target-hit.p);
+		if(albedoMap)
+			attenuation = albedoMap->sample(hit.u, hit.v);
+		else
+			attenuation = albedo;
+		return true;
+	}
+
+	math::Vec3f albedo;
+	std::shared_ptr<Sampler> albedoMap;
 };
 
 class Metal : public Material

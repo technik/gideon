@@ -28,8 +28,9 @@
 class MeshInstance : public Shape
 {
 public:
-	MeshInstance(const TriangleMesh& mesh, const math::Matrix34f& transform)
+	MeshInstance(const TriangleMesh& mesh, const Material& mat, const math::Matrix34f& transform)
 		: mMesh(mesh)
+		, mMaterial(mat)
 	{
 		mXForm = transform;
 		mXFormInv = transform.inverse();
@@ -42,6 +43,7 @@ public:
 		{
 			collision.normal = mXForm.transformDir(collision.normal);
 			collision.p = mXForm.transformPos(collision.p);
+			collision.material = &mMaterial;
 			return true;
 		}
 		return false;
@@ -50,4 +52,5 @@ private:
 	const TriangleMesh& mMesh;
 	math::Matrix34f mXForm;
 	math::Matrix34f mXFormInv;
+	const Material& mMaterial;
 };

@@ -52,7 +52,7 @@ public:
 				const auto& node = document.nodes[i];
 				if(node.mesh >= 0)
 				{
-					mShapes.push_back(new MeshInstance(*mMeshes[node.mesh], transforms[i]));
+					mShapes.push_back(new MeshInstance(*mMeshes[node.mesh], *mMaterials[node.mesh], transforms[i]));
 				}
 			}
 		}
@@ -148,7 +148,15 @@ public:
 				}
 			}
 
+			// Load material
+			auto matDesc = document.materials[primitive.material];
+			auto albedoTex = matDesc.pbrMetallicRoughness.baseColorTexture;
+			auto albedoMapName = document.images[document.textures[albedoTex.index].source].uri;
+			auto sampler = std::make_shared<PBRMaterial::Sampler>(albedoMapName.c_str());
+			auto material = new PBRMaterial({1.f,1.f,1.f}, sampler);
+
 			mMeshes.push_back(new TriangleMesh(vertices, indices));
+			mMaterials.push_back(material);
 		}
 	}
 
@@ -213,4 +221,5 @@ public:
 private:
 	std::vector<Shape*>	mShapes;
 	std::vector<TriangleMesh*>	mMeshes;
+	std::vector<Material*>	mMaterials;
 };

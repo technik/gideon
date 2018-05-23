@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gideon", "gideon\gideon.vcxproj", "{F7998FF0-3696-4D7E-8AF5-C42AD883EAFF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{DF1F1A99-2989-44BE-AD3B-B096FBE288CE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{F7998FF0-3696-4D7E-8AF5-C42AD883EAFF}.Release|x64.Build.0 = Release|x64
 		{F7998FF0-3696-4D7E-8AF5-C42AD883EAFF}.Release|x86.ActiveCfg = Release|Win32
 		{F7998FF0-3696-4D7E-8AF5-C42AD883EAFF}.Release|x86.Build.0 = Release|Win32
+		{DF1F1A99-2989-44BE-AD3B-B096FBE288CE}.Debug|x64.ActiveCfg = Debug|x64
+		{DF1F1A99-2989-44BE-AD3B-B096FBE288CE}.Debug|x64.Build.0 = Debug|x64
+		{DF1F1A99-2989-44BE-AD3B-B096FBE288CE}.Debug|x86.ActiveCfg = Debug|Win32
+		{DF1F1A99-2989-44BE-AD3B-B096FBE288CE}.Debug|x86.Build.0 = Debug|Win32
+		{DF1F1A99-2989-44BE-AD3B-B096FBE288CE}.Release|x64.ActiveCfg = Release|x64
+		{DF1F1A99-2989-44BE-AD3B-B096FBE288CE}.Release|x64.Build.0 = Release|x64
+		{DF1F1A99-2989-44BE-AD3B-B096FBE288CE}.Release|x86.ActiveCfg = Release|Win32
+		{DF1F1A99-2989-44BE-AD3B-B096FBE288CE}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

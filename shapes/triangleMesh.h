@@ -73,7 +73,6 @@ public:
 		}
 
 		mBVH = AABBTree(triList);
-		m = new Lambertian(math::Vec3f(0.9f));
 	}
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
@@ -81,7 +80,6 @@ public:
 		TriangleHit hitInfo;
 		if(mBVH.hit(r,tMin,tMax,hitInfo))
 		{
-			collision.material = m;
 			collision.p = hitInfo.pos;
 			collision.normal = hitInfo.normal;
 			collision.t = hitInfo.t;
@@ -209,5 +207,4 @@ private:
 
 	AABBTree mBVH;
 	std::vector<VtxInfo> mVtxData;
-	Material* m;
 };
