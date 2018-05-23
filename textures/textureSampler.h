@@ -95,8 +95,9 @@ struct ClampWrap
 
 	size_t operator()(float x) const
 	{
+		auto raw = int(std::floorf(x*mSize));
 		return std::min(
-			(size_t)std::min(x, 0.f),
+			(size_t)std::max(raw, 0),
 			mSize-1);
 	}
 
