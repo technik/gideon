@@ -58,13 +58,13 @@ public:
 	{
 		auto target = hit.p + hit.normal + random.unit_vector();
 		out = math::Ray(hit.p, target-hit.p);
-		/*if(albedoMap)
+		if(albedoMap)
 			attenuation = albedoMap->sample(hit.u, hit.v);
 		else
-			attenuation = albedo;*/
+			attenuation = albedo;/*
 		attenuation.r() = hit.u;
 		attenuation.g() = hit.v;
-		attenuation.b() = 0.f;
+		attenuation.b() = 0.f;*/
 		return true;
 	}
 

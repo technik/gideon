@@ -70,8 +70,17 @@ public:
 				auto c2 = cross(edge2,p-v[2]);
 				if(dot(c1,c2) >= 0.f)
 				{
-					f0 = dot(p-v[0],edge0) * 1/(edge0.sqNorm());
-					f1 = dot(p-v[1],edge1) * 1/(edge1.sqNorm());
+					// Get an orthogonal basis in the triangle
+					auto e1ProjE0 = dot(edge1,edge0)/edge0.sqNorm();// Horizontal projection of edge1 over edge 0
+					auto orthoE1 = edge1 - e1ProjE0*edge0; // V2' to V2
+					f1 = 1 - dot(orthoE1,v[2]-p)/orthoE1.sqNorm();
+					if(f1 >= 1.f-1e-6f)
+						f0 = 0.f;
+					else
+					{
+						auto pp = v[2] + (p-v[2])/(1.f-f1);
+						f0 = (pp-v[0]).norm() / edge0.norm();
+					}
 
 					collision.t = t;
 					collision.p = p;

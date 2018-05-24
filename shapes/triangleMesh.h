@@ -134,7 +134,7 @@ TriangleMesh::TriangleMesh(
 }
 
 //-------------------------------------------------------------------------------------------------
-inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
+inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
 {
 	TriangleHit hitInfo;
 	if(mBVH.hit(r,tMin,tMax,hitInfo))
@@ -149,7 +149,7 @@ inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRe
 }
 
 //-------------------------------------------------------------------------------------------------
-inline TriangleMesh::AABBTree::AABBTree(const std::vector<TriInfo>& triangleList, int partitionAxis = 0)
+inline TriangleMesh::AABBTree::AABBTree(const std::vector<TriInfo>& triangleList, int partitionAxis)
 {
 	if(triangleList.size() <= 8)
 	{
