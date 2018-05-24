@@ -40,8 +40,8 @@ public:
 	Lambertian(const math::Vec3f& c) : albedo(c) {}
 	bool scatter(const math::Ray&, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
 	{
-		auto target = hit.p + hit.normal + random.unit_vector();
-		out = math::Ray(hit.p, target-hit.p);
+		auto target = hit.normal + random.unit_vector();
+		out = math::Ray(hit.p, target);
 		attenuation = albedo;
 		return true;
 	}
@@ -53,23 +53,37 @@ class PBRMaterial : public Material
 {
 public:
 	using Sampler = BilinearTextureSampler<RepeatWrap,RepeatWrap>;
-	PBRMaterial(const math::Vec3f& baseColor, const std::shared_ptr<Sampler>& baseClrMap) : albedo(baseColor), albedoMap(baseClrMap) {}
-	bool scatter(const math::Ray&, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
+	PBRMaterial(
+		const math::Vec3f& baseColor,
+		const std::shared_ptr<Sampler>& baseClrMap,
+		const std::shared_ptr<Sampler>& _physicsMap,
+		const std::shared_ptr<Sampler>& _aoMap)
+		: albedo(baseColor), albedoMap(baseClrMap), physicsMap(_physicsMap), aoMap(_aoMap)
+	{}
+
+	bool scatter(const math::Ray& in, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
 	{
-		auto target = hit.p + hit.normal + random.unit_vector();
-		out = math::Ray(hit.p, target-hit.p);
-		if(albedoMap)
-			attenuation = albedoMap->sample(hit.u, hit.v);
-		else
-			attenuation = albedo;/*
-		attenuation.r() = hit.u;
-		attenuation.g() = hit.v;
-		attenuation.b() = 0.f;*/
-		return true;
+		//auto ao = aoMap->sample(hit.u, hit.v).r(); // b is metalness
+		auto roughness = physicsMap->sample(hit.u, hit.v).g(); // b is metalness
+		auto target = hit.normal + random.unit_vector();
+		auto reflected = reflect(normalize(in.direction()), hit.normal);
+		auto scatterDir = lerp(reflected, target, roughness);
+		//if(ao > random.scalar()) // Ray didn't get lost in AO
+		//{
+			out = math::Ray(hit.p, scatterDir);
+			if(albedoMap)
+				attenuation = albedoMap->sample(hit.u, hit.v);
+			else
+				attenuation = albedo;
+			return true;
+		//}
+		//else return false; // Ray lost in AO
 	}
 
 	math::Vec3f albedo;
 	std::shared_ptr<Sampler> albedoMap;
+	std::shared_ptr<Sampler> physicsMap;
+	std::shared_ptr<Sampler> aoMap;
 };
 
 class Metal : public Material

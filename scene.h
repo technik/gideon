@@ -150,10 +150,20 @@ public:
 
 			// Load material
 			auto matDesc = document.materials[primitive.material];
+			// albedo
 			auto albedoTex = matDesc.pbrMetallicRoughness.baseColorTexture;
 			auto albedoMapName = document.images[document.textures[albedoTex.index].source].uri;
-			auto sampler = std::make_shared<PBRMaterial::Sampler>(albedoMapName.c_str());
-			auto material = new PBRMaterial({1.f,1.f,1.f}, sampler);
+			auto albedoSampler = std::make_shared<PBRMaterial::Sampler>(albedoMapName.c_str());
+			// Physics
+			auto physicsTex = matDesc.pbrMetallicRoughness.metallicRoughnessTexture;
+			auto physicsMapName = document.images[document.textures[physicsTex.index].source].uri;
+			auto physicsSampler = std::make_shared<PBRMaterial::Sampler>(physicsMapName.c_str());
+			// AO
+			auto aoTex = matDesc.occlusionTexture;
+			auto aoMapName = document.images[document.textures[aoTex.index].source].uri;
+			auto aoSampler = std::make_shared<PBRMaterial::Sampler>(aoMapName.c_str());
+			// Material
+			auto material = new PBRMaterial({1.f,1.f,1.f}, albedoSampler, physicsSampler, aoSampler);
 
 			mMeshes.push_back(new TriangleMesh(vertices, indices));
 			mMaterials.push_back(material);
