@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cmath>
 #include "image.h"
+#include <math/linear.h>
 #include <math/vector3.h>
 #include <memory>
 
@@ -37,9 +38,14 @@ public:
 
 	BilinearTextureSampler(img_ptr img)
 		: mImg(img)
+		, nx(img->width())
+		, ny(img->height())
 		, uWrapper(img->width())
 		, vWrapper(img->height())
-	{}
+	{
+		pixDu = 1.f/nx;
+		pixDv = 1.f/ny;
+	}
 
 	BilinearTextureSampler(const char* imgFileName)
 		: BilinearTextureSampler(std::make_shared<Image>(imgFileName))
@@ -49,25 +55,27 @@ public:
 	math::Vec3f sample(float u, float v) const
 	{
 		// transform u-v coordinates
-		u = u*mImg->width();
-		auto u0 = floor(u);
-		auto u1 = u0+1;
-		v = (1.f-v)*mImg->height(); // Invert v to properly read in image coordinates
-		auto v0 = floor(v);
-		auto v1 = v0+1;
+		auto u0 = floor(u*nx)*pixDu;
+		auto u1 = u0+pixDu;
+		v = (1.f-v); // Invert v to properly read in image coordinates
+		auto v0 = floor(v*ny)*pixDv;
+		auto v1 = v0+pixDv;
 		// Get the relevant pixels
-		auto& a = mImg->pixel(uWrapper(u0/mImg->width()),vWrapper(v0/mImg->height()));
-		auto& b = mImg->pixel(uWrapper(u1/mImg->width()),vWrapper(v0/mImg->height()));
-		auto& c = mImg->pixel(uWrapper(u0/mImg->width()),vWrapper(v1/mImg->height()));
-		auto& d = mImg->pixel(uWrapper(u1/mImg->width()),vWrapper(v1/mImg->height()));
-		auto du = u-u0;
-		auto dv = v-v0;
-		auto top = a*(1-du)+b*du;
-		auto bottom = c*(1-du)+d*du;
-		return top*(1-dv)+bottom*dv;
+		auto& a = mImg->pixel(uWrapper(u0),vWrapper(v0));
+		auto& b = mImg->pixel(uWrapper(u1),vWrapper(v0));
+		auto& c = mImg->pixel(uWrapper(u0),vWrapper(v1));
+		auto& d = mImg->pixel(uWrapper(u1),vWrapper(v1));
+		// Interpolate
+		auto du = (u-u0)*nx;
+		auto dv = (v-v0)*ny;
+		auto top = math::lerp(a, b, du);
+		auto bottom = math::lerp(c, d, du);
+		return math::lerp(top, bottom, dv);
 	}
 
 private:
+	size_t nx, ny;
+	float pixDu, pixDv;
 	img_ptr mImg;
 	UPolicy uWrapper;
 	VPolicy vWrapper;
