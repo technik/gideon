@@ -54,23 +54,24 @@ public:
 	/// Texture coordinates start at the upper left corner
 	math::Vec3f sample(float u, float v) const
 	{
-		// transform u-v coordinates
-		auto u0 = floor(u*nx)*pixDu;
-		auto u1 = u0+pixDu;
-		v = (1.f-v); // Invert v to properly read in image coordinates
-		auto v0 = floor(v*ny)*pixDv;
-		auto v1 = v0+pixDv;
+		// transform u-v coordinates into image space (pixel units)
+		auto s = u*nx;
+		auto t = (1-v)*ny;
+		auto s0 = floor(s);
+		auto t0 = floor(t);
+		auto s1 = s0+1;
+		auto t1 = t0+1;
 		// Get the relevant pixels
-		auto& a = mImg->pixel(uWrapper(u0),vWrapper(v0));
-		auto& b = mImg->pixel(uWrapper(u1),vWrapper(v0));
-		auto& c = mImg->pixel(uWrapper(u0),vWrapper(v1));
-		auto& d = mImg->pixel(uWrapper(u1),vWrapper(v1));
+		auto& a = mImg->pixel(uWrapper(s0),vWrapper(t0));
+		auto& b = mImg->pixel(uWrapper(s1),vWrapper(t0));
+		auto& c = mImg->pixel(uWrapper(s0),vWrapper(t1));
+		auto& d = mImg->pixel(uWrapper(s1),vWrapper(t1));
 		// Interpolate
-		auto du = (u-u0)*nx;
-		auto dv = (v-v0)*ny;
-		auto top = math::lerp(a, b, du);
-		auto bottom = math::lerp(c, d, du);
-		return math::lerp(top, bottom, dv);
+		auto ds = s-s0;
+		auto dt = t-t0;
+		auto top = math::lerp(a, b, ds);
+		auto bottom = math::lerp(c, d, ds);
+		return math::lerp(top, bottom, dt);
 	}
 
 private:
@@ -88,8 +89,8 @@ struct RepeatWrap
 
 	size_t operator()(float x) const
 	{
-		auto mod = int(std::floorf(x*mSize));
-		return mod%mSize;
+		auto raw = int(std::floorf(x));
+		return raw%mSize;
 	}
 
 private:
@@ -103,7 +104,7 @@ struct ClampWrap
 
 	size_t operator()(float x) const
 	{
-		auto raw = int(std::floorf(x*mSize));
+		auto raw = int(x);
 		return std::min(
 			(size_t)std::max(raw, 0),
 			mSize-1);

@@ -21,7 +21,6 @@
     <ClCompile Include="..\..\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shapes\triangleMesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\stb_image.h">

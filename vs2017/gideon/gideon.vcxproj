@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\main.cpp" />
-    <ClCompile Include="..\..\shapes\triangleMesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\background.h" />
