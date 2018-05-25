@@ -39,6 +39,7 @@ public:
 	struct VtxInfo
 	{
 		math::Vec3f position;
+		math::Vec3f normal;
 		float u, v;
 
 		VtxInfo lerp(const VtxInfo& b, float x) const;
@@ -73,8 +74,11 @@ private:
 		auto& v2 = mVtxData[3*tri.ndx+2];
 		auto a = v0.lerp(v1,tri.f0);
 		auto res = a.lerp(v2,tri.f1);
+		
 		hit.u = res.u;
 		hit.v = res.v;
+		hit.normal = res.normal;
+		hit.normal.normalize();
 	}
 
 	struct AABBTree
@@ -102,6 +106,7 @@ TriangleMesh::VtxInfo TriangleMesh::VtxInfo::lerp(const VtxInfo& b, float x) con
 	VtxInfo res;
 	auto x0 = 1-x;
 	res.position = position*x0+b.position*x;
+	res.normal = math::lerp(normal,b.normal, x);
 	res.u = u*x0+b.u*x;
 	res.v = v*x0+b.v*x;
 	return res;
@@ -140,7 +145,6 @@ inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRe
 	if(mBVH.hit(r,tMin,tMax,hitInfo))
 	{
 		collision.p = hitInfo.pos;
-		collision.normal = hitInfo.normal;
 		collision.t = hitInfo.t;
 		interpolateData(hitInfo, collision);
 		return true;
