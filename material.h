@@ -78,8 +78,8 @@ public:
 		else
 			baseColor = albedo;
 
-		math::Vec3f specColor = lerp(math::Vec3f(0.04), baseColor, metalness);
-		math::Vec3f diffColor = baseColor*(1.0-metalness);
+		math::Vec3f specColor = lerp(math::Vec3f(0.04f), baseColor, metalness);
+		math::Vec3f diffColor = baseColor*(1.0f-metalness);
 
 		auto ndh = std::max(0.f,-dot(hit.normal, in.direction()));
 		auto Fresnel = fresnelSchlick(ndh, specColor);
