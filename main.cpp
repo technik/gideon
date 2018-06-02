@@ -190,7 +190,7 @@ void threadRoutine(
 	{
 		auto& tile = (*tiles)[selfCounter];
 		traceImageSegment(*cam, *world, tile, *dst, random, nSamples);
-		cout << selfCounter << "\n";
+		//cout << selfCounter << "\n";
 		selfCounter = (*tileCounter)++;
 	}
 }
