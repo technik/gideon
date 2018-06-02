@@ -98,9 +98,15 @@ private:
 		// Returns index of the bounding volume enclosing the range
 		size_t prepareTreeRange(const TriRange& range, int partitionAxis = 0);
 
-		std::vector<math::AABB> mBVs;
 		using Children = std::pair<size_t,size_t>;
-		std::vector<Children> mChildren; // child indices
+
+		struct Node
+		{
+			math::AABB bbox;
+			Children children;
+		};
+
+		std::vector<Node> mNodes;
 
 		TriRange mRange;
 		std::vector<TriInfo> mTris;
@@ -175,11 +181,11 @@ inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRe
 //-------------------------------------------------------------------------------------------------
 inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, int partitionAxis)
 {
-	size_t ndx = mBVs.size();
-	auto& bbox = mBVs.emplace_back();
-	mChildren.emplace_back();
+	size_t ndx = mNodes.size();
+	mNodes.emplace_back();
 	if((range.second-range.first) <= TriangleMesh::MAX_LEAF_TRIS) // leaf node
 	{
+		auto& bbox = mNodes.back().bbox;
 		bbox.clear();
 		for(auto t = range.first; t != range.second; ++t)
 		{
@@ -200,8 +206,10 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 		auto middle = sortedList.first + (sortedList.second-sortedList.first) / 2;
 		auto a = prepareTreeRange({sortedList.first, middle}, (partitionAxis+1)%3);
 		auto b = prepareTreeRange({middle, sortedList.second }, (partitionAxis+1)%3);
-		mChildren[ndx] = {a,b};
-		mBVs[ndx] = math::AABB(mBVs[a], mBVs[b]);
+		mNodes[ndx] = {
+			math::AABB(mNodes[a].bbox, mNodes[b].bbox),
+			{a,b}
+		};
 	}
 	return ndx;
 }
@@ -209,7 +217,7 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 //--------------------------------------------------------------------------------------------------
 inline bool TriangleMesh::AABBTree::hit(size_t ndx, const TriRange& range, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const
 {
-	if(!mBVs[ndx].intersect(ri, tMin, tMax, tMin))
+	if(!mNodes[ndx].bbox.intersect(ri, tMin, tMax, tMin))
 		return false;
 
 	float t = tMax;
@@ -218,7 +226,7 @@ inline bool TriangleMesh::AABBTree::hit(size_t ndx, const TriRange& range, const
 	if(rangeLen > MAX_LEAF_TRIS) // this is not a leaf node
 	{
 		auto middle = range.first + rangeLen/2;
-		auto& children = mChildren[ndx];
+		auto& children = mNodes[ndx].children;
 		bool hit_a = hit(children.first, {range.first,middle},r,ri,tMin,t,tmp_hit);
 		if(hit_a)
 		{
