@@ -104,6 +104,15 @@ private:
 		{
 			math::AABB bbox;
 			Children children;
+
+			bool isLeaf() const { 
+				return children.first == -1;
+			}
+
+			void maskAsLeaf()
+			{
+				children.first = -1;
+			}
 		};
 
 		std::vector<Node> mNodes;
@@ -193,6 +202,7 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 			bbox.add(t->tri.vtx(1));
 			bbox.add(t->tri.vtx(2));
 		}
+		mNodes.back().maskAsLeaf(); // Mark node as leaf
 	}
 	else // Non-leaf node
 	{
@@ -217,16 +227,17 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 //--------------------------------------------------------------------------------------------------
 inline bool TriangleMesh::AABBTree::hit(size_t ndx, const TriRange& range, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const
 {
-	if(!mNodes[ndx].bbox.intersect(ri, tMin, tMax, tMin))
+	auto& node = mNodes[ndx];
+	if(!node.bbox.intersect(ri, tMin, tMax, tMin))
 		return false;
 
 	float t = tMax;
 	TriangleHit tmp_hit;
 	auto rangeLen = (range.second-range.first);
-	if(rangeLen > MAX_LEAF_TRIS) // this is not a leaf node
+	if(!node.isLeaf()) // this is not a leaf node
 	{
 		auto middle = range.first + rangeLen/2;
-		auto& children = mNodes[ndx].children;
+		auto& children = node.children;
 		bool hit_a = hit(children.first, {range.first,middle},r,ri,tMin,t,tmp_hit);
 		if(hit_a)
 		{
