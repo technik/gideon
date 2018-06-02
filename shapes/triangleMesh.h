@@ -88,11 +88,10 @@ private:
 
 	struct AABBTree {
 		AABBTree() = default;
-		AABBTree(const std::vector<TriInfo>& triList)
+		AABBTree(std::vector<TriInfo>& triList)
 		{
-			mTris = triList;
-			TriRange range = {mTris.begin(), mTris.end()};
-			mNumElements = mTris.size();
+			TriRange range = {triList.begin(), triList.end()};
+			mNumElements = triList.size();
 			prepareTreeRange(range);
 		}
 
@@ -138,7 +137,6 @@ private:
 		std::vector<TriSet> mTriSets;
 
 		size_t mNumElements;
-		std::vector<TriInfo> mTris;
 
 
 		bool hit(size_t ndx, size_t rangeLen, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const;
