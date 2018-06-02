@@ -61,6 +61,11 @@ public:
 		: albedo(baseColor), albedoMap(baseClrMap), physicsMap(_physicsMap), aoMap(_aoMap)
 	{}
 
+	static math::Vec3f fresnelSchlick(float cosTheta, const math::Vec3f& F0)
+	{
+		return F0 + (1.f - F0) * pow(1.f - cosTheta, 5.f);
+	}
+
 	bool scatter(const math::Ray& in, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
 	{
 		//auto ao = aoMap->sample(hit.u, hit.v).r(); // b is metalness
@@ -76,15 +81,21 @@ public:
 		math::Vec3f specColor = lerp(math::Vec3f(0.04), baseColor, metalness);
 		math::Vec3f diffColor = baseColor*(1.0-metalness);
 
+		auto ndh = std::max(0.f,-dot(hit.normal, in.direction()));
+		auto Fresnel = fresnelSchlick(ndh, specColor);
+		auto kS = Fresnel.norm();
+
 		math::Vec3f scatterDir;
 		auto diffDir = hit.normal + random.unit_vector();
-		if(random.scalar() > metalness) // Diffuse
+		if(random.scalar() > kS) // Diffuse
 		{
-			attenuation = diffColor;
-			scatterDir = diffDir;
+			attenuation = diffColor*ndh;
+			scatterDir = diffDir*(math::Vec3f(1.f)-Fresnel);
 		} else {// Specular
-			attenuation = specColor;
-			scatterDir = lerp(reflect(normalize(in.direction()), hit.normal), diffDir, roughness);
+			auto m = normalize(hit.normal + random.unit_vector()*roughness);
+			scatterDir = reflect(in.direction(), m);
+			auto mdh = std::max(0.f,-dot(m, in.direction()));
+			attenuation = specColor * mdh;
 		}
 
 		out = math::Ray(hit.p, scatterDir);
