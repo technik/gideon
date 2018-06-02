@@ -106,11 +106,11 @@ private:
 		std::vector<TriInfo> mTris;
 
 
-		bool hit(size_t ndx, const TriRange& range, const math::Ray & r, float tMin, float tMax, TriangleHit & collision) const;
+		bool hit(size_t ndx, const TriRange& range, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const;
 
 		bool hit(const math::Ray & r, float tMin, float tMax, TriangleHit & collision) const
 		{
-			return hit(0, mRange, r,tMin,tMax,collision);
+			return hit(0, mRange, r, r.implicit() ,tMin,tMax,collision);
 		}
 	};
 
@@ -207,9 +207,9 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 }
 
 //--------------------------------------------------------------------------------------------------
-inline bool TriangleMesh::AABBTree::hit(size_t ndx, const TriRange& range, const math::Ray & r, float tMin, float tMax, TriangleHit & collision) const
+inline bool TriangleMesh::AABBTree::hit(size_t ndx, const TriRange& range, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const
 {
-	if(!mBVs[ndx].intersect(r.implicit(), tMin, tMax, tMin))
+	if(!mBVs[ndx].intersect(ri, tMin, tMax, tMin))
 		return false;
 
 	float t = tMax;
@@ -219,13 +219,13 @@ inline bool TriangleMesh::AABBTree::hit(size_t ndx, const TriRange& range, const
 	{
 		auto middle = range.first + rangeLen/2;
 		auto& children = mChildren[ndx];
-		bool hit_a = hit(children.first, {range.first,middle},r,tMin,t,tmp_hit);
+		bool hit_a = hit(children.first, {range.first,middle},r,ri,tMin,t,tmp_hit);
 		if(hit_a)
 		{
 			collision = tmp_hit;
 			t = tmp_hit.t;
 		}
-		bool hit_b = hit(children.second, {middle,range.second},r,tMin,t,tmp_hit);
+		bool hit_b = hit(children.second, {middle,range.second},r,ri,tMin,t,tmp_hit);
 		if(hit_b)
 		{
 			collision = tmp_hit;
