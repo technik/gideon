@@ -52,6 +52,8 @@ public:
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override;
 
+	static constexpr size_t MAX_LEAF_TRIS = 8;
+
 private:
 	struct TriInfo {
 		Triangle tri;
@@ -81,20 +83,21 @@ private:
 		hit.normal.normalize();
 	}
 
+	using TriList = std::vector<TriInfo>;
+	using TriRange = std::pair<TriList::iterator, TriList::iterator>;
+
 	struct AABBTreeNode
 	{
 		math::AABB mBoundingVolume;
 		AABBTreeNode* a = nullptr;
 		AABBTreeNode* b = nullptr;
 
-		using TriList = std::vector<TriInfo>;
-		using TriRange = std::pair<TriList::iterator, TriList::iterator>;
-		TriRange mTris;
-
 		AABBTreeNode() = default;
+		TriRange mTris;
 
 		AABBTreeNode(const TriRange& triangleList, int partitionAxis = 0);
 		bool hit(const math::Ray & r, float tMin, float tMax, TriangleHit & collision) const;
+		bool hit(const TriRange& range, const math::Ray & r, float tMin, float tMax, TriangleHit & collision) const;
 	};
 
 	struct AABBTree {
@@ -102,16 +105,19 @@ private:
 		AABBTree(const std::vector<TriInfo>& triList)
 		{
 			mTris = triList;
-			root = AABBTreeNode({mTris.begin(), mTris.end()});
+			mRange = {mTris.begin(), mTris.end()};
+			root = AABBTreeNode(mRange);
 		}
 
 		AABBTreeNode root;
 
+		TriRange mRange;
 		std::vector<TriInfo> mTris;
 
 		bool hit(const math::Ray & r, float tMin, float tMax, TriangleHit & collision) const
 		{
-			return root.hit(r,tMin,tMax,collision);
+			return root.hit(mRange, r,tMin,tMax,collision);
+			//return root.hit(r,tMin,tMax,collision);
 		}
 	};
 
@@ -176,7 +182,7 @@ inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRe
 //-------------------------------------------------------------------------------------------------
 inline TriangleMesh::AABBTreeNode::AABBTreeNode(const TriRange& range, int partitionAxis)
 {
-	if((range.second-range.first) <= 8)
+	if((range.second-range.first) <= TriangleMesh::MAX_LEAF_TRIS)
 	{
 		mTris = range;
 		mBoundingVolume.clear();
@@ -200,6 +206,58 @@ inline TriangleMesh::AABBTreeNode::AABBTreeNode(const TriRange& range, int parti
 		a = new AABBTreeNode({sortedList.first, middle}, (partitionAxis+1)%3);
 		b = new AABBTreeNode({middle, sortedList.second }, (partitionAxis+1)%3);
 		mBoundingVolume = math::AABB(a->mBoundingVolume, b->mBoundingVolume);
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+inline bool TriangleMesh::AABBTreeNode::hit(const TriRange& range, const math::Ray & r, float tMin, float tMax, TriangleHit & collision) const
+{
+	if(!mBoundingVolume.intersect(r.implicit(), tMin, tMax, tMin))
+		return false;
+
+	float t = tMax;
+	TriangleHit tmp_hit;
+	auto rangeLen = (range.second-range.first);
+	if(rangeLen > MAX_LEAF_TRIS) // this is not a leaf node
+	{
+		auto middle = range.first + rangeLen/2;
+		assert(a && b);
+		bool hit_a = a->hit({range.first,middle},r,tMin,t,tmp_hit);
+		if(hit_a)
+		{
+			collision = tmp_hit;
+			t = tmp_hit.t;
+		}
+		bool hit_b = b->hit({middle,range.second},r,tMin,t,tmp_hit);
+		if(hit_b)
+		{
+			collision = tmp_hit;
+			t = tmp_hit.t;
+		}
+		return hit_a || hit_b;
+	}
+	else
+	{
+		assert(!a && !b);
+		bool hit_anything = false;
+		for(auto tri = range.first; tri != range.second; ++tri)
+		{
+			HitRecord tri_hit;
+			float f0, f1;
+			if(tri->tri.hit(r,tMin,t,tri_hit,f0,f1))
+			{
+				collision.pos = tri_hit.p;
+				t = tri_hit.t;
+				collision.t = t;
+				collision.f0 = f0;
+				collision.f1 = f1;
+				collision.normal = tri_hit.normal;
+				collision.ndx = tri->ndx;
+				hit_anything = true;
+			}
+		}
+
+		return hit_anything;
 	}
 }
 
