@@ -33,6 +33,76 @@
 #include <fx/gltf.h>
 #include <fstream>
 
+namespace {
+	//----------------------------------------------------------------------------------------------
+	inline auto loadMaterials(
+		const fx::gltf::Document& _document,
+		const std::vector<std::shared_ptr<PBRMaterial::Sampler>>& _textures
+	)
+	{
+		std::vector<std::shared_ptr<PBRMaterial>> materials;
+		auto baseColor = math::Vec3f(1.f);
+
+		// Load materials
+		for(auto& matDesc : _document.materials)
+		{
+			std::shared_ptr<PBRMaterial::Sampler> albedo, physics, ao;
+
+			auto& pbrDesc = matDesc.pbrMetallicRoughness;
+			if(!pbrDesc.empty())
+			{
+				// Base color
+				if(!pbrDesc.baseColorTexture.empty())
+				{
+					auto albedoNdx = pbrDesc.baseColorTexture.index;
+					albedo = _textures[albedoNdx];
+				}
+				// Base color factor
+				{
+					auto& colorDesc = pbrDesc.baseColorFactor;
+					baseColor = reinterpret_cast<const math::Vec3f&>(colorDesc);
+				}
+				// Metallic-roughness
+				if(!pbrDesc.metallicRoughnessTexture.empty())
+				{
+					// Load map in linear space!!
+					auto ndx = pbrDesc.metallicRoughnessTexture.index;
+					physics = _textures[ndx];
+				}
+				/*if(pbrDesc.roughnessFactor != 1.f)
+					mat->addParam("uRoughness", pbrDesc.roughnessFactor);
+				if(pbrDesc.metallicFactor != 1.f)
+					mat->addParam("uMetallic", pbrDesc.metallicFactor);*/
+
+			}
+
+			auto mat = std::make_shared<PBRMaterial>(baseColor, albedo, physics, ao);
+			materials.push_back(mat);
+		}
+
+		return materials;
+	}
+
+	//----------------------------------------------------------------------------------------------
+	// TODO: This method assumes the texture is sRGB.
+	// Instead, textures should be loaded on demand, when real color space info is available, or a first pass
+	// should be performed on materials, marking textures with their corresponding color spaces
+	auto loadTextures(const std::string& _assetsFolder, const fx::gltf::Document& _document)
+	{
+		std::vector<std::shared_ptr<PBRMaterial::Sampler>> textures;
+		textures.reserve(_document.textures.size());
+		for(auto& textDesc : _document.textures)
+		{
+			// TODO: Use texture sampler information
+			//auto& sampler = _document.samplers[textDesc.sampler];
+			auto& image = _document.images[textDesc.source];
+			textures.push_back(std::make_shared<PBRMaterial::Sampler>((_assetsFolder + image.uri).c_str()));
+		}
+
+		return textures;
+	}
+}
+
 class Scene
 {
 public:
@@ -46,7 +116,9 @@ public:
 			std::vector<math::Matrix34f> transforms(document.nodes.size());
 			if(!loadTransforms(document, transforms))
 				return;
-			loadMeshes(document, document.meshes);
+			auto textures = loadTextures("", document);
+			auto materials = loadMaterials(document, textures);
+			loadMeshes(document, materials, document.meshes);
 			for(int i = 0; i < document.nodes.size(); ++i)
 			{
 				const auto& node = document.nodes[i];
@@ -61,9 +133,17 @@ public:
 	bool loadTransforms(const fx::gltf::Document& document, std::vector<math::Matrix34f>& transforms)
 	{
 		// Build index of parent nodes
-		std::vector<int> parentIndices(document.nodes.size());
-		for(auto& i : parentIndices)
-			i = -1; // No parent
+		std::vector<int> parentIndices(document.nodes.size(), -1);
+		// First, build hierarchy of nodes
+		// Then, solve transforms
+		for(int i = 0; i < document.nodes.size(); ++i)
+		{
+			auto& node = document.nodes[i];
+			for(auto c : node.children)
+			{
+				parentIndices[c] = i;
+			}
+		}
 		for(int i = 0; i < document.nodes.size(); ++i)
 		{
 			auto& node = document.nodes[i];
@@ -74,12 +154,6 @@ public:
 				xForm = transforms[parent] * xForm;
 			}
 			transforms[i] = xForm;
-			for(auto c : node.children)
-			{
-				if(c < i)
-					return false; // Nodes are expected in depth-first order
-				parentIndices[c] = i;
-			}
 		}
 		return true;
 	}
@@ -94,7 +168,7 @@ public:
 		return xForm*composedXForm;
 	}
 
-	void loadMeshes(const fx::gltf::Document& document, std::vector<fx::gltf::Mesh>& meshes)
+	void loadMeshes(const fx::gltf::Document& document, const std::vector<std::shared_ptr<PBRMaterial>>& materials, std::vector<fx::gltf::Mesh>& meshes)
 	{
 		std::vector<uint8_t> bufferData;
 		loadRawBuffer(document.buffers[0].uri.c_str(), bufferData);
@@ -162,25 +236,9 @@ public:
 				}
 			}
 
-			// Load material
-			auto matDesc = document.materials[primitive.material];
-			// albedo
-			auto albedoTex = matDesc.pbrMetallicRoughness.baseColorTexture;
-			auto albedoMapName = document.images[document.textures[albedoTex.index].source].uri;
-			auto albedoSampler = std::make_shared<PBRMaterial::Sampler>(albedoMapName.c_str());
-			// Physics
-			auto physicsTex = matDesc.pbrMetallicRoughness.metallicRoughnessTexture;
-			auto physicsMapName = document.images[document.textures[physicsTex.index].source].uri;
-			auto physicsSampler = std::make_shared<PBRMaterial::Sampler>(physicsMapName.c_str());
-			// AO
-			auto aoTex = matDesc.occlusionTexture;
-			auto aoMapName = document.images[document.textures[aoTex.index].source].uri;
-			auto aoSampler = std::make_shared<PBRMaterial::Sampler>(aoMapName.c_str());
-			// Material
-			auto material = new PBRMaterial({1.f,1.f,1.f}, albedoSampler, physicsSampler, aoSampler);
 
 			mMeshes.push_back(new TriangleMesh(vertices, indices));
-			mMaterials.push_back(material);
+			mMaterials.push_back(materials[primitive.material]);
 		}
 	}
 
@@ -245,5 +303,5 @@ public:
 private:
 	std::vector<Shape*>	mShapes;
 	std::vector<TriangleMesh*>	mMeshes;
-	std::vector<Material*>	mMaterials;
+	std::vector<std::shared_ptr<Material>>	mMaterials;
 };

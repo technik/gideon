@@ -64,20 +64,33 @@ public:
 	bool scatter(const math::Ray& in, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
 	{
 		//auto ao = aoMap->sample(hit.u, hit.v).r(); // b is metalness
-		auto roughness = physicsMap->sample(hit.u, hit.v).g(); // b is metalness
-		auto target = hit.normal + random.unit_vector();
-		auto reflected = reflect(normalize(in.direction()), hit.normal);
-		auto scatterDir = lerp(reflected, target, roughness);
-		//if(ao > random.scalar()) // Ray didn't get lost in AO
-		//{
-			out = math::Ray(hit.p, scatterDir);
-			if(albedoMap)
-				attenuation = albedoMap->sample(hit.u, hit.v);
-			else
-				attenuation = albedo;
-			return true;
-		//}
-		//else return false; // Ray lost in AO
+		auto roughness = physicsMap ? physicsMap->sample(hit.u, hit.v).g() : 1.f; // b is metalness
+		auto metalness = physicsMap ? physicsMap->sample(hit.u, hit.v).b() : 1.f; // b is metalness
+					
+		math::Vec3f baseColor;
+		if(albedoMap)
+			baseColor = albedoMap->sample(hit.u, hit.v);
+		else
+			baseColor = albedo;
+
+		math::Vec3f specColor = lerp(math::Vec3f(0.04), baseColor, metalness);
+		math::Vec3f diffColor = baseColor*(1.0-metalness);
+
+		math::Vec3f scatterDir;
+		auto diffDir = hit.normal + random.unit_vector();
+		if(random.scalar() > metalness) // Diffuse
+		{
+			attenuation = diffColor;
+			scatterDir = diffDir;
+		} else {// Specular
+			attenuation = specColor;
+			scatterDir = lerp(reflect(normalize(in.direction()), hit.normal), diffDir, roughness);
+		}
+
+		out = math::Ray(hit.p, scatterDir);
+		attenuation = lerp(baseColor, {1.f,1.f,1.f}, metalness);
+
+		return true;
 	}
 
 	math::Vec3f albedo;

@@ -161,9 +161,9 @@ inline TriangleMesh::AABBTree::AABBTree(const std::vector<TriInfo>& triangleList
 		mBoundingVolume.clear();
 		for(auto& t : mTris)
 		{
-			mBoundingVolume.add(t.tri.v[0]);
-			mBoundingVolume.add(t.tri.v[1]);
-			mBoundingVolume.add(t.tri.v[2]);
+			mBoundingVolume.add(t.tri.vtx(0));
+			mBoundingVolume.add(t.tri.vtx(1));
+			mBoundingVolume.add(t.tri.vtx(2));
 		}
 	}
 	else

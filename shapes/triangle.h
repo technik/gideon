@@ -36,6 +36,11 @@ public:
 		const math::Vec3f& v2)
 		: v({v0,v1,v2})
 	{
+		edge0 = v[1]-v[0];
+		edge1 = v[2]-v[1];
+		mNormal = normalize(cross(edge0,edge1));
+
+		mPlaneOffset = dot(v[0],mNormal);
 	}
 
 	bool hit(
@@ -46,20 +51,15 @@ public:
 		float& f0, float& f1 // Interpolation factors along the edges
 	) const
 	{
-		auto edge0 = v[1]-v[0];
-		auto edge1 = v[2]-v[1];
-		auto normal = normalize(cross(edge0,edge1));
-		auto planeOffset = dot(v[0],normal);
-
 		auto p0 = r.at(tMin);
 		auto p1 = r.at(tMax);
 
-		auto offset0 = dot(p0, normal);
-		auto offset1 = dot(p1, normal);
+		auto offset0 = dot(p0, mNormal);
+		auto offset1 = dot(p1, mNormal);
 
-		if((offset0-planeOffset)*(offset1-planeOffset) <= 0.f) // Line segment intersects the plane of the triangle
+		if((offset0-mPlaneOffset)*(offset1-mPlaneOffset) <= 0.f) // Line segment intersects the plane of the triangle
 		{
-			float t = tMin + (tMax-tMin)*(planeOffset-offset0)/(offset1-offset0);
+			float t = tMin + (tMax-tMin)*(mPlaneOffset-offset0)/(offset1-offset0);
 			auto p = r.at(t);
 
 			auto c0 = cross(edge0,p-v[0]);
@@ -84,7 +84,7 @@ public:
 
 					collision.t = t;
 					collision.p = p;
-					collision.normal = normal;
+					collision.normal = mNormal;
 					return true;
 				}
 			}
@@ -93,12 +93,20 @@ public:
 		return false;
 	}
 
-	math::Vec3f normal() const {
-		auto edge0 = v[1]-v[0];
-		auto edge1 = v[2]-v[1];
-		return normalize(cross(edge0,edge1));
+	const math::Vec3f& vtx(size_t i) const
+	{
+		return v[i];
+	}
+
+	const math::Vec3f& normal() const {
+		return mNormal;
 	}
 	math::Vec3f centroid() const { return (v[0]+v[1]+v[2])/3.f; }
 
+private:
 	std::array<math::Vec3f,3> v;
+	math::Vec3f edge0;
+	math::Vec3f edge1;
+	math::Vec3f mNormal;
+	float mPlaneOffset;
 };
