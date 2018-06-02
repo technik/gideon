@@ -91,14 +91,33 @@ private:
 		AABBTree(const std::vector<TriInfo>& triList)
 		{
 			mTris = triList;
-			mRange = {mTris.begin(), mTris.end()};
-			prepareTreeRange(mRange);
+			TriRange range = {mTris.begin(), mTris.end()};
+			mNumElements = mTris.size();
+			prepareTreeRange(range);
 		}
 
 		// Returns index of the bounding volume enclosing the range
 		size_t prepareTreeRange(const TriRange& range, int partitionAxis = 0);
 
 		using Children = std::pair<size_t,size_t>;
+
+		struct TriSet
+		{
+			TriSet() = default;
+			TriSet(const TriRange& range)
+			{
+				for(int i = 0; i < MAX_LEAF_TRIS; ++i)
+				{
+					elements[i].tri = Triangle(math::Vec3f(0.f), math::Vec3f(0.f), math::Vec3f(0.f));
+					elements[i].ndx = -1;
+				}
+				for(int i = 0; i < MAX_LEAF_TRIS; ++i)
+				{
+					elements[i] = *(range.first + i);
+				}
+			}
+			TriInfo elements[MAX_LEAF_TRIS];
+		};
 
 		struct Node
 		{
@@ -116,16 +135,17 @@ private:
 		};
 
 		std::vector<Node> mNodes;
+		std::vector<TriSet> mTriSets;
 
-		TriRange mRange;
+		size_t mNumElements;
 		std::vector<TriInfo> mTris;
 
 
-		bool hit(size_t ndx, const TriRange& range, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const;
+		bool hit(size_t ndx, size_t rangeLen, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const;
 
 		bool hit(const math::Ray & r, float tMin, float tMax, TriangleHit & collision) const
 		{
-			return hit(0, mRange, r, r.implicit() ,tMin,tMax,collision);
+			return hit(0, mNumElements, r, r.implicit() ,tMin,tMax,collision);
 		}
 	};
 
@@ -203,6 +223,8 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 			bbox.add(t->tri.vtx(2));
 		}
 		mNodes.back().maskAsLeaf(); // Mark node as leaf
+		mNodes.back().children.second = mTriSets.size();
+		mTriSets.emplace_back(range);
 	}
 	else // Non-leaf node
 	{
@@ -225,7 +247,7 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 }
 
 //--------------------------------------------------------------------------------------------------
-inline bool TriangleMesh::AABBTree::hit(size_t ndx, const TriRange& range, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const
+inline bool TriangleMesh::AABBTree::hit(size_t ndx, size_t rangeLen, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const
 {
 	auto& node = mNodes[ndx];
 	if(!node.bbox.intersect(ri, tMin, tMax, tMin))
@@ -233,18 +255,17 @@ inline bool TriangleMesh::AABBTree::hit(size_t ndx, const TriRange& range, const
 
 	float t = tMax;
 	TriangleHit tmp_hit;
-	auto rangeLen = (range.second-range.first);
 	if(!node.isLeaf()) // this is not a leaf node
 	{
-		auto middle = range.first + rangeLen/2;
+		auto middle = rangeLen/2;
 		auto& children = node.children;
-		bool hit_a = hit(children.first, {range.first,middle},r,ri,tMin,t,tmp_hit);
+		bool hit_a = hit(children.first, middle,r,ri,tMin,t,tmp_hit);
 		if(hit_a)
 		{
 			collision = tmp_hit;
 			t = tmp_hit.t;
 		}
-		bool hit_b = hit(children.second, {middle,range.second},r,ri,tMin,t,tmp_hit);
+		bool hit_b = hit(children.second, rangeLen-middle,r,ri,tMin,t,tmp_hit);
 		if(hit_b)
 		{
 			collision = tmp_hit;
@@ -255,11 +276,12 @@ inline bool TriangleMesh::AABBTree::hit(size_t ndx, const TriRange& range, const
 	else
 	{
 		bool hit_anything = false;
-		for(auto tri = range.first; tri != range.second; ++tri)
+		auto& set = mTriSets[node.children.second];
+		for(int i = 0; i < rangeLen; ++i)
 		{
 			HitRecord tri_hit;
 			float f0, f1;
-			if(tri->tri.hit(r,tMin,t,tri_hit,f0,f1))
+			if(set.elements[i].tri.hit(r,tMin,t,tri_hit,f0,f1))
 			{
 				collision.pos = tri_hit.p;
 				t = tri_hit.t;
@@ -267,7 +289,7 @@ inline bool TriangleMesh::AABBTree::hit(size_t ndx, const TriRange& range, const
 				collision.f0 = f0;
 				collision.f1 = f1;
 				collision.normal = tri_hit.normal;
-				collision.ndx = tri->ndx;
+				collision.ndx = set.elements[i].ndx;
 				hit_anything = true;
 			}
 		}
