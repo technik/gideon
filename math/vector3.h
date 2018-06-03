@@ -26,6 +26,11 @@
 #include <cmath>
 #include <initializer_list>
 
+#include <xmmintrin.h>
+#include <immintrin.h>
+#include <emmintrin.h>
+#include <zmmintrin.h>
+
 namespace math {
 
 	class Vec3f
@@ -211,4 +216,54 @@ namespace math {
 	{
 		return v * (1/v.norm());
 	}
+
+	//-----------------------------------------------------------------
+	// Explicitly SIMD set of 8 Vec3fs
+	class float8
+	{
+	public:
+		float8() = default;
+		explicit float8(const float* p) {
+			m = _mm256_load_ps(p);
+		}
+
+		explicit float8(const std::array<float,8>& p) {
+			m = _mm256_set_ps(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+		}
+
+		explicit float8(float x) {
+			m = _mm256_set1_ps(x);
+		}
+
+		explicit float8(__m256 x) : m(x) {}
+
+		float8 operator+(const float8& b) const
+		{
+			return float8(_mm256_add_ps(m, b.m));
+		}
+
+		float8 operator-(const float8& b) const
+		{
+			return float8(_mm256_sub_ps(m, b.m));
+		}
+
+		float8 operator*(const float8& b) const
+		{
+			return float8(_mm256_mul_ps(m, b.m));
+		}
+
+		float8 operator/(const float8& b) const
+		{
+			return float8(_mm256_div_ps(m, b.m));
+		}
+
+		// this*b + c;
+		float8 mul_add(const float8& b, const float8& c)
+		{
+			return float8(_mm256_fmadd_ps(m,b.m,c.m));
+		}
+
+	private:
+		__m256 m;
+	};
 }

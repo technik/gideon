@@ -52,7 +52,7 @@ public:
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override;
 
-	static constexpr size_t MAX_LEAF_TRIS = 8;
+	static constexpr size_t MAX_LEAF_TRIS = 2;
 
 private:
 	struct TriInfo {
