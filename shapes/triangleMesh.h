@@ -100,25 +100,35 @@ private:
 
 		using Children = std::pair<size_t,size_t>;
 
+		template<size_t N>
 		struct TriSet
 		{
 			TriSet() = default;
 			TriSet(const TriRange& range)
 			{
-				for(int i = 0; i < MAX_LEAF_TRIS; ++i)
+				for(int i = 0; i < N; ++i)
 				{
 					// Fill in with invalid trianlges
 					triangles[i] = Triangle(math::Vec3f(0.f), math::Vec3f(0.f), math::Vec3f(0.f));
 					indices[i] = -1;
 				}
-				for(int i = 0; i < MAX_LEAF_TRIS; ++i)
+				for(int i = 0; i < N; ++i)
 				{
 					triangles[i] = (range.first+i)->tri;
 					indices[i] = (range.first+i)->ndx;
 				}
 			}
-			Triangle triangles[MAX_LEAF_TRIS];
-			int indices[MAX_LEAF_TRIS];
+
+			Triangle triangles[N];
+			int indices[N];
+
+			int hit(
+				const math::Ray& r,
+				float tMin,
+				float tMax,
+				HitRecord& collision,
+				float& f0, float& f1 // Interpolation factors along the edges
+			) const;
 		};
 
 		struct Node
@@ -137,7 +147,7 @@ private:
 		};
 
 		std::vector<Node> mNodes;
-		std::vector<TriSet> mTriSets;
+		std::vector<TriSet<MAX_LEAF_TRIS>> mTriSets;
 
 		size_t mNumElements;
 
@@ -276,25 +286,93 @@ inline bool TriangleMesh::AABBTree::hit(size_t ndx, size_t rangeLen, const math:
 	}
 	else
 	{
-		bool hit_anything = false;
+		HitRecord tri_hit;
+		float f0, f1;
 		auto& set = mTriSets[node.children.second];
-		for(int i = 0; i < rangeLen; ++i)
+		auto i = set.hit(r,tMin,tMax,tri_hit,f0,f1);
+		if(i >= 0)
 		{
-			HitRecord tri_hit;
-			float f0, f1;
-			if(set.triangles[i].hit(r,tMin,t,tri_hit,f0,f1))
-			{
-				collision.pos = tri_hit.p;
-				t = tri_hit.t;
-				collision.t = t;
-				collision.f0 = f0;
-				collision.f1 = f1;
-				collision.normal = tri_hit.normal;
-				collision.ndx = set.indices[i];
-				hit_anything = true;
-			}
+			collision.pos = tri_hit.p;
+			t = tri_hit.t;
+			collision.t = t;
+			collision.f0 = f0;
+			collision.f1 = f1;
+			collision.normal = tri_hit.normal;
+			collision.ndx = set.indices[i];
+			return true;
 		}
 
-		return hit_anything;
+		return false;
 	}
+}
+
+//--------------------------------------------------------------------------------------------------
+template<size_t N>
+inline int TriangleMesh::AABBTree::TriSet<N>::hit(
+	const math::Ray& r,
+	float tMin,
+	float tMax,
+	HitRecord& collision,
+	float& _f0, float& _f1 // Interpolation factors along the edges
+) const
+{
+	auto p0 = r.at(tMin);
+	auto p1 = r.at(tMax);
+
+	int hit_anything = -1;
+
+	collision.t = tMax;
+
+	for(auto i = 0; i < N; ++i)
+	{
+		auto normal = triangles[i].mNormal;
+		float offset0 = dot(p0, normal);
+		float offset1 = dot(p1, normal);
+		auto mPlaneOffset = triangles[i].mPlaneOffset;
+
+		if((offset0-mPlaneOffset)*(offset1-mPlaneOffset) <= 0.f) // Line segment intersects the plane of the triangle
+		{
+			float t = tMin + (tMax-tMin)*(mPlaneOffset-offset0)/(offset1-offset0);
+			auto p = r.at(t);
+
+			auto edge0 = triangles[i].edge0;
+			auto edge1 = triangles[i].edge1;
+			auto v0 = triangles[i].v[0];
+			auto v1 = triangles[i].v[1];
+			auto c0 = cross(edge0,p-v0);
+			auto c1 = cross(edge1,p-v1);
+			if(dot(c0,c1) >= 0.f)
+			{
+				auto v2 = triangles[i].v[2];
+				auto edge2 = v0-v2;
+				auto c2 = cross(edge2,p-v2);
+				if(dot(c1,c2) >= 0.f)
+				{
+					// Get an orthogonal basis in the triangle
+					auto e1ProjE0 = dot(edge1,edge0)/edge0.sqNorm();// Horizontal projection of edge1 over edge 0
+					auto orthoE1 = edge1 - e1ProjE0*edge0; // V2' to V2
+					float f1 = 1 - dot(orthoE1,v2-p)/orthoE1.sqNorm();
+					float f0;
+					if(f1 >= 1.f-1e-6f)
+						f0 = 0.f;
+					else
+					{
+						auto pp = v2 + (p-v2)/(1.f-f1);
+						f0 = (pp-v0).norm() / edge0.norm();
+					}
+
+					if(t < collision.t) {
+						_f0 = f0;
+						_f1 = f1;
+						collision.t = t;
+						collision.p = p;
+						collision.normal = normal;
+						hit_anything = i;
+					}
+				}
+			}
+		}
+	}
+
+	return hit_anything;
 }

@@ -103,7 +103,7 @@ public:
 	}
 	math::Vec3f centroid() const { return (v[0]+v[1]+v[2])/3.f; }
 
-private:
+//private:
 	std::array<math::Vec3f,3> v;
 	math::Vec3f edge0;
 	math::Vec3f edge1;
