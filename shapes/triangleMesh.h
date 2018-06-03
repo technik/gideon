@@ -114,7 +114,10 @@ private:
 				}
 				for(int i = 0; i < N; ++i)
 				{
-					v[i] =  (range.first+i)->tri.v;
+					auto v =  (range.first+i)->tri.v;
+					mV0[i] = v[0];
+					mV1[i] = v[1];
+					mV2[i] = v[2];
 					mEdge0[i] =  (range.first+i)->tri.edge0;
 					mEdge1[i] =  (range.first+i)->tri.edge1;
 					mNormal[i] =  (range.first+i)->tri.mNormal;
@@ -123,7 +126,9 @@ private:
 				}
 			}
 
-			std::array<math::Vec3f,3> v[N];
+			math::Vec3f mV0[N];
+			math::Vec3f mV1[N];
+			math::Vec3f mV2[N];
 			math::Vec3f mEdge0[N];
 			math::Vec3f mEdge1[N];
 			math::Vec3f mNormal[N];
@@ -345,13 +350,13 @@ inline int TriangleMesh::AABBTree::TriSet<N>::hit(
 
 			auto edge0 = mEdge0[i];
 			auto edge1 = mEdge1[i];
-			auto v0 = v[i][0];
-			auto v1 = v[i][1];
+			auto v0 = mV0[i];
+			auto v1 = mV1[i];
 			auto c0 = cross(edge0,p-v0);
 			auto c1 = cross(edge1,p-v1);
 			if(dot(c0,c1) >= 0.f)
 			{
-				auto v2 = v[i][2];
+				auto v2 = mV2[i];
 				auto edge2 = v0-v2;
 				auto c2 = cross(edge2,p-v2);
 				if(dot(c1,c2) >= 0.f)
