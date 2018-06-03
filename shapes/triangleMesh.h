@@ -109,17 +109,25 @@ private:
 				for(int i = 0; i < N; ++i)
 				{
 					// Fill in with invalid trianlges
-					triangles[i] = Triangle(math::Vec3f(0.f), math::Vec3f(0.f), math::Vec3f(0.f));
+					mPlaneOffset[i] = std::numeric_limits<float>::infinity();
 					indices[i] = -1;
 				}
 				for(int i = 0; i < N; ++i)
 				{
-					triangles[i] = (range.first+i)->tri;
+					v[i] =  (range.first+i)->tri.v;
+					mEdge0[i] =  (range.first+i)->tri.edge0;
+					mEdge1[i] =  (range.first+i)->tri.edge1;
+					mNormal[i] =  (range.first+i)->tri.mNormal;
+					mPlaneOffset[i] =  (range.first+i)->tri.mPlaneOffset;
 					indices[i] = (range.first+i)->ndx;
 				}
 			}
 
-			Triangle triangles[N];
+			std::array<math::Vec3f,3> v[N];
+			math::Vec3f mEdge0[N];
+			math::Vec3f mEdge1[N];
+			math::Vec3f mNormal[N];
+			float mPlaneOffset[N];
 			int indices[N];
 
 			int hit(
@@ -325,25 +333,25 @@ inline int TriangleMesh::AABBTree::TriSet<N>::hit(
 
 	for(auto i = 0; i < N; ++i)
 	{
-		auto normal = triangles[i].mNormal;
+		auto normal = mNormal[i];
 		float offset0 = dot(p0, normal);
 		float offset1 = dot(p1, normal);
-		auto mPlaneOffset = triangles[i].mPlaneOffset;
+		auto planeOffset = mPlaneOffset[i];
 
-		if((offset0-mPlaneOffset)*(offset1-mPlaneOffset) <= 0.f) // Line segment intersects the plane of the triangle
+		if((offset0-planeOffset)*(offset1-planeOffset) <= 0.f) // Line segment intersects the plane of the triangle
 		{
-			float t = tMin + (tMax-tMin)*(mPlaneOffset-offset0)/(offset1-offset0);
+			float t = tMin + (tMax-tMin)*(planeOffset-offset0)/(offset1-offset0);
 			auto p = r.at(t);
 
-			auto edge0 = triangles[i].edge0;
-			auto edge1 = triangles[i].edge1;
-			auto v0 = triangles[i].v[0];
-			auto v1 = triangles[i].v[1];
+			auto edge0 = mEdge0[i];
+			auto edge1 = mEdge1[i];
+			auto v0 = v[i][0];
+			auto v1 = v[i][1];
 			auto c0 = cross(edge0,p-v0);
 			auto c1 = cross(edge1,p-v1);
 			if(dot(c0,c1) >= 0.f)
 			{
-				auto v2 = triangles[i].v[2];
+				auto v2 = v[i][2];
 				auto edge2 = v0-v2;
 				auto c2 = cross(edge2,p-v2);
 				if(dot(c1,c2) >= 0.f)
