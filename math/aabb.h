@@ -122,4 +122,58 @@ namespace math
 		Vector mMin;
 		Vector mMax;
 	};
+
+	/// Axis aligned bounding box, SIMD version
+	struct AABBSimd {
+		using Vector = float4;
+
+		// Constructors
+		AABBSimd() = default;
+		AABBSimd(const Vec3f& _min, const Vec3f& _max)
+			: mMin(_min.x(),_min.y(),_min.z(),0.f)
+			, mMax(_max.x(),_max.y(),_max.z(),1.f)
+		{ }
+
+		AABBSimd(const AABBSimd& a, const AABBSimd& b)
+			: mMin(math::min(a.mMin,b.mMin))
+			, mMax(math::max(a.mMax,b.mMax))
+		{
+		}
+
+		// Size, position and volume
+		/// Make the Box empty
+		void clear() {
+			mMin = Vector(_mm_set_ps1(std::numeric_limits<float>::infinity()));
+			mMax = Vector(_mm_set_ps1(-std::numeric_limits<float>::infinity()));
+		}
+
+		bool empty() const {
+			return float4(mMax <= mMin).any();
+		}
+
+		void add(const Vector& v)
+		{
+			mMin = math::min(mMin, v);
+			mMax = math::max(mMax, v);
+		}
+
+		const Vector& min() const { return mMin; }
+		const Vector& max() const { return mMax; }
+		Vector size() const { return mMax - mMin; }
+
+		/// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
+		/// Also, store the minimun intersection distance into _tout
+		bool intersect(const Ray::ImplicitSimd& _r, float& _tout) const {
+			Vector t1 = mMin * _r.n + _r.o;
+			Vector t2 = mMax * _r.n + _r.o;
+			auto tMax = math::max(t1,t2); // vmax, tmax
+			auto tMin = math::min(t1,t2); // vmin, tmin
+			_tout = tMin.hMax();
+			float closestMax =tMax.hMin();
+			return closestMax >= _tout;
+		}
+	private:
+		Vector mMin;
+		Vector mMax;
+	};
 }

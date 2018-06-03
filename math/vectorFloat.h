@@ -28,6 +28,7 @@
 #include <zmmintrin.h>
 
 #include <array>
+#include "vector3.h"
 
 namespace math
 {
@@ -39,7 +40,11 @@ namespace math
 		float4() = default;
 
 		explicit float4(const std::array<float,4>& x) {
-			m = _mm_set_ps(x[0], x[1], x[2], x[3]);
+			m = _mm_set_ps(x[3], x[2], x[1], x[0]);
+		}
+
+		explicit float4(float x, float y, float z, float w) {
+			m = _mm_set_ps(w, z, y, x);
 		}
 
 		explicit float4(float x)
@@ -74,13 +79,101 @@ namespace math
 			return _mm_movemask_ps(m) != 0;
 		}
 
-	private:
+		bool none() const
+		{
+			return _mm_movemask_ps(m) == 0;
+		}
+
+		bool all() const
+		{
+			return _mm_movemask_ps(m) == -1;
+		}
+
+		template<uint8_t a, uint8_t b, uint8_t c, uint8_t d>
+		float4 shuffle() const
+		{
+			constexpr int mask = (d<<6)|(c<<4)|(b<<2)|a;
+			return float4(_mm_permute_ps(m,mask));
+		}
+
+		float hMin() const;
+		float hMax() const;
+
+		float x() const {
+			return _mm_cvtss_f32(m);
+		}
+
 		__m128 m;
 	};
 
+	inline auto min(float4 a, float4 b)
+	{
+		return float4(_mm_min_ps(a.m,b.m));
+	}
+
+	inline auto max(float4 a, float4 b)
+	{
+		return float4(_mm_max_ps(a.m,b.m));
+	}
+
+	float float4::hMin() const
+	{
+		float4 v = min(*this, shuffle<2,3,0,1>());
+		v = min(v,v.shuffle<1,0,3,2>());
+		return v.x();
+	}
+
+	float float4::hMax() const
+	{
+		float4 v = max(*this, shuffle<2,3,0,0>());
+		v = max(v,v.shuffle<1,0,0,0>());
+		return v.x();
+	}
+
 	//-----------------------------------------------------------------
+	// A single vec3 implemented using simd packed 4 floats
 	class VecSimd3f
-	{};
+	{
+	public:
+		VecSimd3f() = default;
+		explicit VecSimd3f(Vec3f v)
+			: m( _mm_set_ps(v.x(),v.y(),v.z(),v.z()) )
+		{}
+
+		explicit VecSimd3f(__m128 x) : m(x) {}
+
+		VecSimd3f operator+(const VecSimd3f& b) const {
+			return VecSimd3f(_mm_add_ps(m, b.m));
+		}
+
+		VecSimd3f operator-(const VecSimd3f& b) const {
+			return VecSimd3f(_mm_sub_ps(m, b.m));
+		}
+
+		VecSimd3f operator*(const VecSimd3f& b) const {
+			return VecSimd3f(_mm_mul_ps(m, b.m));
+		}
+
+		void operator=(VecSimd3f b) { m = b.m; }
+
+		__m128 operator<=(VecSimd3f b) const {
+			return _mm_cmple_ps(m,b.m);
+		}
+
+		bool operator==(VecSimd3f b) { return float4(_mm_cmpeq_ps(m, b.m)).all(); }
+
+		__m128 m;
+	};
+
+	inline auto min(VecSimd3f a, VecSimd3f b)
+	{
+		return VecSimd3f(_mm_min_ps(a.m,b.m));
+	}
+
+	inline auto max(VecSimd3f a, VecSimd3f b)
+	{
+		return VecSimd3f(_mm_max_ps(a.m,b.m));
+	}
 
 	//-----------------------------------------------------------------
 	// Explicitly SIMD set of 8 Vec3fs

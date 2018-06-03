@@ -50,8 +50,8 @@ namespace math
 
 		struct ImplicitSimd
 		{
-			VecSimd3f o; // -origin/dir
-			VecSimd3f n; // 1 / dir
+			float4 o; // -origin/dir
+			float4 n; // 1 / dir
 		};
 
 		// Compute an implicit representation of the ray. Useful for batched intersection tests.
@@ -69,8 +69,23 @@ namespace math
 			return Implicit{origin, invDir};
 		}
 
-		ImplicitSimd implicitSimd() const {
-
+		ImplicitSimd implicitSimd(float tMin, float tMax) const {
+			auto nonSimd = implicit();
+			// The trick of storing tMin and tMax inside the implicit vector
+			// saves shuffle instructions, but requires tMax and tMin's last component to
+			// be properly setup
+			return ImplicitSimd{
+				float4(
+					nonSimd.o.x(),
+					nonSimd.o.y(),
+					nonSimd.o.z(),
+					tMin),
+				float4(
+					nonSimd.n.x(),
+					nonSimd.n.y(),
+					nonSimd.n.z(),
+					tMax-tMin)
+			};
 		}
 
 	private:
