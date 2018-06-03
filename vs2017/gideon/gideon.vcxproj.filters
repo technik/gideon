@@ -98,5 +98,8 @@
     <ClInclude Include="..\..\math\linear.h">
       <Filter>src\math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\math\vectorFloat.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

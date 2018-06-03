@@ -23,6 +23,7 @@
 #pragma once
 
 #include "vector3.h"
+#include "vectorFloat.h"
 
 namespace math
 {
@@ -47,6 +48,12 @@ namespace math
 			Vec3f n; // 1 / dir
 		};
 
+		struct ImplicitSimd
+		{
+			VecSimd3f o; // -origin/dir
+			VecSimd3f n; // 1 / dir
+		};
+
 		// Compute an implicit representation of the ray. Useful for batched intersection tests.
 		Implicit implicit() const {
 			Vec3f invDir(
@@ -60,6 +67,10 @@ namespace math
 				mDirection.z() ? -mOrigin.z() * invDir.z() : 0.f
 			);
 			return Implicit{origin, invDir};
+		}
+
+		ImplicitSimd implicitSimd() const {
+
 		}
 
 	private:
