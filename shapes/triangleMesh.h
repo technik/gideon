@@ -107,15 +107,18 @@ private:
 			{
 				for(int i = 0; i < MAX_LEAF_TRIS; ++i)
 				{
-					elements[i].tri = Triangle(math::Vec3f(0.f), math::Vec3f(0.f), math::Vec3f(0.f));
-					elements[i].ndx = -1;
+					// Fill in with invalid trianlges
+					triangles[i] = Triangle(math::Vec3f(0.f), math::Vec3f(0.f), math::Vec3f(0.f));
+					indices[i] = -1;
 				}
 				for(int i = 0; i < MAX_LEAF_TRIS; ++i)
 				{
-					elements[i] = *(range.first + i);
+					triangles[i] = (range.first+i)->tri;
+					indices[i] = (range.first+i)->ndx;
 				}
 			}
-			TriInfo elements[MAX_LEAF_TRIS];
+			Triangle triangles[MAX_LEAF_TRIS];
+			int indices[MAX_LEAF_TRIS];
 		};
 
 		struct Node
@@ -279,7 +282,7 @@ inline bool TriangleMesh::AABBTree::hit(size_t ndx, size_t rangeLen, const math:
 		{
 			HitRecord tri_hit;
 			float f0, f1;
-			if(set.elements[i].tri.hit(r,tMin,t,tri_hit,f0,f1))
+			if(set.triangles[i].hit(r,tMin,t,tri_hit,f0,f1))
 			{
 				collision.pos = tri_hit.p;
 				t = tri_hit.t;
@@ -287,7 +290,7 @@ inline bool TriangleMesh::AABBTree::hit(size_t ndx, size_t rangeLen, const math:
 				collision.f0 = f0;
 				collision.f1 = f1;
 				collision.normal = tri_hit.normal;
-				collision.ndx = set.elements[i].ndx;
+				collision.ndx = set.indices[i];
 				hit_anything = true;
 			}
 		}
