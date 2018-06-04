@@ -146,7 +146,7 @@ private:
 
 		struct Node
 		{
-			math::AABB bbox;
+			math::AABBSimd bbox;
 			Children children;
 
 			bool isLeaf() const { 
@@ -165,11 +165,11 @@ private:
 		size_t mNumElements;
 
 
-		bool hit(size_t ndx, size_t rangeLen, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const;
+		bool hit(size_t ndx, size_t rangeLen, const math::Ray & r, const math::Ray::ImplicitSimd & ri, float tMin, float tMax, TriangleHit & collision) const;
 
 		bool hit(const math::Ray & r, float tMin, float tMax, TriangleHit & collision) const
 		{
-			return hit(0, mNumElements, r, r.implicit() ,tMin,tMax,collision);
+			return hit(0, mNumElements, r, r.implicitSimd() ,tMin,tMax,collision);
 		}
 	};
 
@@ -242,9 +242,9 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 		bbox.clear();
 		for(auto t = range.first; t != range.second; ++t)
 		{
-			bbox.add(t->tri.vtx(0));
-			bbox.add(t->tri.vtx(1));
-			bbox.add(t->tri.vtx(2));
+			bbox.add(math::float4(t->tri.vtx(0)));
+			bbox.add(math::float4(t->tri.vtx(1)));
+			bbox.add(math::float4(t->tri.vtx(2)));
 		}
 		mNodes.back().maskAsLeaf(); // Mark node as leaf
 		mNodes.back().children.second = mTriSets.size();
@@ -263,7 +263,7 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 		auto a = prepareTreeRange({sortedList.first, middle}, (partitionAxis+1)%3);
 		auto b = prepareTreeRange({middle, sortedList.second }, (partitionAxis+1)%3);
 		mNodes[ndx] = {
-			math::AABB(mNodes[a].bbox, mNodes[b].bbox),
+			math::AABBSimd(mNodes[a].bbox, mNodes[b].bbox),
 			{a,b}
 		};
 	}
@@ -271,7 +271,7 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 }
 
 //--------------------------------------------------------------------------------------------------
-inline bool TriangleMesh::AABBTree::hit(size_t ndx, size_t rangeLen, const math::Ray & r, const math::Ray::Implicit & ri, float tMin, float tMax, TriangleHit & collision) const
+inline bool TriangleMesh::AABBTree::hit(size_t ndx, size_t rangeLen, const math::Ray & r, const math::Ray::ImplicitSimd & ri, float tMin, float tMax, TriangleHit & collision) const
 {
 	auto& node = mNodes[ndx];
 	if(!node.bbox.intersect(ri, tMin, tMax, tMin))
