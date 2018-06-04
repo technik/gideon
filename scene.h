@@ -295,6 +295,7 @@ public:
 		return hit_anything;
 	}
 
+	Camera* camera = nullptr;
 private:
 	std::vector<Shape*>	mShapes;
 	std::vector<TriangleMesh*>	mMeshes;
