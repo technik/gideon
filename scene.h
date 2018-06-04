@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
+#include <camera/frustumCamera.h>
 #include <math/aabb.h>
 #include <math/vector3.h>
 #include <math/quaterrnion.h>
@@ -119,12 +120,32 @@ public:
 	Scene(const char* gltfFileName)
 	{
 		fx::gltf::Document document = fx::gltf::LoadFromText(gltfFileName);
+		std::vector<math::Matrix34f> transforms(document.nodes.size());
+
+		if(!loadTransforms(document, transforms))
+			return;
+
+		// Optionally load a camera
+		if(!document.cameras.empty())
+		{
+			int nodeNdx = 0;
+			for(auto& node : document.nodes)
+			{
+				if(node.camera == 0)
+				{
+					auto& camDesc = document.cameras[nodeNdx];
+					auto xForm = transforms[nodeNdx];
+					auto pos = xForm.transformPos(math::Vec3f(0.f));
+					auto lookDir = xForm.transformDir({0.f,0.f,-1.f});
+					auto aspectRatio = camDesc.perspective.aspectRatio;
+					camera = new FrustumCamera(pos, pos+lookDir, camDesc.perspective.yfov * aspectRatio, aspectRatio);
+					break;
+				}
+			}
+		}
 
 		if(document.scene >= 0)
 		{
-			std::vector<math::Matrix34f> transforms(document.nodes.size());
-			if(!loadTransforms(document, transforms))
-				return;
 			auto folder = getFolder(gltfFileName);
 			auto textures = loadTextures(folder, document);
 			auto materials = loadMaterials(document, textures);
@@ -154,14 +175,22 @@ public:
 				parentIndices[c] = i;
 			}
 		}
+		// Read local transforms
+		std::vector<math::Matrix34f> localTransforms(document.nodes.size());
 		for(int i = 0; i < document.nodes.size(); ++i)
 		{
 			auto& node = document.nodes[i];
-			auto xForm = readTransform(node);
+			localTransforms[i] = readTransform(node);
+		}
+		// Iterate over parent transforms
+		for(int i = 0; i < document.nodes.size(); ++i)
+		{
+			auto xForm = localTransforms[i];
 			auto parent = parentIndices[i];
-			if(parent >= 0)
+			while(parent >= 0)
 			{
-				xForm = transforms[parent] * xForm;
+				xForm = localTransforms[parent] * xForm;
+				parent = parentIndices[parent];
 			}
 			transforms[i] = xForm;
 		}

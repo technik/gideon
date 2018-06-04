@@ -317,7 +317,7 @@ int main(int _argc, const char** _argv)
 		Vec3f camLookAt { 0.f, 0.f, 0.f };
 		//Vec3f camPos { 0.f, 0.0f, 0.f};
 		//Vec3f camLookAt { 0.f, 0.f, -1.f };
-		cam = new FrustumCamera(camPos, camLookAt, 3.14159f*params.fov/180, size.x1, size.y1);
+		cam = new FrustumCamera(camPos, camLookAt, 3.14159f*params.fov/180, float(size.x1)/size.y1);
 	}
 
 	// Divide the image in tiles that can be consumed as jobs
