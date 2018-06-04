@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
+#include <math/vector2.h>
 #include <math/vector3.h>
 
 class Material;
@@ -32,5 +33,5 @@ struct HitRecord
 	math::Vec3f p;
 	float t;
 	math::Vec3f normal;
-	float u, v;
+	math::Vec2f uv;
 };

@@ -35,6 +35,7 @@
     <ClInclude Include="..\..\math\quaterrnion.h" />
     <ClInclude Include="..\..\math\ray.h" />
     <ClInclude Include="..\..\math\rectangle.h" />
+    <ClInclude Include="..\..\math\vector2.h" />
     <ClInclude Include="..\..\math\vector3.h" />
     <ClInclude Include="..\..\math\vectorFloat.h" />
     <ClInclude Include="..\..\random.h" />

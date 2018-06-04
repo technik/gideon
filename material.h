@@ -69,12 +69,13 @@ public:
 	bool scatter(const math::Ray& in, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
 	{
 		//auto ao = aoMap->sample(hit.u, hit.v).r(); // b is metalness
-		auto roughness = physicsMap ? physicsMap->sample(hit.u, hit.v).g() : 1.f; // b is metalness
-		auto metalness = physicsMap ? physicsMap->sample(hit.u, hit.v).b() : 1.f; // b is metalness
+		auto physics = physicsMap ? physicsMap->sample(hit.uv) : math::Vec3f(1.f);
+		auto roughness = physics.g();
+		auto metalness = physics.b();
 					
 		math::Vec3f baseColor;
 		if(albedoMap)
-			baseColor = albedoMap->sample(hit.u, hit.v);
+			baseColor = albedoMap->sample(hit.uv);
 		else
 			baseColor = albedo;
 

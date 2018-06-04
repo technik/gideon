@@ -103,6 +103,15 @@ namespace {
 	}
 }
 
+inline std::string getFolder(const std::string& path)
+{
+	auto pos = path.find_last_of("\\/");
+	if (pos != std::string::npos)
+		return path.substr(0, pos+1);
+
+	return "";
+}
+
 class Scene
 {
 public:
@@ -116,9 +125,10 @@ public:
 			std::vector<math::Matrix34f> transforms(document.nodes.size());
 			if(!loadTransforms(document, transforms))
 				return;
-			auto textures = loadTextures("", document);
+			auto folder = getFolder(gltfFileName);
+			auto textures = loadTextures(folder, document);
 			auto materials = loadMaterials(document, textures);
-			loadMeshes(document, materials, document.meshes);
+			loadMeshes(folder, document, materials, document.meshes);
 			for(int i = 0; i < document.nodes.size(); ++i)
 			{
 				const auto& node = document.nodes[i];
@@ -168,74 +178,59 @@ public:
 		return xForm*composedXForm;
 	}
 
-	void loadMeshes(const fx::gltf::Document& document, const std::vector<std::shared_ptr<PBRMaterial>>& materials, std::vector<fx::gltf::Mesh>& meshes)
+	template<class T, class TRead = T>
+	std::vector<T> readAttribute(const fx::gltf::Document& document, const std::vector<uint8_t>& bufferData, uint32_t accessorNdx)
+	{
+		static_assert(sizeof(T) >= sizeof(TRead), "T can not contain TRead. Indices would be truncated");
+		auto& accessor = document.accessors[accessorNdx];
+		auto byteOffset = accessor.byteOffset;
+		auto count = accessor.count;
+		auto& bv = document.bufferViews[accessor.bufferView];
+		auto viewData = &bufferData[bv.byteOffset];
+		
+		std::vector<T> data(count);
+		auto stride = std::max<uint32_t>(bv.byteStride, sizeof(TRead));
+		for(size_t i = 0; i < count; ++i)
+		{
+			data[i] = reinterpret_cast<const TRead&>(viewData[stride*i+byteOffset]);
+		}
+
+		return data;
+	}
+
+	std::vector<uint16_t> readIndices(const fx::gltf::Document& document, const std::vector<uint8_t>& bufferData, uint32_t accessorNdx)
+	{
+		auto& accessor = document.accessors[accessorNdx];
+		if(accessor.componentType == fx::gltf::Accessor::ComponentType::UnsignedByte)
+			return readAttribute<uint16_t,uint8_t>(document, bufferData, accessorNdx);
+		else 
+			return readAttribute<uint16_t>(document, bufferData, accessorNdx);
+	}
+
+	void loadMeshes(const std::string& _assetsFolder, const fx::gltf::Document& document, const std::vector<std::shared_ptr<PBRMaterial>>& materials, std::vector<fx::gltf::Mesh>& meshes)
 	{
 		std::vector<uint8_t> bufferData;
-		loadRawBuffer(document.buffers[0].uri.c_str(), bufferData);
+		loadRawBuffer((_assetsFolder+document.buffers[0].uri).c_str(), bufferData);
 
 		for(auto& meshDesc : meshes)
 		{
 			auto& primitive = meshDesc.primitives[0];
 			auto& idxAccessor = document.accessors[primitive.indices];
 
-			std::vector<size_t> indices;
-			{
-				auto byteOffset = idxAccessor.byteOffset;
-				auto count = idxAccessor.count;
-				auto& bv = document.bufferViews[idxAccessor.bufferView];
-				auto viewData = &bufferData[bv.byteOffset];
-				indices.resize(count);
-				for(size_t i = 0; i < count; ++i)
-				{
-					indices[i] = reinterpret_cast<uint16_t&>(viewData[2*i+byteOffset]);
-				}
-			}
+			auto indices = readIndices(document, bufferData, primitive.indices);
+			auto position = readAttribute<math::Vec3f>(document, bufferData, primitive.attributes["POSITION"]);
+			auto normals = readAttribute<math::Vec3f>(document, bufferData, primitive.attributes["NORMAL"]);
+			auto uvs = readAttribute<math::Vec2f>(document, bufferData, primitive.attributes["TEXCOORD_0"]);
 
-			auto& posAccessor = document.accessors[primitive.attributes["POSITION"]];
 			using Vtx = TriangleMesh::VtxInfo;
-			std::vector<Vtx> vertices;
+			std::vector<Vtx> vertices(position.size());
+			for(size_t i = 0; i < vertices.size(); ++i)
 			{
-				auto byteOffset = posAccessor.byteOffset;
-				auto count = posAccessor.count;
-				auto& bv = document.bufferViews[posAccessor.bufferView];
-				auto stride = bv.byteStride ? bv.byteStride : 12; // Assume tightly packed vec3fs
-				auto viewData = &bufferData[bv.byteOffset];
-				vertices.resize(count);
-				for(size_t i = 0; i < count; ++i)
-				{
-					vertices[i].position = reinterpret_cast<math::Vec3f&>(viewData[stride*i+byteOffset]);
-				}
+				auto& v = vertices[i];
+				v.position = position[i];
+				v.normal = normals[i];
+				v.uv = uvs[i];
 			}
-			// uvs
-			auto& uvAccessor = document.accessors[primitive.attributes["TEXCOORD_0"]];
-			{
-				auto byteOffset = uvAccessor.byteOffset;
-				auto count = uvAccessor.count;
-				auto& bv = document.bufferViews[uvAccessor.bufferView];
-				auto stride = bv.byteStride ? bv.byteStride : 8; // Assume tightly packed vec2fs
-				auto viewData = &bufferData[bv.byteOffset];
-				vertices.resize(count);
-				for(size_t i = 0; i < count; ++i)
-				{
-					vertices[i].u = reinterpret_cast<float&>(viewData[stride*i+byteOffset+0]);
-					vertices[i].v = -reinterpret_cast<float&>(viewData[stride*i+byteOffset+4]);
-				}
-			}
-			// normals
-			auto& nrmAccessor = document.accessors[primitive.attributes["NORMAL"]];
-			{
-				auto byteOffset = nrmAccessor.byteOffset;
-				auto count = nrmAccessor.count;
-				auto& bv = document.bufferViews[nrmAccessor.bufferView];
-				auto stride = bv.byteStride ? bv.byteStride : 12; // Assume tightly packed vec2fs
-				auto viewData = &bufferData[bv.byteOffset];
-				vertices.resize(count);
-				for(size_t i = 0; i < count; ++i)
-				{
-					vertices[i].normal = reinterpret_cast<math::Vec3f&>(viewData[stride*i+byteOffset]);
-				}
-			}
-
 
 			mMeshes.push_back(new TriangleMesh(vertices, indices));
 			mMaterials.push_back(materials[primitive.material]);

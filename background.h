@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
+#include <math/vector2.h>
 #include <math/vector3.h>
 #include <textures/image.h>
 #include <textures/textureSampler.h>
@@ -65,18 +66,19 @@ public:
 	math::Vec3f sample(const math::Vec3f& direction) const override
 	{
 		// Transform direction into uv coordinates
-		float u, v;
-		sampleSpherical(direction, u, v);
-		return mSampler.sample(u,v);
+		auto uv = sampleSpherical(direction);
+		return mSampler.sample(uv);
 	}
 
 private:
 	using Sampler = BilinearTextureSampler<RepeatWrap,ClampWrap>;
 
-	void sampleSpherical(const math::Vec3f& dir, float& u, float& v) const
+	math::Vec2f sampleSpherical(const math::Vec3f& dir) const
 	{
-		u = atan2(dir.z(), -dir.x()) * 0.1591f + 0.5f;
-		v = asin(dir.y()) * 0.3183f + 0.5f;
+		return {
+			atan2(dir.z(), -dir.x()) * 0.1591f + 0.5f,
+			asin(dir.y()) * 0.3183f + 0.5f
+		};
 	}
 
 	Sampler mSampler;

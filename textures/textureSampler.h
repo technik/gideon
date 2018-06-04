@@ -26,6 +26,7 @@
 #include <cmath>
 #include "image.h"
 #include <math/linear.h>
+#include <math/vector2.h>
 #include <math/vector3.h>
 #include <memory>
 
@@ -52,11 +53,11 @@ public:
 	{}
 
 	/// Texture coordinates start at the upper left corner
-	math::Vec3f sample(float u, float v) const
+	math::Vec3f sample(const math::Vec2f& uv) const
 	{
 		// transform u-v coordinates into image space (pixel units)
-		auto s = u*nx;
-		auto t = (1-v)*ny;
+		auto s = uv.x()*nx;
+		auto t = (1-uv.y())*ny;
 		auto s0 = floor(s);
 		auto t0 = floor(t);
 		auto s1 = s0+1;

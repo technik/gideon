@@ -101,5 +101,8 @@
     <ClInclude Include="..\..\math\vectorFloat.h">
       <Filter>src\math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\math\vector2.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

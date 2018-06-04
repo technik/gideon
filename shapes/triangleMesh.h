@@ -25,6 +25,7 @@
 #include <cassert>
 #include <vector>
 #include <material.h>
+#include <math/vector2.h>
 #include <math/vector3.h>
 #include <math/aabb.h>
 #include "shape.h"
@@ -40,7 +41,7 @@ public:
 	{
 		math::Vec3f position;
 		math::Vec3f normal;
-		float u, v;
+		math::Vec2f uv;
 
 		VtxInfo lerp(const VtxInfo& b, float x) const;
 	};
@@ -77,8 +78,7 @@ private:
 		auto a = v0.lerp(v1,tri.f0);
 		auto res = a.lerp(v2,tri.f1);
 		
-		hit.u = res.u;
-		hit.v = res.v;
+		hit.uv = res.uv;
 		hit.normal = res.normal;
 		hit.normal.normalize();
 	}
@@ -186,8 +186,7 @@ TriangleMesh::VtxInfo TriangleMesh::VtxInfo::lerp(const VtxInfo& b, float x) con
 	auto x0 = 1-x;
 	res.position = position*x0+b.position*x;
 	res.normal = math::lerp(normal,b.normal, x);
-	res.u = u*x0+b.u*x;
-	res.v = v*x0+b.v*x;
+	res.uv = math::lerp(uv,b.uv, x);
 	return res;
 }
 
