@@ -130,8 +130,8 @@ namespace math
 		// Constructors
 		AABBSimd() = default;
 		AABBSimd(const Vec3f& _min, const Vec3f& _max)
-			: mMin(_min.x(),_min.y(),_min.z(),0.f)
-			, mMax(_max.x(),_max.y(),_max.z(),1.f)
+			: mMin(_min.x(),_min.y(),_min.z(),_min.z())
+			, mMax(_max.x(),_max.y(),_max.z(),_max.z())
 		{ }
 
 		AABBSimd(const AABBSimd& a, const AABBSimd& b)
@@ -163,14 +163,15 @@ namespace math
 
 		/// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
 		/// Also, store the minimun intersection distance into _tout
-		bool intersect(const Ray::ImplicitSimd& _r, float& _tout) const {
-			Vector t1 = mMin * _r.n + _r.o;
-			Vector t2 = mMax * _r.n + _r.o;
-			auto tMax = math::max(t1,t2); // vmax, tmax
-			auto tMin = math::min(t1,t2); // vmin, tmin
-			_tout = tMin.hMax();
-			float closestMax =tMax.hMin();
-			return closestMax >= _tout;
+		bool intersect(const Ray::ImplicitSimd& _r, float _t0, float _t1, float& _tCollide) const {
+			Vector t1 = (mMin - _r.o) * _r.n;
+			Vector t2 = (mMax - _r.o) * _r.n;
+			// Swapping the order of comparison is important because of NaN behavior and SSE
+			auto tEnter = math::min(t2,t1); // Enters
+			_tCollide = std::max(_t0, tEnter.hMax()); // Furthest enter
+			auto tExit = math::max(t1,t2); // Exits
+			float closestExit = std::min(_t1, tExit.hMin());
+			return closestExit >= _tCollide;
 		}
 	private:
 		Vector mMin;

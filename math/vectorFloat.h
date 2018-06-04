@@ -47,6 +47,11 @@ namespace math
 			m = _mm_set_ps(w, z, y, x);
 		}
 
+		explicit float4(Vec3f v)
+		{
+			m = _mm_set_ps(v.z(), v.z(), v.y(), v.x());
+		}
+
 		explicit float4(float x)
 		{
 			m = _mm_set_ps1(x);

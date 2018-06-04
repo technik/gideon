@@ -69,23 +69,18 @@ namespace math
 			return Implicit{origin, invDir};
 		}
 
-		ImplicitSimd implicitSimd(float tMin, float tMax) const {
-			auto nonSimd = implicit();
+		ImplicitSimd implicitSimd() const {
+			float4 origin = float4(mOrigin);
+			Vec3f invDir = {
+				1.f / mDirection.x(),
+				1.f / mDirection.y(),
+				1.f / mDirection.z()
+			};
+
 			// The trick of storing tMin and tMax inside the implicit vector
 			// saves shuffle instructions, but requires tMax and tMin's last component to
 			// be properly setup
-			return ImplicitSimd{
-				float4(
-					nonSimd.o.x(),
-					nonSimd.o.y(),
-					nonSimd.o.z(),
-					tMin),
-				float4(
-					nonSimd.n.x(),
-					nonSimd.n.y(),
-					nonSimd.n.z(),
-					tMax-tMin)
-			};
+			return ImplicitSimd{ origin, float4(invDir) };
 		}
 
 	private:
