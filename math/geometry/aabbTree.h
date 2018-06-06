@@ -30,8 +30,6 @@ namespace math {
 
 	struct AABBTree {
 
-		using TriList = std::vector<TriInfo>;
-		using TriRange = std::pair<TriList::iterator, TriList::iterator>;
 		static constexpr size_t MAX_LEAF_TRIS = 2;
 		using TriSet = TriangleSet<MAX_LEAF_TRIS>;
 

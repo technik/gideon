@@ -30,6 +30,7 @@
     <ClInclude Include="..\..\material.h" />
     <ClInclude Include="..\..\math\aabb.h" />
     <ClInclude Include="..\..\math\constants.h" />
+    <ClInclude Include="..\..\math\geometry\aabbTree.h" />
     <ClInclude Include="..\..\math\linear.h" />
     <ClInclude Include="..\..\math\matrix.h" />
     <ClInclude Include="..\..\math\quaterrnion.h" />
@@ -45,6 +46,7 @@
     <ClInclude Include="..\..\shapes\sphere.h" />
     <ClInclude Include="..\..\shapes\triangle.h" />
     <ClInclude Include="..\..\shapes\triangleMesh.h" />
+    <ClInclude Include="..\..\shapes\triangleSet.h" />
     <ClInclude Include="..\..\stb_image.h" />
     <ClInclude Include="..\..\stb_image_write.h" />
     <ClInclude Include="..\..\textures\image.h" />

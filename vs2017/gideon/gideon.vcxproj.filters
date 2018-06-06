@@ -16,6 +16,9 @@
     <Filter Include="src\textures">
       <UniqueIdentifier>{00bf8d78-96df-48c5-b6f0-7f4d140b8504}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\math\geometry">
+      <UniqueIdentifier>{3b6acb63-8839-4e03-85a0-5ad0f36f8c6d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\main.cpp">
@@ -103,6 +106,12 @@
     </ClInclude>
     <ClInclude Include="..\..\math\vector2.h">
       <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\math\geometry\aabbTree.h">
+      <Filter>src\math\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shapes\triangleSet.h">
+      <Filter>src\shapes</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

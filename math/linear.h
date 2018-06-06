@@ -27,8 +27,20 @@
 namespace math
 {
 	template<class T>
-	auto lerp(const T& a, const T& b, float x)
+	constexpr auto lerp(const T& a, const T& b, float x)
 	{
 		return a*(1-x)+b*x;
+	}
+
+	constexpr uint32_t lower_power_of_two(uint32_t v)
+	{
+		v--;
+		v |= v >> 1;
+		v |= v >> 2;
+		v |= v >> 4;
+		v |= v >> 8;
+		v |= v >> 16;
+		++v;
+		return v/2;
 	}
 }

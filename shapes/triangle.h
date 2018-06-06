@@ -110,3 +110,20 @@ public:
 	math::Vec3f mNormal;
 	float mPlaneOffset;
 };
+
+struct TriInfo {
+	Triangle tri;
+	int ndx;
+};
+
+struct TriangleHit
+{
+	size_t ndx;
+	math::Vec3f pos;
+	math::Vec3f normal;
+	float t;
+	float f0, f1; // Interpolation factors
+};
+
+using TriList = std::vector<TriInfo>;
+using TriRange = std::pair<TriList::iterator, TriList::iterator>;
