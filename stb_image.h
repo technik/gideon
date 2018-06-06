@@ -1612,19 +1612,22 @@ static stbi__uint16 *stbi__convert_format16(stbi__uint16 *data, int img_n, int r
 #ifndef STBI_NO_LINEAR
 static float   *stbi__ldr_to_hdr(stbi_uc *data, int x, int y, int comp)
 {
-   int i,k,n;
+   int i,n;
    float *output;
    if (!data) return NULL;
    output = (float *) stbi__malloc_mad4(x, y, comp, sizeof(float), 0);
    if (output == NULL) { STBI_FREE(data); return stbi__errpf("outofmem", "Out of memory"); }
    // compute number of non-alpha components
    if (comp & 1) n = comp; else n = comp-1;
-   for (i=0; i < x*y; ++i) {
-      for (k=0; k < n; ++k) {
-         output[i*comp + k] = (float) (pow(data[i*comp+k]/255.0f, stbi__l2h_gamma) * stbi__l2h_scale);
-      }
-      if (k < comp) output[i*comp + k] = data[i*comp+k]/255.0f;
+   auto count = x*y;
+   for (i=0; i < count*n; ++i) {
+       output[i] = (float) (pow(data[i]/255.0f, stbi__l2h_gamma) * stbi__l2h_scale);
    }
+	if (n < comp) {
+	   for (i=comp-1; i < count*comp; i+=comp) {
+		   output[i] = data[i]/255.0f;
+	   }
+	}
    STBI_FREE(data);
    return output;
 }
