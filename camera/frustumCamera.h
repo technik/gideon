@@ -41,7 +41,7 @@ public:
 		auto side = normalize(cross(depth, {0.f,1.f,0.f}));
 		auto up = cross(side, depth);
 		auto hLen = std::tan(horFov/2.f);
-		auto vLen = hLen/aspectRatio;
+		auto vLen = hLen*aspectRatio;
 		ll_corner = depth - hLen * side - vLen * up;
 		horizontal = 2*hLen*side;
 		vertical = 2*vLen*up;

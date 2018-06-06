@@ -138,7 +138,7 @@ public:
 					auto pos = xForm.transformPos(math::Vec3f(0.f));
 					auto lookDir = xForm.transformDir({0.f,0.f,-1.f});
 					auto aspectRatio = camDesc.perspective.aspectRatio;
-					camera = new FrustumCamera(pos, pos+lookDir, camDesc.perspective.yfov * aspectRatio, aspectRatio);
+					camera = new FrustumCamera(pos, pos+lookDir, camDesc.perspective.yfov * aspectRatio, 1.f);
 					break;
 				}
 			}
@@ -149,13 +149,13 @@ public:
 			auto folder = getFolder(gltfFileName);
 			auto textures = loadTextures(folder, document);
 			auto materials = loadMaterials(document, textures);
-			loadMeshes(folder, document, materials, document.meshes);
+			auto meshes = loadMeshes(folder, document, materials);
 			for(int i = 0; i < document.nodes.size(); ++i)
 			{
 				const auto& node = document.nodes[i];
 				if(node.mesh >= 0)
 				{
-					mShapes.push_back(new MeshInstance(*mMeshes[node.mesh], *mMaterials[node.mesh], transforms[i]));
+					mShapes.push_back(new MeshInstance(meshes[node.mesh], transforms[i]));
 				}
 			}
 		}
@@ -236,21 +236,22 @@ public:
 			return readAttribute<uint16_t>(document, bufferData, accessorNdx);
 	}
 
-	void loadMeshes(const std::string& _assetsFolder, const fx::gltf::Document& document, const std::vector<std::shared_ptr<PBRMaterial>>& materials, std::vector<fx::gltf::Mesh>& meshes)
+	auto loadSingleMesh(
+		const fx::gltf::Document& document,
+		const std::vector<uint8_t>& bufferData,
+		const fx::gltf::Mesh& meshDesc,
+		const std::vector<std::shared_ptr<PBRMaterial>>& materials)
 	{
-		std::vector<uint8_t> bufferData;
-		loadRawBuffer((_assetsFolder+document.buffers[0].uri).c_str(), bufferData);
-
-		for(auto& meshDesc : meshes)
+		std::vector<TriangleMesh> primitives;
+		std::vector<std::shared_ptr<PBRMaterial>> meshMaterials;
+		for(auto& primitiveDesc : meshDesc.primitives)
 		{
-			auto& primitive = meshDesc.primitives[0];
-			auto& idxAccessor = document.accessors[primitive.indices];
+			auto indices = readIndices(document, bufferData, primitiveDesc.indices);
+			auto position = readAttribute<math::Vec3f>(document, bufferData, primitiveDesc.attributes.at("POSITION"));
+			auto normals = readAttribute<math::Vec3f>(document, bufferData, primitiveDesc.attributes.at("NORMAL"));
+			auto uvs = readAttribute<math::Vec2f>(document, bufferData, primitiveDesc.attributes.at("TEXCOORD_0"));
 
-			auto indices = readIndices(document, bufferData, primitive.indices);
-			auto position = readAttribute<math::Vec3f>(document, bufferData, primitive.attributes["POSITION"]);
-			auto normals = readAttribute<math::Vec3f>(document, bufferData, primitive.attributes["NORMAL"]);
-			auto uvs = readAttribute<math::Vec2f>(document, bufferData, primitive.attributes["TEXCOORD_0"]);
-
+			// Copy vertex data
 			using Vtx = TriangleMesh::VtxInfo;
 			std::vector<Vtx> vertices(position.size());
 			for(size_t i = 0; i < vertices.size(); ++i)
@@ -261,9 +262,25 @@ public:
 				v.uv = uvs[i];
 			}
 
-			mMeshes.push_back(new TriangleMesh(vertices, indices));
-			mMaterials.push_back(materials[primitive.material]);
+			primitives.emplace_back(vertices, indices);
+			meshMaterials.push_back(materials[primitiveDesc.material]);
 		}
+
+		return std::make_shared<MultiMesh>(primitives, meshMaterials);
+	}
+
+	std::vector<std::shared_ptr<MultiMesh>> loadMeshes(const std::string& _assetsFolder, const fx::gltf::Document& document, const std::vector<std::shared_ptr<PBRMaterial>>& materials)
+	{
+		std::vector<uint8_t> bufferData;
+		loadRawBuffer((_assetsFolder+document.buffers[0].uri).c_str(), bufferData);
+
+		std::vector<std::shared_ptr<MultiMesh>> meshes;
+		for(auto& meshDesc : document.meshes)
+		{
+			meshes.push_back(loadSingleMesh(document, bufferData, meshDesc, materials));
+		}
+
+		return meshes;
 	}
 
 	void loadRawBuffer(const char* uri, std::vector<uint8_t>& dst)

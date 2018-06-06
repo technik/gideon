@@ -57,7 +57,7 @@ public:
 	{
 		// transform u-v coordinates into image space (pixel units)
 		auto s = uv.x()*nx;
-		auto t = (1-uv.y())*ny;
+		auto t = uv.y()*ny;
 		auto s0 = floor(s);
 		auto t0 = floor(t);
 		auto s1 = s0+1;

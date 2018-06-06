@@ -77,7 +77,7 @@ private:
 	{
 		return {
 			atan2(dir.z(), -dir.x()) * 0.1591f + 0.5f,
-			asin(dir.y()) * 0.3183f + 0.5f
+			asin(-dir.y()) * 0.3183f + 0.5f
 		};
 	}
 

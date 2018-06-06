@@ -23,14 +23,14 @@
 #include "triangleMesh.h"
 #include <math/matrix.h>
 #include <math/ray.h>
+#include <memory>
 #include "shape.h"
 
 class MeshInstance : public Shape
 {
 public:
-	MeshInstance(const TriangleMesh& mesh, const Material& mat, const math::Matrix34f& transform)
+	MeshInstance(const std::shared_ptr<MultiMesh>& mesh, const math::Matrix34f& transform)
 		: mMesh(mesh)
-		, mMaterial(mat)
 	{
 		mXForm = transform;
 		mXFormInv = transform.inverse();
@@ -39,18 +39,19 @@ public:
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
 	{
 		math::Ray localRay (mXFormInv.transformPos(r.origin()), mXFormInv.transformDir(r.direction()));
-		if(mMesh.hit(localRay, tMin, tMax, collision))
+
+		if(mMesh->hit(localRay, tMin, tMax, collision))
 		{
 			collision.normal = mXForm.transformDir(collision.normal);
 			collision.p = mXForm.transformPos(collision.p);
-			collision.material = &mMaterial;
+			tMax = collision.t;
 			return true;
 		}
+
 		return false;
 	}
 private:
-	const TriangleMesh& mMesh;
+	std::shared_ptr<const MultiMesh> mMesh;
 	math::Matrix34f mXForm;
 	math::Matrix34f mXFormInv;
-	const Material& mMaterial;
 };
