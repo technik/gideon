@@ -56,48 +56,10 @@ public:
 
 private:
 
-	void interpolateData(const TriangleHit& tri, HitRecord& hit) const
-	{
-		auto& v0 = mVtxData[3*tri.ndx];
-		auto& v1 = mVtxData[3*tri.ndx+1];
-		auto& v2 = mVtxData[3*tri.ndx+2];
-		auto a = v0.lerp(v1,tri.f0);
-		auto res = a.lerp(v2,tri.f1);
-		
-		hit.uv = res.uv;
-		hit.normal = res.normal;
-		hit.normal.normalize();
-	}
+	void interpolateData(const TriangleHit& tri, HitRecord& hit) const;
 
 	math::AABBTree mBVH;
 	std::vector<VtxInfo> mVtxData;
-};
-
-class MultiMesh : Shape
-{
-public:
-	MultiMesh(const std::vector<TriangleMesh>& mesh, const std::vector<std::shared_ptr<PBRMaterial>>& mat)
-		: mMeshes(mesh)
-		, mMaterials(mat)
-	{}
-
-	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
-	{
-		bool hit_any = false;
-		for(size_t i = 0; i < mMeshes.size(); ++i)
-		{
-			if(mMeshes[i].hit(r, tMin, tMax, collision))
-			{
-				collision.material = mMaterials[i].get();
-				tMax = collision.t;
-				hit_any = true;
-			}
-		}
-		return hit_any;
-	}
-
-	const std::vector<TriangleMesh> mMeshes;
-	const std::vector<std::shared_ptr<PBRMaterial>> mMaterials;
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -151,4 +113,18 @@ inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRe
 		return true;
 	}
 	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+inline void TriangleMesh::interpolateData(const TriangleHit& tri, HitRecord& hit) const
+{
+	auto& v0 = mVtxData[3*tri.ndx];
+	auto& v1 = mVtxData[3*tri.ndx+1];
+	auto& v2 = mVtxData[3*tri.ndx+2];
+	auto a = v0.lerp(v1,tri.f0);
+	auto res = a.lerp(v2,tri.f1);
+
+	hit.uv = res.uv;
+	hit.normal = res.normal;
+	hit.normal.normalize();
 }

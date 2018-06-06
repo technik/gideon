@@ -113,5 +113,8 @@
     <ClInclude Include="..\..\shapes\triangleSet.h">
       <Filter>src\shapes</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\shapes\multimesh.h">
+      <Filter>src\shapes</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

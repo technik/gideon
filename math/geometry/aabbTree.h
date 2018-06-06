@@ -37,7 +37,7 @@ namespace math {
 		AABBTree(std::vector<TriInfo>& triList)
 		{
 			TriRange range = {triList.begin(), triList.end()};
-			mNumElements = triList.size();
+			mNumElements = (uint32_t)triList.size();
 			prepareTreeRange(range);
 		}
 
@@ -64,8 +64,7 @@ namespace math {
 		std::vector<Node> mNodes;
 		std::vector<TriSet> mTriSets;
 
-		size_t mNumElements;
-
+		uint32_t mNumElements;
 
 		bool hit(size_t ndx, uint32_t rangeLen, const math::Ray & r, const math::Ray::ImplicitSimd & ri, float tMin, float tMax, TriangleHit & collision) const;
 
@@ -80,7 +79,7 @@ namespace math {
 	{
 		size_t ndx = mNodes.size();
 		mNodes.emplace_back();
-		auto nElements = range.second-range.first;
+		auto nElements = (uint32_t)(range.second-range.first);
 		if(nElements <= MAX_LEAF_TRIS) // leaf node
 		{
 			auto& bbox = mNodes.back().bbox;

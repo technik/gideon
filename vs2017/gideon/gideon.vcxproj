@@ -42,6 +42,7 @@
     <ClInclude Include="..\..\random.h" />
     <ClInclude Include="..\..\scene.h" />
     <ClInclude Include="..\..\shapes\meshInstance.h" />
+    <ClInclude Include="..\..\shapes\multimesh.h" />
     <ClInclude Include="..\..\shapes\shape.h" />
     <ClInclude Include="..\..\shapes\sphere.h" />
     <ClInclude Include="..\..\shapes\triangle.h" />
