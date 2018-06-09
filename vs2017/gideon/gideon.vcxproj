@@ -46,7 +46,7 @@
     <ClInclude Include="..\..\shapes\shape.h" />
     <ClInclude Include="..\..\shapes\sphere.h" />
     <ClInclude Include="..\..\shapes\triangle.h" />
-    <ClInclude Include="..\..\shapes\triangleMesh.h" />
+    <ClInclude Include="..\..\shapes\meshPrimitive.h" />
     <ClInclude Include="..\..\shapes\triangleSet.h" />
     <ClInclude Include="..\..\stb_image.h" />
     <ClInclude Include="..\..\stb_image_write.h" />

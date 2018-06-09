@@ -1623,11 +1623,11 @@ static float   *stbi__ldr_to_hdr(stbi_uc *data, int x, int y, int comp)
    for (i=0; i < count*n; ++i) {
        output[i] = (float) (pow(data[i]/255.0f, stbi__l2h_gamma) * stbi__l2h_scale);
    }
-	if (n < comp) {
-	   for (i=comp-1; i < count*comp; i+=comp) {
-		   output[i] = data[i]/255.0f;
-	   }
-	}
+if (n < comp) {
+   for (i=comp-1; i < count*comp; i+=comp) {
+      output[i] = data[i]/255.0f;
+   }
+}
    STBI_FREE(data);
    return output;
 }

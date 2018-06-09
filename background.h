@@ -46,7 +46,7 @@ public:
 
 	math::Vec3f sample(const math::Vec3f& direction) const override
 	{
-		float f = 0.5f + 0.5f * direction.y();
+		float f = 0.5f - 0.5f * direction.y();
 		return mUpColor*f + (1-f)*mDownColor;
 	}
 

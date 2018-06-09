@@ -40,8 +40,8 @@ public:
 		auto depth = normalize(lookAt - pos);
 		auto side = normalize(cross(depth, {0.f,1.f,0.f}));
 		auto up = cross(side, depth);
-		auto hLen = std::tan(horFov/2.f);
-		auto vLen = hLen*aspectRatio;
+		auto vLen = std::tan(horFov/2.f);
+		auto hLen = vLen*aspectRatio;
 		ll_corner = depth - hLen * side - vLen * up;
 		horizontal = 2*hLen*side;
 		vertical = 2*vLen*up;
@@ -51,7 +51,7 @@ public:
 	{
 		return math::Ray(
 			origin,
-			ll_corner + u*horizontal + v*vertical
+			normalize(ll_corner + u*horizontal + v*vertical)
 		);
 	}
 

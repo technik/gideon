@@ -291,7 +291,8 @@ int main(int _argc, const char** _argv)
 		auto generator = RandomGenerator();
 		world = new Scene(generator);
 	} else {
-		world = new Scene(params.scene.c_str());
+		auto aspectRatio = float(size.x1)/size.y1;
+		world = new Scene(params.scene.c_str(), aspectRatio);
 	}
 
 	// Background

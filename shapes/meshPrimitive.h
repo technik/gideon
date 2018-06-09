@@ -33,10 +33,10 @@
 #include "triangle.h"
 
 //-------------------------------------------------------------------------------------------------
-class TriangleMesh : public Shape
+class MeshPrimitive : public Shape
 {
 public:
-	TriangleMesh() = default;
+	MeshPrimitive() = default;
 
 	struct VtxInfo
 	{
@@ -48,7 +48,7 @@ public:
 	};
 
 	template<typename Idx>
-	TriangleMesh(
+	MeshPrimitive(
 		const std::vector<VtxInfo>& vertices,
 		const std::vector<Idx>& indices);
 
@@ -65,7 +65,7 @@ private:
 //-------------------------------------------------------------------------------------------------
 // Inline implementation
 //-------------------------------------------------------------------------------------------------
-TriangleMesh::VtxInfo TriangleMesh::VtxInfo::lerp(const VtxInfo& b, float x) const
+MeshPrimitive::VtxInfo MeshPrimitive::VtxInfo::lerp(const VtxInfo& b, float x) const
 { 
 	VtxInfo res;
 	auto x0 = 1-x;
@@ -77,7 +77,7 @@ TriangleMesh::VtxInfo TriangleMesh::VtxInfo::lerp(const VtxInfo& b, float x) con
 
 //-------------------------------------------------------------------------------------------------
 template<typename Idx>
-TriangleMesh::TriangleMesh(
+MeshPrimitive::MeshPrimitive(
 	const std::vector<VtxInfo>& vertices,
 	const std::vector<Idx>& indices)
 {
@@ -102,7 +102,7 @@ TriangleMesh::TriangleMesh(
 }
 
 //-------------------------------------------------------------------------------------------------
-inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
+inline bool MeshPrimitive::hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
 {
 	TriangleHit hitInfo;
 	if(mBVH.hit(r,tMin,tMax,hitInfo))
@@ -116,7 +116,7 @@ inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRe
 }
 
 //-------------------------------------------------------------------------------------------------
-inline void TriangleMesh::interpolateData(const TriangleHit& tri, HitRecord& hit) const
+inline void MeshPrimitive::interpolateData(const TriangleHit& tri, HitRecord& hit) const
 {
 	auto& v0 = mVtxData[3*tri.ndx];
 	auto& v1 = mVtxData[3*tri.ndx+1];

@@ -37,17 +37,17 @@
 namespace {
 	//----------------------------------------------------------------------------------------------
 	inline auto loadMaterials(
-		const fx::gltf::Document& _document,
-		const std::vector<std::shared_ptr<PBRMaterial::Sampler>>& _textures
+		const fx::gltf::Document& _document//,
+		//const std::vector<std::shared_ptr<Material::Sampler>>& _textures
 	)
 	{
-		std::vector<std::shared_ptr<PBRMaterial>> materials;
+		std::vector<std::shared_ptr<Material>> materials;
 		auto baseColor = math::Vec3f(1.f);
 
 		// Load materials
 		for(auto& matDesc : _document.materials)
 		{
-			std::shared_ptr<PBRMaterial::Sampler> albedo, physics, ao;
+			/*std::shared_ptr<PBRMaterial::Sampler> albedo, physics, ao;
 
 			auto& pbrDesc = matDesc.pbrMetallicRoughness;
 			if(!pbrDesc.empty())
@@ -69,15 +69,16 @@ namespace {
 					// Load map in linear space!!
 					auto ndx = pbrDesc.metallicRoughnessTexture.index;
 					physics = _textures[ndx];
-				}
+				}*/
 				/*if(pbrDesc.roughnessFactor != 1.f)
 					mat->addParam("uRoughness", pbrDesc.roughnessFactor);
 				if(pbrDesc.metallicFactor != 1.f)
 					mat->addParam("uMetallic", pbrDesc.metallicFactor);*/
 
-			}
+			/*}
 
-			auto mat = std::make_shared<PBRMaterial>(baseColor, albedo, physics, ao);
+			auto mat = std::make_shared<PBRMaterial>(baseColor, albedo, physics, ao);*/
+			auto mat = std::make_shared<Lambertian>(math::Vec3f(0.75f));
 			materials.push_back(mat);
 		}
 
@@ -117,7 +118,7 @@ class Scene
 {
 public:
 	Scene() {}
-	Scene(const char* gltfFileName)
+	Scene(const char* gltfFileName, float aspectRatio)
 	{
 		fx::gltf::Document document = fx::gltf::LoadFromText(gltfFileName);
 		std::vector<math::Matrix34f> transforms(document.nodes.size());
@@ -137,8 +138,7 @@ public:
 					auto xForm = transforms[nodeNdx];
 					auto pos = xForm.transformPos(math::Vec3f(0.f));
 					auto lookDir = xForm.transformDir({0.f,0.f,-1.f});
-					auto aspectRatio = camDesc.perspective.aspectRatio;
-					camera = new FrustumCamera(pos, pos+lookDir, camDesc.perspective.yfov * aspectRatio, 1.f);
+					camera = new FrustumCamera(pos, pos+lookDir, camDesc.perspective.yfov * aspectRatio, aspectRatio);
 					break;
 				}
 			}
@@ -147,8 +147,9 @@ public:
 		if(document.scene >= 0)
 		{
 			auto folder = getFolder(gltfFileName);
-			auto textures = loadTextures(folder, document);
-			auto materials = loadMaterials(document, textures);
+			//auto textures = loadTextures(folder, document);
+			//auto materials = loadMaterials(document, textures);
+			auto materials = loadMaterials(document);
 			auto meshes = loadMeshes(folder, document, materials);
 			for(int i = 0; i < document.nodes.size(); ++i)
 			{
@@ -240,10 +241,10 @@ public:
 		const fx::gltf::Document& document,
 		const std::vector<uint8_t>& bufferData,
 		const fx::gltf::Mesh& meshDesc,
-		const std::vector<std::shared_ptr<PBRMaterial>>& materials)
+		const std::vector<std::shared_ptr<Material>>& materials)
 	{
-		std::vector<TriangleMesh> primitives;
-		std::vector<std::shared_ptr<PBRMaterial>> meshMaterials;
+		std::vector<MeshPrimitive> primitives;
+		std::vector<std::shared_ptr<Material>> meshMaterials;
 		for(auto& primitiveDesc : meshDesc.primitives)
 		{
 			auto indices = readIndices(document, bufferData, primitiveDesc.indices);
@@ -252,7 +253,7 @@ public:
 			auto uvs = readAttribute<math::Vec2f>(document, bufferData, primitiveDesc.attributes.at("TEXCOORD_0"));
 
 			// Copy vertex data
-			using Vtx = TriangleMesh::VtxInfo;
+			using Vtx = MeshPrimitive::VtxInfo;
 			std::vector<Vtx> vertices(position.size());
 			for(size_t i = 0; i < vertices.size(); ++i)
 			{
@@ -269,7 +270,7 @@ public:
 		return std::make_shared<MultiMesh>(primitives, meshMaterials);
 	}
 
-	std::vector<std::shared_ptr<MultiMesh>> loadMeshes(const std::string& _assetsFolder, const fx::gltf::Document& document, const std::vector<std::shared_ptr<PBRMaterial>>& materials)
+	std::vector<std::shared_ptr<MultiMesh>> loadMeshes(const std::string& _assetsFolder, const fx::gltf::Document& document, const std::vector<std::shared_ptr<Material>>& materials)
 	{
 		std::vector<uint8_t> bufferData;
 		loadRawBuffer((_assetsFolder+document.buffers[0].uri).c_str(), bufferData);
@@ -344,6 +345,6 @@ public:
 	Camera* camera = nullptr;
 private:
 	std::vector<Shape*>	mShapes;
-	std::vector<TriangleMesh*>	mMeshes;
+	std::vector<MeshPrimitive*>	mMeshes;
 	std::vector<std::shared_ptr<Material>>	mMaterials;
 };
