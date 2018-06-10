@@ -104,5 +104,14 @@
     <ClInclude Include="..\..\math\vector2.h">
       <Filter>src\math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\math\vector.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\math\baseMatrixExpr.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\math\baseMatrixView.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

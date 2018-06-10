@@ -29,12 +29,15 @@
     <ClInclude Include="..\..\collision.h" />
     <ClInclude Include="..\..\material.h" />
     <ClInclude Include="..\..\math\aabb.h" />
+    <ClInclude Include="..\..\math\baseMatrixExpr.h" />
+    <ClInclude Include="..\..\math\baseMatrixView.h" />
     <ClInclude Include="..\..\math\constants.h" />
     <ClInclude Include="..\..\math\linear.h" />
     <ClInclude Include="..\..\math\matrix.h" />
     <ClInclude Include="..\..\math\quaterrnion.h" />
     <ClInclude Include="..\..\math\ray.h" />
     <ClInclude Include="..\..\math\rectangle.h" />
+    <ClInclude Include="..\..\math\vector.h" />
     <ClInclude Include="..\..\math\vector2.h" />
     <ClInclude Include="..\..\math\vector3.h" />
     <ClInclude Include="..\..\math\vectorFloat.h" />
