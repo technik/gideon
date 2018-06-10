@@ -27,7 +27,7 @@
 namespace math {
 
 	/// Base matrix view
-	/*template<class Derived, class T, size_t m, size_t n>
+	template<class Derived, class T, size_t m, size_t n>
 	struct MatrixBaseView
 	{
 		// Constructors
@@ -35,11 +35,11 @@ namespace math {
 		MatrixBaseView(const T& _x) : MatrixBaseView(UniformExpr<T,m,n>(_x)) {}
 
 		template<class Other>
-		MatrixBaseView(const MatrixBaseExpr<Other,m,n>& v) { *this = v; }
+		MatrixBaseView(const BaseMatrixExpr<Other,m,n>& v) { *this = v; }
 
 		// Assignment
 		template<class OtherDerived>
-		auto& operator=(const MatrixBaseExpr<OtherDerived,m,n>& v)
+		auto& operator=(const BaseMatrixExpr<OtherDerived,m,n>& v)
 		{
 			for(auto i = 0; i < n; ++i)
 				(*this)[i] = v[i];
@@ -50,9 +50,9 @@ namespace math {
 		auto& operator[](size_t i) { return static_cast<Derived&>(*this)[i]; }
 
 		// Other operations
-		template<class Other>
-		void operator+=(const MatrixBaseExpr<Other,m,n>& b)
-		{ *this = static_cast<const Derived&>(*this)+b; }
-	};*/
+		/*template<class Other>
+		void operator+=(const BaseMatrixExpr<Other,m,n>& b)
+		{ *this = static_cast<const Derived&>(*this)+b; }*/
+	};
 
 } // namespace math
