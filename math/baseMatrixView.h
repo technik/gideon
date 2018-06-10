@@ -46,6 +46,18 @@ namespace math {
 		template<class Other>
 		void operator+=(const BaseMatrixExpr<Other,m,n>& b)
 		{ *this = static_cast<const Derived&>(*this)+b; }
+
+		template<class Other>
+		void operator-=(const BaseMatrixExpr<Other,m,n>& b)
+		{ *this = static_cast<const Derived&>(*this)-b; }
+
+		template<class Other>
+		void operator*=(const BaseMatrixExpr<Other,m,n>& b)
+		{ *this = static_cast<const Derived&>(*this)*b; }
+
+		template<class Other>
+		void operator/=(const BaseMatrixExpr<Other,m,n>& b)
+		{ *this = static_cast<const Derived&>(*this)/b; }
 	};
 
 } // namespace math

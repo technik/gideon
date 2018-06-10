@@ -131,41 +131,4 @@ namespace math {
 		return BinaryOp(a,b,[](auto a, auto b){ return std::max(a, b); });
 	}
 
-	/*
-	Vec3f& operator+=(const Vec3f& v) {
-		for(size_t i = 0; i < 3; ++i)
-			m[i] += v.m[i];
-		return *this;
-	}
-
-	Vec3f& operator-=(const Vec3f& v) {
-		for(size_t i = 0; i < 3; ++i)
-			m[i] -= v.m[i];
-		return *this;
-	}
-
-	Vec3f& operator*=(const Vec3f& v) {
-		for(size_t i = 0; i < 3; ++i)
-			m[i] *= v.m[i];
-		return *this;
-	}
-
-	Vec3f& operator/=(const Vec3f& v) {
-		for(size_t i = 0; i < 3; ++i)
-			m[i] /= v.m[i];
-		return *this;
-	}
-
-	Vec3f& operator*=(float x) {
-		for(size_t i = 0; i < 3; ++i)
-			m[i] *= x;
-		return *this;
-	}
-
-	Vec3f& operator/=(float x) {
-		for(size_t i = 0; i < 3; ++i)
-			m[i] /= x;
-		return *this;
-	}*/
-
 } // namespace math
