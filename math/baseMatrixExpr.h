@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
+#include <algorithm>
+
 namespace math {
 
 	/// Base expression for all matrix-like types
@@ -87,18 +89,47 @@ namespace math {
 	//-------------------------------------------------------------------------------------------------------
 	// Specialized operators
 	//-------------------------------------------------------------------------------------------------------
-	template<class T1, class T2, size_t m, size_t n>
-	auto operator+(const BaseMatrixExpr<T1,m,n>& a, const BaseMatrixExpr<T2,m,n>& b)
-	{
-		return BinaryOp(a,b,[](auto a, auto b){ return a + b; });
-	}
-
 	template<class T, size_t m, size_t n>
 	auto operator-(const BaseMatrixExpr<T,m,n>& a)
 	{
 		return UnaryOp(a,[](auto a) { return -a; });
 	}
 
+	template<class T1, class T2, size_t m, size_t n>
+	auto operator+(const BaseMatrixExpr<T1,m,n>& a, const BaseMatrixExpr<T2,m,n>& b)
+	{
+		return BinaryOp(a,b,[](auto a, auto b){ return a + b; });
+	}
+
+	template<class T1, class T2, size_t m, size_t n>
+	auto operator-(const BaseMatrixExpr<T1,m,n>& a, const BaseMatrixExpr<T2,m,n>& b)
+	{
+		return BinaryOp(a,b,[](auto a, auto b){ return a - b; });
+	}
+
+	template<class T1, class T2, size_t m, size_t n>
+	auto operator*(const BaseMatrixExpr<T1,m,n>& a, const BaseMatrixExpr<T2,m,n>& b)
+	{
+		return BinaryOp(a,b,[](auto a, auto b){ return a * b; });
+	}
+
+	template<class T1, class T2, size_t m, size_t n>
+	auto operator/(const BaseMatrixExpr<T1,m,n>& a, const BaseMatrixExpr<T2,m,n>& b)
+	{
+		return BinaryOp(a,b,[](auto a, auto b){ return a / b; });
+	}
+
+	template<class T1, class T2, size_t m, size_t n>
+	auto min(const BaseMatrixExpr<T1,m,n>& a, const BaseMatrixExpr<T2,m,n>& b)
+	{
+		return BinaryOp(a,b,[](auto a, auto b){ return std::min(a, b); });
+	}
+
+	template<class T1, class T2, size_t m, size_t n>
+	auto max(const BaseMatrixExpr<T1,m,n>& a, const BaseMatrixExpr<T2,m,n>& b)
+	{
+		return BinaryOp(a,b,[](auto a, auto b){ return std::max(a, b); });
+	}
 
 	/*
 	Vec3f& operator+=(const Vec3f& v) {
