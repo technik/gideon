@@ -43,9 +43,9 @@ namespace math {
 		auto& operator[](size_t i) { return static_cast<Derived&>(*this)[i]; }
 
 		// Other operations
-		/*template<class Other>
+		template<class Other>
 		void operator+=(const BaseMatrixExpr<Other,m,n>& b)
-		{ *this = static_cast<const Derived&>(*this)+b; }*/
+		{ *this = static_cast<const Derived&>(*this)+b; }
 	};
 
 } // namespace math

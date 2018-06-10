@@ -45,4 +45,96 @@ namespace math {
 		const T x;
 	};
 
+	//-------------------------------------------------------------------------------------------------------
+	// Generic operators
+	//-------------------------------------------------------------------------------------------------------
+	/// Generic unary operator
+	template<class T, size_t m, size_t n, class Op>
+	struct UnaryOp : BaseMatrixExpr<UnaryOp<T,m,n,Op>,m,n>
+	{
+		UnaryOp(
+			const BaseMatrixExpr<T,m,n>& a,
+			const Op& op) : mOp(op), mA(a)
+		{}
+
+		auto operator[](size_t i) const {
+			return mOp(mA[i]);
+		}
+
+		const Op& mOp;
+		const BaseMatrixExpr<T,m,n>& mA;
+	};
+
+	/// Binary opeartor on matrix expressions
+	template<class T1, class T2, size_t m, size_t n, class Op>
+	struct BinaryOp : BaseMatrixExpr<BinaryOp<T1,T2,m,n,Op>,m,n>
+	{
+		BinaryOp(
+			const BaseMatrixExpr<T1,m,n>& a,
+			const BaseMatrixExpr<T2,m,n>& b,
+			const Op& op) : mOp(op), mA(a), mB(b)
+		{}
+
+		auto operator[](size_t i) const {
+			return mOp(mA[i], mB[i]);
+		}
+
+		const Op& mOp;
+		const BaseMatrixExpr<T1,m,n>& mA;
+		const BaseMatrixExpr<T2,m,n>& mB;
+	};
+
+	//-------------------------------------------------------------------------------------------------------
+	// Specialized operators
+	//-------------------------------------------------------------------------------------------------------
+	template<class T1, class T2, size_t m, size_t n>
+	auto operator+(const BaseMatrixExpr<T1,m,n>& a, const BaseMatrixExpr<T2,m,n>& b)
+	{
+		return BinaryOp(a,b,[](auto a, auto b){ return a + b; });
+	}
+
+	template<class T, size_t m, size_t n>
+	auto operator-(const BaseMatrixExpr<T,m,n>& a)
+	{
+		return UnaryOp(a,[](auto a) { return -a; });
+	}
+
+
+	/*
+	Vec3f& operator+=(const Vec3f& v) {
+		for(size_t i = 0; i < 3; ++i)
+			m[i] += v.m[i];
+		return *this;
+	}
+
+	Vec3f& operator-=(const Vec3f& v) {
+		for(size_t i = 0; i < 3; ++i)
+			m[i] -= v.m[i];
+		return *this;
+	}
+
+	Vec3f& operator*=(const Vec3f& v) {
+		for(size_t i = 0; i < 3; ++i)
+			m[i] *= v.m[i];
+		return *this;
+	}
+
+	Vec3f& operator/=(const Vec3f& v) {
+		for(size_t i = 0; i < 3; ++i)
+			m[i] /= v.m[i];
+		return *this;
+	}
+
+	Vec3f& operator*=(float x) {
+		for(size_t i = 0; i < 3; ++i)
+			m[i] *= x;
+		return *this;
+	}
+
+	Vec3f& operator/=(float x) {
+		for(size_t i = 0; i < 3; ++i)
+			m[i] /= x;
+		return *this;
+	}*/
+
 } // namespace math
