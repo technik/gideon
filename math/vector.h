@@ -30,10 +30,12 @@ namespace math {
 	//-------------------------------------------------------------------------------------------------------
 	// Base vector classes
 	//-------------------------------------------------------------------------------------------------------
+	template<class Derived, size_t n>
+	using BaseVectorExpr = BaseMatrixExpr<Derived,n,1>;
 
 	/// Vector Expression
 	template<class Derived, size_t n>
-	struct VectorExpression : BaseMatrixExpr<Derived,n,1>
+	struct VectorExpression : BaseVectorExpr<Derived,n>
 	{
 		static_assert(n > 0);
 
@@ -44,11 +46,17 @@ namespace math {
 	};
 	
 	/// Vector View
-	/*template<class Derived, class T, size_t n>
+	template<class Derived, class T, size_t n>
 	struct VectorView : MatrixBaseView<Derived,T,n,1>
 	{
 		using MatrixBaseView<Derived,T,n,1>::MatrixBaseView;
 		static_assert(n > 0);
+
+		auto x() const { return (*this)[0]; }
+		auto y() const { return (*this)[1]; static_assert(n>1, "Vector is too small to have a y component"); }
+		auto z() const { return (*this)[2]; static_assert(n>2, "Vector is too small to have a z component"); }
+		auto w() const { return (*this)[3]; static_assert(n>3, "Vector is too small to have a w component"); }
+
 		auto& x() { return (*this)[0]; }
 		auto& y() { return (*this)[1]; static_assert(n>1, "Vector is too small to have a y component"); }
 		auto& z() { return (*this)[2]; static_assert(n>2, "Vector is too small to have a z component"); }
@@ -63,7 +71,7 @@ namespace math {
 	struct UnitVector : VectorExpression<UnitVector<T,n>,n>
 	{
 		UnitVector() = delete;
-	};*/
+	};
 
 	//-------------------------------------------------------------------------------------------------------
 	// Generic vector classes
@@ -71,24 +79,29 @@ namespace math {
 
 	template<class T, int n>
 	struct Vector
-		: VectorExpression<Vector<T,n>,n>
-		//, VectorView<Vector<T,n>,T,n>
+		: VectorView<Vector<T,n>,T,n>
 	{
-		/*T& operator[](size_t i) { return a[i]; }
+		T& operator[](size_t i) { return a[i]; }
 		const T& operator[](size_t i) const { return a[i]; }
 
 		Vector() = default;
-		Vector(T _x) : VectorView<Vector<T,n>,T,n>(_x) {}
+		Vector(T _x)
+			: Vector(UniformExpr<T,n,1>(_x))
+		{}
 
-		template<class T2>
-		Vector(const MatrixBaseExpr<T2,n,1>& v) { *this = v; }
+		template<class Other>
+		Vector(const BaseVectorExpr<Other,n>& v)
+		{ 
+			for(auto i = 0; i < n; ++i)
+				a[i] = v[i];
+		}
 
 		Vector(T _x, T _y) : a{_x,_y} {}
 		Vector(T _x, T _y, T _z) : a{_x,_y,_z} {}
 		Vector(T _x, T _y, T _z, T _w) : a{_x,_y,_z,_w} {}
 
 	private:
-		T a[n];*/
+		T a[n];
 	};
 
 	//-------------------------------------------------------------------------------------------------------

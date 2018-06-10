@@ -28,15 +28,8 @@ namespace math {
 
 	/// Base matrix view
 	template<class Derived, class T, size_t m, size_t n>
-	struct MatrixBaseView
+	struct MatrixBaseView : BaseMatrixExpr<Derived,m,n>
 	{
-		// Constructors
-		MatrixBaseView() = default;
-		MatrixBaseView(const T& _x) : MatrixBaseView(UniformExpr<T,m,n>(_x)) {}
-
-		template<class Other>
-		MatrixBaseView(const BaseMatrixExpr<Other,m,n>& v) { *this = v; }
-
 		// Assignment
 		template<class OtherDerived>
 		auto& operator=(const BaseMatrixExpr<OtherDerived,m,n>& v)
