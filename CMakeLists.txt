@@ -34,8 +34,9 @@ endmacro()
 ################################################################################
 
 # Collect all sources
-file(GLOB_RECURSE PATHTRACER_SOURCE_FILES "pathtracer/*.cpp" "pathtracer/*.h" "pathtracer/*.inl" "include/*.h")
-GroupSources(src pathtracer)
+file(GLOB_RECURSE PATHTRACER_SOURCE_FILES "pathtracer/*.cpp" "pathtracer/*.h" "pathtracer/*.inl" "include/*.h" "include/*.hpp")
+GroupSources(pathtracer pathtracer)
+GroupSources(include include)
 add_executable(pathtracer ${PATHTRACER_SOURCE_FILES})
 target_include_directories (pathtracer PUBLIC "include")
 target_include_directories (pathtracer PUBLIC "pathtracer")
