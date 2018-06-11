@@ -44,6 +44,12 @@ namespace math
 		constexpr Vector(T x, T y, T z) : m {x,y,z} {}
 		constexpr Vector(T x, T y, T z, T w) : m {x,y,z} {}
 
+		Vector(const std::array<T,n>& v) {
+			for(auto i = 0; i < n; ++i)
+				m[i] = v[i];
+			return *this;
+		}
+
 		Vector& operator=(const Vector& v) = default;
 		Vector& operator=(const std::array<T,n>& v) {
 			for(auto i = 0; i < n; ++i)

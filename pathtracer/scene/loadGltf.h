@@ -1,6 +1,5 @@
 //-------------------------------------------------------------------------------------------------
-// Based on the minibook 'Raytracing in one weekend' and Aras P.'s series: Daily pathtracer
-// https://aras-p.info/blog/
+// Toy path tracer
 //--------------------------------------------------------------------------------------------------
 // Copyright 2018 Carmelo J Fdez-Aguera
 // 
@@ -20,39 +19,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include "triangleMesh.h"
-#include <math/matrix.h>
-#include <math/ray.h>
-#include <memory>
-#include "shape.h"
+class Scene;
 
-class MeshInstance
-{
-public:
-	MeshInstance(const std::shared_ptr<Shape>& mesh, const math::Matrix34f& transform)
-		: mMesh(mesh)
-	{
-		mXForm = transform;
-		mXFormInv = transform.inverse();
-	}
-
-	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
-	{
-		math::Ray localRay (mXFormInv.transformPos(r.origin()), mXFormInv.transformDir(r.direction()));
-
-		if(mMesh->hit(localRay, tMin, tMax, collision))
-		{
-			collision.normal = mXForm.transformDir(collision.normal);
-			collision.p = mXForm.transformPos(collision.p);
-			tMax = collision.t;
-			return true;
-		}
-
-		return false;
-	}
-
-private:
-	std::shared_ptr<const Shape> mMesh;
-	math::Matrix34f mXForm;
-	math::Matrix34f mXFormInv;
-};
+/// Loads the gltf scene from fileName into dst scene
+/// If overrideMaterials is true, all materials in the scene will be substituted by plain white, diffuse material
+bool loadGltf(const char* fileName, Scene& dst, bool overrideMaterials = false);

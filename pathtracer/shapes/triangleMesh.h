@@ -176,7 +176,7 @@ private:
 	std::vector<VtxInfo> mVtxData;
 };
 
-class MultiMesh : Shape
+class MultiMesh : public Shape
 {
 public:
 	MultiMesh(const std::vector<TriangleMesh>& mesh, const std::vector<std::shared_ptr<PBRMaterial>>& mat)
@@ -206,7 +206,7 @@ public:
 //-------------------------------------------------------------------------------------------------
 // Inline implementation
 //-------------------------------------------------------------------------------------------------
-TriangleMesh::VtxInfo TriangleMesh::VtxInfo::lerp(const VtxInfo& b, float x) const
+inline TriangleMesh::VtxInfo TriangleMesh::VtxInfo::lerp(const VtxInfo& b, float x) const
 { 
 	VtxInfo res;
 	auto x0 = 1-x;

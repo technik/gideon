@@ -34,6 +34,12 @@ namespace math
 		Matrix34f(const std::array<float,16>& x)
 			: m(x)
 		{}
+		
+		Matrix34f(float x)
+		{
+			for(auto i = 0; i < 16; ++i)
+				m[i] = x;
+		}
 
 		Matrix34f inverse() const
 		{

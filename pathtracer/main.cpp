@@ -35,6 +35,7 @@
 #include "math/rectangle.h"
 #include "collision.h"
 #include "scene/scene.h"
+#include "scene/loadGltf.h"
 #include "textures/image.h"
 
 // ------ Single header libraries ------
@@ -141,7 +142,6 @@ using Rect = math::Rectangle<size_t>;
 
 //--------------------------------------------------------------------------------------------------
 void traceImageSegment(
-	const Camera& cam,
 	const Scene& world,
 	Rect window,
 	Image& dst,
@@ -150,6 +150,8 @@ void traceImageSegment(
 {
 	const auto totalNx = dst.width();
 	const auto totalNy = dst.height();
+	auto& cam = *world.cameras().front();
+
 	for(size_t i = window.y0; i < window.y1; ++i)
 		for(size_t j = window.x0; j < window.x1; ++j)
 		{
@@ -170,14 +172,12 @@ void traceImageSegment(
 //--------------------------------------------------------------------------------------------------
 // Would prefer to pass things by reference, but std::thread creates local copies of the objects in that case
 void threadRoutine(
-	const Camera* cam,
 	const Scene* world,
 	Image* dst,
 	const std::vector<Rect>* tiles,
 	std::atomic<size_t>* tileCounter,
 	unsigned nSamples)
 {
-	assert(cam);
 	assert(world);
 	assert(dst);
 	assert(tiles);
@@ -189,7 +189,7 @@ void threadRoutine(
 	while(selfCounter < tiles->size()) // Valid job
 	{
 		auto& tile = (*tiles)[selfCounter];
-		traceImageSegment(*cam, *world, tile, *dst, random, nSamples);
+		traceImageSegment(*world, tile, *dst, random, nSamples);
 		cout << selfCounter << "\n";
 		selfCounter = (*tileCounter)++;
 	}
@@ -291,13 +291,10 @@ int main(int _argc, const char** _argv)
 	Image outputImage(params.sx, params.sy);
 
 	// Scene
-	Scene* world = nullptr;
-	if(params.scene.empty())
+	Scene world;
+	if(!params.scene.empty())
 	{
-		auto generator = RandomGenerator();
-		world = new Scene(generator);
-	} else {
-		world = new Scene(params.scene.c_str(), params.overrideMaterials);
+		loadGltf(params.scene.c_str(), world, params.overrideMaterials);
 	}
 
 	// Background
@@ -311,19 +308,18 @@ int main(int _argc, const char** _argv)
 	}
 
 	// Camera
-	auto& cam = world->camera;
 	if(params.sphericalRender)
 	{
-		cam = new SphericalCamera(Vec3f(0.f), {0.f,0.f,1.f}, {0.f,0.f,1.f});
+		world.cameras().emplace_back(make_shared<SphericalCamera>(Vec3f(0.f), Vec3f{0.f,0.f,1.f}, Vec3f{0.f,0.f,1.f}));
 	}
-	if(!cam) // Create a default camera
+	if(world.cameras().empty()) // Create a default camera
 	{
 		Vec3f camPos { -1.0f, 0.0f, 4.f}; // Damaged helmet
 		//Vec3f camPos { 189.95187377929688f, 579.0979614257813f, -386.1866149902344f }; // Reciprocating saw
 		Vec3f camLookAt { 0.f, 0.f, 0.f };
 		//Vec3f camPos { 0.f, 0.0f, 0.f};
 		//Vec3f camLookAt { 0.f, 0.f, -1.f };
-		cam = new FrustumCamera(camPos, camLookAt, 3.14159f*params.fov/180, float(size.x1)/size.y1);
+		world.cameras().emplace_back(make_shared<FrustumCamera>(camPos, camLookAt, 3.14159f*params.fov/180, float(size.x1)/size.y1));
 	}
 
 	// Divide the image in tiles that can be consumed as jobs
@@ -352,7 +348,7 @@ int main(int _argc, const char** _argv)
 	auto start = chrono::high_resolution_clock::now();
 	for(int i = 0; i < nThreads; ++i)
 	{
-		ts[i] = std::thread(threadRoutine, cam, world, &outputImage, &tiles, &tileCounter, params.ns);
+		ts[i] = std::thread(threadRoutine, &world, &outputImage, &tiles, &tileCounter, params.ns);
 		if(!ts[i].joinable())
 		{
 			return -1;

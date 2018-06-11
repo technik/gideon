@@ -121,14 +121,14 @@ namespace math
 		return float4(_mm_max_ps(a.m,b.m));
 	}
 
-	float float4::hMin() const
+	inline float float4::hMin() const
 	{
 		float4 v = min(*this, shuffle<2,3,0,1>());
 		v = min(v,v.shuffle<1,0,3,2>());
 		return v.x();
 	}
 
-	float float4::hMax() const
+	inline float float4::hMax() const
 	{
 		float4 v = max(*this, shuffle<2,3,0,0>());
 		v = max(v,v.shuffle<1,0,0,0>());
