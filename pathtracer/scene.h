@@ -138,7 +138,7 @@ public:
 					auto pos = xForm.transformPos(math::Vec3f(0.f));
 					auto lookDir = xForm.transformDir({0.f,0.f,-1.f});
 					auto aspectRatio = camDesc.perspective.aspectRatio;
-					camera = new FrustumCamera(pos, pos+lookDir, camDesc.perspective.yfov * aspectRatio, 1.f);
+					camera = new FrustumCamera(pos, pos+lookDir, camDesc.perspective.yfov, aspectRatio);
 					break;
 				}
 			}
