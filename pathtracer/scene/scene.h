@@ -26,7 +26,7 @@
 #include <math/aabb.h>
 #include <math/vector.h>
 #include <math/quaterrnion.h>
-#include "random.h"
+#include "math/random.h"
 #include "shapes/sphere.h"
 #include "shapes/triangleMesh.h"
 #include "shapes/meshInstance.h"
@@ -117,7 +117,7 @@ class Scene
 {
 public:
 	Scene() {}
-	Scene(const char* gltfFileName)
+	Scene(const char* gltfFileName, bool /*overrideMaterials = false*/)
 	{
 		fx::gltf::Document document = fx::gltf::LoadFromText(gltfFileName);
 		std::vector<math::Matrix34f> transforms(document.nodes.size());

@@ -25,7 +25,7 @@
 #include <math/ray.h>
 #include <math/vector.h>
 #include "collision.h"
-#include "random.h"
+#include "math/random.h"
 #include "textures/textureSampler.h"
 
 class Material

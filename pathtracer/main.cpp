@@ -34,7 +34,7 @@
 #include "camera/sphericalCamera.h"
 #include "math/rectangle.h"
 #include "collision.h"
-#include "scene.h"
+#include "scene/scene.h"
 #include "textures/image.h"
 
 // ------ Single header libraries ------
@@ -203,6 +203,7 @@ struct CmdLineParams
 	unsigned sx = 640;
 	unsigned sy = 480;
 	unsigned ns = 4;
+	bool overrideMaterials = false;
 	float fov = 45.f;
 	unsigned tileSize = 20;
 	bool sphericalRender = false;
@@ -218,6 +219,11 @@ struct CmdLineParams
 		{
 			scene = args[i+1];
 			return 2;
+		}
+		if(arg == "-solid")
+		{
+			overrideMaterials = true;
+			return 1;
 		}
 		if(arg == "-o")
 		{
@@ -291,7 +297,7 @@ int main(int _argc, const char** _argv)
 		auto generator = RandomGenerator();
 		world = new Scene(generator);
 	} else {
-		world = new Scene(params.scene.c_str());
+		world = new Scene(params.scene.c_str(), params.overrideMaterials);
 	}
 
 	// Background
