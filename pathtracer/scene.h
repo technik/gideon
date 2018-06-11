@@ -24,7 +24,7 @@
 
 #include <camera/frustumCamera.h>
 #include <math/aabb.h>
-#include <math/vector3.h>
+#include <math/vector.h>
 #include <math/quaterrnion.h>
 #include "random.h"
 #include "shapes/sphere.h"

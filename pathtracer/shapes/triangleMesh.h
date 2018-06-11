@@ -25,8 +25,7 @@
 #include <cassert>
 #include <vector>
 #include <material.h>
-#include <math/vector2.h>
-#include <math/vector3.h>
+#include <math/vector.h>
 #include <math/aabb.h>
 #include "shape.h"
 #include "triangle.h"
@@ -80,7 +79,7 @@ private:
 		
 		hit.uv = res.uv;
 		hit.normal = res.normal;
-		hit.normal.normalize();
+		normalize(hit.normal);
 	}
 
 	using TriList = std::vector<TriInfo>;
@@ -91,7 +90,7 @@ private:
 		AABBTree(std::vector<TriInfo>& triList)
 		{
 			TriRange range = {triList.begin(), triList.end()};
-			mNumElements = triList.size();
+			mNumElements = (uint32_t)triList.size();
 			prepareTreeRange(range);
 		}
 
@@ -162,7 +161,7 @@ private:
 		std::vector<Node> mNodes;
 		std::vector<TriSet<MAX_LEAF_TRIS>> mTriSets;
 
-		size_t mNumElements;
+		uint32_t mNumElements;
 
 
 		bool hit(size_t ndx, uint32_t rangeLen, const math::Ray & r, const math::Ray::ImplicitSimd & ri, float tMin, float tMax, TriangleHit & collision) const;
@@ -227,7 +226,7 @@ TriangleMesh::TriangleMesh(
 	std::vector<TriInfo> triList(nTris);
 	mVtxData.resize(3*nTris);
 
-	for(size_t i = 0; i < nTris; ++i)
+	for(auto i = 0; i < nTris; ++i)
 	{
 		auto i0 = indices[3*i+0];
 		auto i1 = indices[3*i+1];
@@ -274,7 +273,7 @@ inline size_t TriangleMesh::AABBTree::prepareTreeRange(const TriRange& range, in
 {
 	size_t ndx = mNodes.size();
 	mNodes.emplace_back();
-	auto nElements = range.second-range.first;
+	auto nElements = (uint32_t)(range.second-range.first);
 	if(nElements <= TriangleMesh::MAX_LEAF_TRIS) // leaf node
 	{
 		auto& bbox = mNodes.back().bbox;

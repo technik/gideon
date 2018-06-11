@@ -24,7 +24,7 @@
 
 #include <material.h>
 #include <math/ray.h>
-#include <math/vector3.h>
+#include <math/vector.h>
 #include "shape.h"
 
 class Sphere : public Shape

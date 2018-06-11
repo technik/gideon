@@ -24,7 +24,7 @@
 
 #include "camera.h"
 #include <math/ray.h>
-#include <math/vector3.h>
+#include <math/vector.h>
 #include <math/constants.h>
 
 class SphericalCamera : public Camera

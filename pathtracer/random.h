@@ -24,7 +24,7 @@
 
 #include <random>
 #include <math/constants.h>
-#include <math/vector3.h>
+#include <math/vector.h>
 
 class RandomGenerator
 {

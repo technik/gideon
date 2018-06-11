@@ -1,9 +1,6 @@
 //-------------------------------------------------------------------------------------------------
 // Toy path tracer
 //-------------------------------------------------------------------------------------------------
-// Based on the minibook 'Raytracing in one weekend' and Aras P.'s series: Daily pathtracer
-// https://aras-p.info/blog/
-//--------------------------------------------------------------------------------------------------
 // Copyright 2018 Carmelo J Fdez-Aguera
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software
@@ -25,7 +22,7 @@
 #include <cassert>
 #include <cmath>
 #include <functional>
-#include <math/vector3.h>
+#include <math/vector.h>
 #include <memory>
 #include <stb_image.h>
 #include <stb_image_write.h>
@@ -77,9 +74,9 @@ public:
 		for(size_t i = 0; i < nPixels; ++i) 
 		{
 			auto& c = mData[i];
-			tmpBuffer.push_back(floatToByteColor(c.r()));
-			tmpBuffer.push_back(floatToByteColor(c.g()));
-			tmpBuffer.push_back(floatToByteColor(c.b()));
+			tmpBuffer.push_back(floatToByteColor(c.x()));
+			tmpBuffer.push_back(floatToByteColor(c.y()));
+			tmpBuffer.push_back(floatToByteColor(c.z()));
 		}
 
 		const int rowStride = int(3*sx);

@@ -24,7 +24,7 @@
 
 #include "camera.h"
 #include <math/ray.h>
-#include <math/vector3.h>
+#include <math/vector.h>
 
 class FrustumCamera : public Camera
 {

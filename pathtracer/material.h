@@ -23,7 +23,7 @@
 #pragma once
 
 #include <math/ray.h>
-#include <math/vector3.h>
+#include <math/vector.h>
 #include "collision.h"
 #include "random.h"
 #include "textures/textureSampler.h"
@@ -70,8 +70,8 @@ public:
 	{
 		//auto ao = aoMap->sample(hit.u, hit.v).r(); // b is metalness
 		auto physics = physicsMap ? physicsMap->sample(hit.uv) : math::Vec3f(1.f);
-		auto roughness = physics.g();
-		auto metalness = physics.b();
+		auto roughness = physics.y();
+		auto metalness = physics.z();
 					
 		math::Vec3f baseColor;
 		if(albedoMap)

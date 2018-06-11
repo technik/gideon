@@ -28,7 +28,7 @@
 #include <zmmintrin.h>
 
 #include <array>
-#include "vector3.h"
+#include "vector.h"
 
 namespace math
 {

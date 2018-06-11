@@ -22,8 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include <math/vector2.h>
-#include <math/vector3.h>
+#include <math/vector.h>
 
 class Material;
 

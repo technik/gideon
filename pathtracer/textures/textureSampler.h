@@ -26,8 +26,7 @@
 #include <cmath>
 #include "image.h"
 #include <math/linear.h>
-#include <math/vector2.h>
-#include <math/vector3.h>
+#include <math/vector.h>
 #include <memory>
 
 //--------------------------------------------------------------------------------------------------

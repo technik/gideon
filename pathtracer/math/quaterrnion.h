@@ -22,7 +22,7 @@
 
 #include <array>
 #include "matrix.h"
-#include "vector3.h"
+#include "vector.h"
 #include <cmath>
 
 namespace math

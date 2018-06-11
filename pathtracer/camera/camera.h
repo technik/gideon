@@ -23,7 +23,7 @@
 #pragma once
 
 #include <math/ray.h>
-#include <math/vector3.h>
+#include <math/vector.h>
 
 class Camera
 {
