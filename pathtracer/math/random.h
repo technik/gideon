@@ -23,8 +23,8 @@
 #pragma once
 
 #include <random>
-#include <math/constants.h>
-#include <math/vector.h>
+#include "constants.h"
+#include "vector.h"
 
 class RandomGenerator
 {

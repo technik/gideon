@@ -40,3 +40,10 @@ GroupSources(include include)
 add_executable(pathtracer ${PATHTRACER_SOURCE_FILES})
 target_include_directories (pathtracer PUBLIC "include")
 target_include_directories (pathtracer PUBLIC "pathtracer")
+
+################################################################################
+# tests code
+################################################################################
+add_executable(algebraTest test/unit/algebraTest.cpp)
+set_target_properties(algebraTest PROPERTIES FOLDER test)
+add_test(algebra_unit_test algebraTest)
