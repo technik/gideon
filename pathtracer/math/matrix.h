@@ -139,13 +139,17 @@ namespace math
 			return x;
 		}
 
-		static auto upSolve(const Matrix44f& L, const Vec4f& y)
+		static auto upSolve(const Matrix44f& U, const Vec4f& y)
 		{
 			Vec4f x;
-			x[3] =  y[3]/L(3,3);
-			x[2] = (y[2] - x[3]*L(2,3)) /L(2,2);
-			x[1] = (y[1] - x[3]*L(1,3) - x[2]*L(1,2))/L(1,1);
-			x[0] = (y[0] - x[3]*L(0,3) - x[2]*L(0,2) - x[1]*L(0,1))/L(0,0);
+			for(int i = 3; i >= 0; --i)
+			{
+				assert(abs(U(i,i)) > 1e-4f);
+				float accum = 0.f;
+				for(int j = i+1; j < 4; ++j)
+					accum += U(i,j)*x[j];
+				x[i] = (y[i] - accum)/U(i,i);
+			}
 			return x;
 		}
 

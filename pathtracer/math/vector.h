@@ -42,7 +42,7 @@ namespace math
 		}
 		constexpr Vector(T x, T y) : m {x,y} {}
 		constexpr Vector(T x, T y, T z) : m {x,y,z} {}
-		constexpr Vector(T x, T y, T z, T w) : m {x,y,z} {}
+		constexpr Vector(T x, T y, T z, T w) : m {x,y,z,w} {}
 
 		Vector(const std::array<T,n>& v) {
 			for(auto i = 0; i < n; ++i)
