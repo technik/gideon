@@ -102,15 +102,23 @@ namespace { // Auxiliary functions
 	//----------------------------------------------------------------------------------------------
 	auto loadMaterials(
 		const fx::gltf::Document& _document,
-		const std::vector<std::shared_ptr<PBRMaterial::Sampler>>& _textures
+		const std::vector<std::shared_ptr<PBRMaterial::Sampler>>& _textures,
+		bool overrideMaterials
 	)
 	{
-		std::vector<std::shared_ptr<PBRMaterial>> materials;
+		std::vector<std::shared_ptr<Material>> materials;
 		auto baseColor = math::Vec3f(1.f);
 
 		// Load materials
 		for(auto& matDesc : _document.materials)
 		{
+			if(overrideMaterials)
+			{
+				auto mat = std::make_shared<Lambertian>(Vec3f(0.75f));
+				materials.push_back(mat);
+				continue;
+			}
+
 			std::shared_ptr<PBRMaterial::Sampler> albedo, physics, ao;
 
 			auto& pbrDesc = matDesc.pbrMetallicRoughness;
@@ -203,10 +211,10 @@ namespace { // Auxiliary functions
 		const fx::gltf::Document& document,
 		const std::vector<uint8_t>& bufferData,
 		const fx::gltf::Mesh& meshDesc,
-		const std::vector<std::shared_ptr<PBRMaterial>>& materials)
+		const std::vector<std::shared_ptr<Material>>& materials)
 	{
 		std::vector<TriangleMesh> primitives;
-		std::vector<std::shared_ptr<PBRMaterial>> meshMaterials;
+		std::vector<std::shared_ptr<Material>> meshMaterials;
 		for(auto& primitiveDesc : meshDesc.primitives)
 		{
 			auto indices = readIndices(document, bufferData, primitiveDesc.indices);
@@ -247,7 +255,7 @@ namespace { // Auxiliary functions
 	}
 
 	//----------------------------------------------------------------------------------------------
-	std::vector<std::shared_ptr<Shape>> loadMeshes(const std::string& _assetsFolder, const fx::gltf::Document& document, const std::vector<std::shared_ptr<PBRMaterial>>& materials)
+	std::vector<std::shared_ptr<Shape>> loadMeshes(const std::string& _assetsFolder, const fx::gltf::Document& document, const std::vector<std::shared_ptr<Material>>& materials)
 	{
 		std::vector<uint8_t> bufferData;
 		loadRawBuffer((_assetsFolder+document.buffers[0].uri).c_str(), bufferData);
@@ -263,7 +271,7 @@ namespace { // Auxiliary functions
 }
 
 //--------------------------------------------------------------------------------------------------
-bool loadGltf(const char* fileName, Scene& dstScene, bool overrideMaterials)
+bool loadGltf(const char* fileName, Scene& dstScene, float aspectRatio, bool overrideMaterials)
 {
 	fx::gltf::Document document = fx::gltf::LoadFromText(fileName);
 
@@ -287,7 +295,6 @@ bool loadGltf(const char* fileName, Scene& dstScene, bool overrideMaterials)
 				auto xForm = transforms[nodeNdx];
 				auto pos = xForm.transformPos(math::Vec3f(0.f));
 				auto lookDir = xForm.transformDir({0.f,0.f,-1.f});
-				auto aspectRatio = camDesc.perspective.aspectRatio;
 				dstScene.addCamera(make_shared<FrustumCamera>(pos, pos+lookDir, camDesc.perspective.yfov, aspectRatio));
 				break;
 			}
@@ -296,7 +303,7 @@ bool loadGltf(const char* fileName, Scene& dstScene, bool overrideMaterials)
 
 	auto folder = getFolder(fileName);
 	auto textures = loadTextures(folder, document);
-	auto materials = loadMaterials(document, textures);
+	auto materials = loadMaterials(document, textures, overrideMaterials);
 	auto meshes = loadMeshes(folder, document, materials);
 	for(int i = 0; i < document.nodes.size(); ++i)
 	{

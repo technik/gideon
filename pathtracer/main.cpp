@@ -294,7 +294,7 @@ int main(int _argc, const char** _argv)
 	Scene world;
 	if(!params.scene.empty())
 	{
-		loadGltf(params.scene.c_str(), world, params.overrideMaterials);
+		loadGltf(params.scene.c_str(), world, float(params.sx)/params.sy, params.overrideMaterials);
 	}
 
 	// Background

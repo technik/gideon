@@ -29,11 +29,17 @@
 class MeshInstance
 {
 public:
-	MeshInstance(const std::shared_ptr<Shape>& mesh, const math::Matrix34f& transform)
+	MeshInstance(const std::shared_ptr<Shape>& mesh, const math::Matrix34f& x)
 		: mMesh(mesh)
 	{
-		mXForm = transform;
-		mXFormInv = transform.inverse();
+		mXForm = x;
+		mXFormInv = x.inverse();
+
+		auto det = 
+			x(0,0) * (x(1,1)*x(2,2)-x(2,1)*x(1,2)) -
+			x(0,1) * (x(1,0)*x(2,2)-x(2,0)*x(1,2)) +
+			x(0,2) * (x(1,0)*x(2,1)-x(2,0)*x(1,1));
+		mXFormScaleSign = det > 0? 1.f : -1.f;
 	}
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
@@ -42,7 +48,7 @@ public:
 
 		if(mMesh->hit(localRay, tMin, tMax, collision))
 		{
-			collision.normal = mXForm.transformDir(collision.normal);
+			collision.normal = mXForm.transformDir(mXFormScaleSign * collision.normal);
 			collision.p = mXForm.transformPos(collision.p);
 			tMax = collision.t;
 			return true;
@@ -55,4 +61,5 @@ private:
 	std::shared_ptr<const Shape> mMesh;
 	math::Matrix34f mXForm;
 	math::Matrix34f mXFormInv;
+	float mXFormScaleSign;
 };

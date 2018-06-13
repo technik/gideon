@@ -23,4 +23,4 @@ class Scene;
 
 /// Loads the gltf scene from fileName into dst scene
 /// If overrideMaterials is true, all materials in the scene will be substituted by plain white, diffuse material
-bool loadGltf(const char* fileName, Scene& dst, bool overrideMaterials = false);
+bool loadGltf(const char* fileName, Scene& dst, float aspectRatio, bool overrideMaterials = false);

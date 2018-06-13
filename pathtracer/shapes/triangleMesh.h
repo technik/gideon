@@ -179,7 +179,7 @@ private:
 class MultiMesh : public Shape
 {
 public:
-	MultiMesh(const std::vector<TriangleMesh>& mesh, const std::vector<std::shared_ptr<PBRMaterial>>& mat)
+	MultiMesh(const std::vector<TriangleMesh>& mesh, const std::vector<std::shared_ptr<Material>>& mat)
 		: mMeshes(mesh)
 		, mMaterials(mat)
 	{}
@@ -200,7 +200,7 @@ public:
 	}
 
 	const std::vector<TriangleMesh> mMeshes;
-	const std::vector<std::shared_ptr<PBRMaterial>> mMaterials;
+	const std::vector<std::shared_ptr<Material>> mMaterials;
 };
 
 //-------------------------------------------------------------------------------------------------
