@@ -65,9 +65,9 @@ namespace math
 					res(i,j) =
 						(*this)(i,0)*b(0,j) +
 						(*this)(i,1)*b(1,j) +
-						(*this)(i,2)*b(2,j) +
-						(*this)(i,3);
+						(*this)(i,2)*b(2,j);
 				}
+				res(i,3) += (*this)(i,3);
 			}
 			res(3,0) = 0.f;
 			res(3,1) = 0.f;
@@ -159,10 +159,14 @@ namespace math
 			Matrix44f L, U;
 			std::array<int,4> P;
 			factorizationLU(L,U,P);
+			Matrix44f pb = Matrix44f(0.f);
+			for(int i = 0; i < 4; ++i)
+			{
+				pb(i,P[i]) = 1.f;
+			}
 			for(int j = 0; j < 4; ++j)
 			{
-				Vec4f b(0.f);
-				b[P[j]] = 1.f;
+				Vec4f b(pb(0,j),pb(1,j),pb(2,j),pb(3,j));
 				auto y = lowSolve(L,b);
 				auto x = upSolve(U,y);
 				for(auto i = 0; i < 4; ++i)
