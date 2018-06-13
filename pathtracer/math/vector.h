@@ -256,7 +256,10 @@ namespace math
 	//---------------------------------------------------------------------------------------------
 	template<class T, int n> auto dot(const Vector<T,n>& a, const Vector<T,n>& b)
 	{
-		return a.x()*b.x() + a.y()*b.y() + a.z()*b.z();
+		auto d = T(0);
+		for(int i = 0; i < n; ++i)
+			d += a[i]*b[i];
+		return d;
 	}
 
 	template<class T>

@@ -49,8 +49,38 @@ void testMatrixInverse(const Mat& m)
 	}
 }
 
+bool similarUnit(const Vec4f& a, const Vec4f& b)
+{
+	auto error = dot(a,b) - 1.f;
+	return abs(error) < 1e-4f;
+}
+
+void testLowTriangularMatrixSolve()
+{
+	RandomGenerator g;
+	for(int n = 0; n < 100; ++n)
+	{
+		// Generate a low triangular matrix
+		Matrix44f m = Matrix44f::identity();
+		for(int i = 0; i < 4; ++i)
+		{
+			for(int j = 0; j < 4; ++j)
+			{
+				if(i > j)
+					m(i,j) = g.scalar();
+			}
+		}
+		// Solve for a random vector
+		auto v = normalize(Vec4f(g.scalar(), g.scalar(), g.scalar(), g.scalar()));
+		auto x = Matrix44f::lowSolve(m,v);
+		auto vp = m*x; // Reconstructed vector
+		assert(similarUnit(v,vp));
+	}
+}
+
 int main()
 {
+	testLowTriangularMatrixSolve();
 	// Test characteristic matrices
 	testMatrixInverse(Matrix44f::identity());
 	{ // Scaled matrix

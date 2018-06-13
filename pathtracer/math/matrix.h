@@ -125,19 +125,23 @@ namespace math
 			: m(x)
 		{}
 
-		static std::array<float,4> lowSolve(const Matrix44f& L, std::array<float,4>& y)
+		static auto lowSolve(const Matrix44f& L, const Vec4f& y)
 		{
-			std::array<float,4> x;
-			x[0] = y[0];
-			x[1] = y[1] - x[0]*L(1,0);
-			x[2] = y[2] - x[0]*L(2,0) - x[1]*L(2,1);
-			x[3] = y[3] - x[0]*L(3,0) - x[1]*L(3,1) - x[2]*L(3,2);
+			Vec4f x;
+			for(int i = 0; i < 4; ++i)
+			{
+				assert(abs(L(i,i)) > 1e-4f);
+				float accum = 0.f;
+				for(int j = 0; j < i; ++j)
+					accum += L(i,j)*x[j];
+				x[i] = (y[i] - accum)/L(i,i);
+			}
 			return x;
 		}
 
-		static std::array<float,4> upSolve(const Matrix44f& L, std::array<float,4>& y)
+		static auto upSolve(const Matrix44f& L, const Vec4f& y)
 		{
-			std::array<float,4> x;
+			Vec4f x;
 			x[3] =  y[3]/L(3,3);
 			x[2] = (y[2] - x[3]*L(2,3)) /L(2,2);
 			x[1] = (y[1] - x[3]*L(1,3) - x[2]*L(1,2))/L(1,1);
@@ -153,7 +157,7 @@ namespace math
 			factorizationLU(L,U,P);
 			for(int j = 0; j < 4; ++j)
 			{
-				std::array<float,4> b = {};
+				Vec4f b(0.f);
 				b[P[j]] = 1.f;
 				auto y = lowSolve(L,b);
 				auto x = upSolve(U,y);
@@ -201,6 +205,20 @@ namespace math
 						(*this)(i,2)*b(2,j) +
 						(*this)(i,3)*b(3,j);
 				}
+			}
+			return res;
+		}
+
+		Vec4f operator*(const Vec4f& b) const
+		{
+			Vec4f res;
+			for(int i = 0; i < 4; ++i)
+			{
+				res[i] =
+					(*this)(i,0)*b[0] +
+					(*this)(i,1)*b[1] +
+					(*this)(i,2)*b[2] +
+					(*this)(i,3)*b[3];
 			}
 			return res;
 		}
