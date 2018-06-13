@@ -253,38 +253,48 @@ namespace math
 			{
 				// Find best pivot
 				auto maxA = abs(element(k,k));
-				auto bestI = P[k];
+				auto bestI = k;
 				for(auto i = k+1; i < 4; ++i) // Find best pivot in the column
 				{
 					auto absA = abs(element(i,k));
 					if(absA > maxA)
 					{
 						maxA = absA;
-						bestI = P[i];
+						bestI = i;
 					}
 				}
 				constexpr float tolerance = 1e-4f;
 				assert(maxA > tolerance); // Ensure minimun conditioning of the matrices
-				P[k] = bestI;
 
 				// permutate pivot row
-				if(k != P[k])
-					for(auto j = k+1; j < 4; ++j) // Swap all elements to the right of the pivot, in both rows k and p[k]
+				if(k != bestI)
+				{
+					auto tk = P[bestI];
+					P[bestI] = P[k];
+					P[k] = tk;
+					for(auto j = k; j < 4; ++j) // Swap all elements to the right of the pivot, in both rows k and p[k]
 					{
-						auto a = U(j,k);
-						U(j,k) = U(j,P[k]);
-						U(j,P[k]) = a;
+						auto a = U(k,j);
+						U(k,j) = U(bestI,j);
+						U(bestI,j) = a;
 					}
+					for(auto j = 0; j < k; ++j) // Swap all elements to the right of the pivot, in both rows k and p[k]
+					{
+						auto a = L(k,j);
+						L(k,j) = L(bestI,j);
+						L(bestI,j) = a;
+					}
+				}
 
 				// Partially solve all rows below the pivot
+				auto pivot = U(k,k);
 				for(auto i = k+1; i < 4; ++i)
 				{
-					auto pivot = U(k,k);
-					auto rowCoeff = U(i,k) / pivot; // Multiplier coefficient for row i
-					L(i,k) = rowCoeff;
-					for(auto j = i+1; j < 4; ++j)
+					auto L_ik = U(i,k) / pivot; // Multiplier coefficient for row i
+					L(i,k) = L_ik;
+					for(auto j = k+1; j < 4; ++j)
 					{
-						U(i,j) = U(i,j) - rowCoeff*U(k,j);
+						U(i,j) = U(i,j) - L_ik*U(k,j);
 					}
 					U(i,k) = 0; // U is upper triangular, so all elements below the diagonal must be 0
 				}

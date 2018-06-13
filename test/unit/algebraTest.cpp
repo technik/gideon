@@ -39,11 +39,36 @@ void testMatrixInverse(const Mat& m)
 			if(i == j) // Identity's 1s
 			{
 				error = abs(reconstructedIdentity(i,j)-1);
-				assert(error < 5e-2f);
+				assert(error < 1e-4f);
 			}
 			else { // Identity's 0s
 				error = abs(reconstructedIdentity(i,j));
-				assert(error < 5e-2f);
+				assert(error < 1e-4f);
+			}
+		}
+	}
+}
+
+void testLUDecomposition(const Matrix44f& m)
+{
+	Matrix44f L, U;
+	std::array<int,4> P;
+	m.factorizationLU(L, U, P);
+	auto reconstructedIdentity = L * U;
+	for(int i = 0; i < 3; ++i)
+	{
+		for(int j = 0; j < 4; ++j)
+		{
+			auto error = 0.f;
+			auto a = m(P[i],j);
+			if(abs(a) < 1e-4f)
+			{
+				error = abs(reconstructedIdentity(i,j)-a);
+				assert(error < 1e-4f);
+			}
+			else {
+				error = abs((reconstructedIdentity(i,j)-a)/a);
+				assert(error < 1e-4f);
 			}
 		}
 	}
@@ -106,17 +131,20 @@ int main()
 	testLowTriangularMatrixSolve();
 	testHighTriangularMatrixSolve();
 	// Test characteristic matrices
+	testLUDecomposition(Matrix44f::identity());
 	testMatrixInverse(Matrix44f::identity());
 	{ // Scaled matrix
 		Matrix44f m = Matrix44f::identity();
 		for(int i = 0; i < 4; ++i)
 			m(i,i) = 4.f;
+		testLUDecomposition(m);
 		testMatrixInverse(m);
 	}
 	{ // Translated matrix
 		Matrix44f m = Matrix44f::identity();
 		for(int i = 0; i < 4; ++i)
 			m(i,3) = 4.f;
+		testLUDecomposition(m);
 		testMatrixInverse(m);
 	} // Rotation matrices
 	{
@@ -134,6 +162,7 @@ int main()
 				auto c = cos(angle);
 				auto s = sin(angle);
 				Quatf rot = { axis.x() * s, axis.y() * s, axis.z() * s, c };
+				testLUDecomposition(rot.rotationMtx());
 				testMatrixInverse(rot.rotationMtx());
 			}
 		}
