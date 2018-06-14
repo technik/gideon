@@ -1,9 +1,6 @@
 //-------------------------------------------------------------------------------------------------
 // Toy path tracer
 //-------------------------------------------------------------------------------------------------
-// Based on the minibook 'Raytracing in one weekend' and Aras P.'s series: Daily pathtracer
-// https://aras-p.info/blog/
-//--------------------------------------------------------------------------------------------------
 // Copyright 2018 Carmelo J Fdez-Aguera
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software
@@ -90,6 +87,7 @@ float legendre(int l, int m, float sinTheta, float z)
 	}
 }
 
+//--------------------------------------------------------------------------------------------------
 float sh(int l, int m, float cosTheta, float phi)
 {
 	float sinTheta = sqrt(1-cosTheta*cosTheta);
@@ -108,7 +106,7 @@ float sh(int l, int m, float cosTheta, float phi)
 Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
 {
 	constexpr float nearPlane = 1e-5f;
-	constexpr float farPlane = 1e3f; // 1km
+	constexpr float farPlane = 1e3f;
 	HitRecord hit;
 	if(world.hit(r, nearPlane, farPlane, hit))
 	{
@@ -116,7 +114,8 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 		Vec3f attenuation;
 		if(depth < 10 && hit.material->scatter(r, hit, attenuation, scattered, random))
 		{
-			return attenuation * color(scattered, world, depth+1, random);
+			return attenuation;
+			//return attenuation * color(scattered, world, depth+1, random);
 		}
 		return Vec3f(0.f);
 	}

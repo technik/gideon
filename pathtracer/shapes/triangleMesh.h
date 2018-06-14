@@ -250,7 +250,8 @@ inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRe
 	{
 		collision.p = hitInfo.pos;
 		collision.t = hitInfo.t;
-		interpolateData(hitInfo, collision);
+		//interpolateData(hitInfo, collision);
+		collision.normal = hitInfo.normal;
 		return true;
 	}
 	return false;
