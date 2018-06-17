@@ -50,7 +50,6 @@ public:
 		{
 			collision.normal = mXForm.transformDir(mXFormScaleSign * collision.normal);
 			collision.p = mXForm.transformPos(collision.p);
-			tMax = collision.t;
 			return true;
 		}
 

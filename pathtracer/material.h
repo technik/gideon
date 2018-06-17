@@ -40,14 +40,14 @@ public:
 	Lambertian(const math::Vec3f& c) : albedo(c) {}
 	bool scatter(const math::Ray& ray, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
 	{
-		attenuation = math::Vec3f(hit.t/5.f);//hit.normal;
-		return true;
-		/*if(dot(hit.normal, ray.direction()) > 0.f)
+		/*attenuation = math::Vec3f(hit.t/5.f);//hit.normal;
+		return true;*/
+		if(dot(hit.normal, ray.direction()) > 0.f)
 			hit.normal = - hit.normal;
 		auto target = hit.normal + random.unit_vector();
 		out = math::Ray(hit.p, normalize(target));
 		attenuation = albedo;
-		return true;*/
+		return true;
 	}
 
 	math::Vec3f albedo;
