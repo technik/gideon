@@ -1,6 +1,5 @@
 //-------------------------------------------------------------------------------------------------
-// Based on the minibook 'Raytracing in one weekend' and Aras P.'s series: Daily pathtracer
-// https://aras-p.info/blog/
+// Toy path tracer
 //--------------------------------------------------------------------------------------------------
 // Copyright 2018 Carmelo J Fdez-Aguera
 // 

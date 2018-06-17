@@ -114,16 +114,15 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 		Vec3f attenuation;
 		if(depth < 10 && hit.material->scatter(r, hit, attenuation, scattered, random))
 		{
-			//return attenuation
 			return attenuation * color(scattered, world, depth+1, random);
 		}
 		return Vec3f(0.f);
 	}
 	else
 	{
-		return Vec3f(0.f);
-		//auto unitDirection = normalize(r.direction());
-		//return skyBg->sample(unitDirection);
+		//return Vec3f(0.f);
+		auto unitDirection = normalize(r.direction());
+		return skyBg->sample(unitDirection);
 	}
 	// Spherical harmonics coefficients
 	/*auto dir =r.direction();
