@@ -302,7 +302,11 @@ bool loadGltf(const char* fileName, Scene& dstScene, float aspectRatio, bool ove
 	}
 
 	auto folder = getFolder(fileName);
-	auto textures = loadTextures(folder, document);
+	vector<shared_ptr<PBRMaterial::Sampler>> textures;
+	if(!overrideMaterials)
+	{
+		textures = loadTextures(folder, document);
+	}
 	auto materials = loadMaterials(document, textures, overrideMaterials);
 	auto meshes = loadMeshes(folder, document, materials);
 	for(int i = 0; i < document.nodes.size(); ++i)

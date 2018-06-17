@@ -345,6 +345,7 @@ int main(int _argc, const char** _argv)
 	// Run jobs
 	cout << "Running " << nThreads << " threads for " << tiles.size() << " tiles\n";
 	auto start = chrono::high_resolution_clock::now();
+
 	for(int i = 0; i < nThreads; ++i)
 	{
 		ts[i] = std::thread(threadRoutine, &world, &outputImage, &tiles, &tileCounter, params.ns);
