@@ -38,7 +38,7 @@ public:
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
 	{
-		return mRoot.hit(r, tMin, tMax, collision);
+		return mRoot.hit(r, r.implicit(), tMin, tMax, collision);
 	}
 
 	const math::AABB& bbox() const { return mRoot.mBbox; }
@@ -90,18 +90,18 @@ private:
 			}
 		}
 
-		bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
+		bool hit(const math::Ray& r, const math::Ray::Implicit & ri, float tMin, float tMax, HitRecord & collision) const
 		{
 			if(!mChildren.empty()) // Non-leaf
 			{
 				// Check children
 				bool hit_any = false;
-				if(mChildren[0].mBbox.intersect(r.implicit(), tMin,tMax) && mChildren[0].hit(r,tMin,tMax,collision))
+				if(mChildren[0].mBbox.intersect(ri, tMin,tMax) && mChildren[0].hit(r,ri,tMin,tMax,collision))
 				{
 					tMax = collision.t;
 					hit_any = true;
 				}
-				if(mChildren[1].mBbox.intersect(r.implicit(), tMin,tMax) && mChildren[1].hit(r,tMin,tMax,collision))
+				if(mChildren[1].mBbox.intersect(ri, tMin,tMax) && mChildren[1].hit(r,ri,tMin,tMax,collision))
 				{
 					tMax = collision.t;
 					hit_any = true;
