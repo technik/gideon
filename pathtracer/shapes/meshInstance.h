@@ -46,11 +46,14 @@ public:
 	{
 		math::Ray localRay (mXFormInv.transformPos(r.origin()), mXFormInv.transformDir(r.direction()));
 
-		if(mMesh->hit(localRay, tMin, tMax, collision))
+		if(mMesh->bbox().intersect(localRay.implicit(), tMin, tMax))
 		{
-			collision.normal = mXForm.transformDir(mXFormScaleSign * collision.normal);
-			collision.p = mXForm.transformPos(collision.p);
-			return true;
+			if(mMesh->hit(localRay, tMin, tMax, collision))
+			{
+				collision.normal = mXForm.transformDir(mXFormScaleSign * collision.normal);
+				collision.p = mXForm.transformPos(collision.p);
+				return true;
+			}
 		}
 
 		return false;
