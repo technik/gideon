@@ -256,11 +256,11 @@ namespace math
 			for(auto k = 0; k < 4; k++)
 			{
 				// Find best pivot
-				auto maxA = abs(element(k,k));
+				auto maxA = abs(U.element(k,k));
 				auto bestI = k;
 				for(auto i = k+1; i < 4; ++i) // Find best pivot in the column
 				{
-					auto absA = abs(element(i,k));
+					auto absA = abs(U.element(i,k));
 					if(absA > maxA)
 					{
 						maxA = absA;
