@@ -147,6 +147,12 @@ int main()
 		testLUDecomposition(m);
 		testMatrixInverse(m);
 	} // Rotation matrices
+	testMatrixInverse(Matrix44f({ 
+		1.f, 0.f, 0.f, 0.f, // Col 0
+		0.f, 0.f, 1.f, 0.f, // Col 1
+		0.f,-1.f, 0.f, 0.f, // Col 2
+		0.f, 0.f, 0.f, 1.f  // Col 3
+		}));
 	{
 		std::vector<float> angles = { 0.f, 0.1f, 1.57f, 3.f, 3.14159f, 5.f };
 		std::vector<Vec3f> axes = {
