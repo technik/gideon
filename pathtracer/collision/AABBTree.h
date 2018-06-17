@@ -30,15 +30,18 @@ template<
 class AABBTree
 {
 public:
+	AABBTree() = default;
 	AABBTree(const std::vector<Triangle>& triangles)
 	{
-		root = new Node(triangles, 0);
+		mRoot = Node(triangles, 0);
 	}
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
 	{
-		return root.hit(r, tMin, tMax, collision);
+		return mRoot.hit(r, tMin, tMax, collision);
 	}
+
+	const math::AABB& bbox() const { return mRoot.mBbox; }
 
 private:
 	struct Node
@@ -60,15 +63,16 @@ private:
 						return da < db;
 				});
 				// Create children nodes
-				auto middle = triangles.size / 2;
+				auto middle = triangles.size() / 2;
+				auto nextAxis = (sortAxis+1)%3;
 				// Child A
 				std::vector<Triangle> childTris;
 				childTris.insert(childTris.begin(), triangles.begin(), triangles.begin()+middle);
-				mChildren.emplace_back(childTris);
+				mChildren.emplace_back(childTris, nextAxis);
 				// Child B
 				childTris.clear();
 				childTris.insert(childTris.begin(), triangles.begin()+middle, triangles.end());
-				mChildren.emplace_back(childTris);
+				mChildren.emplace_back(childTris, nextAxis);
 
 				// Update bbox
 				mBbox = math::AABB(mChildren[0].mBbox, mChildren[1].mBbox);
@@ -92,12 +96,12 @@ private:
 			{
 				// Check children
 				bool hit_any = false;
-				if(mChildren[0].hit(r,tMin,tMax,collision))
+				if(mChildren[0].mBbox.intersect(r.implicit(), tMin,tMax) && mChildren[0].hit(r,tMin,tMax,collision))
 				{
 					tMax = collision.t;
 					hit_any = true;
 				}
-				if(mChildren[1].hit(r,tMin,tMax,collision))
+				if(mChildren[1].mBbox.intersect(r.implicit(), tMin,tMax) && mChildren[1].hit(r,tMin,tMax,collision))
 				{
 					tMax = collision.t;
 					hit_any = true;

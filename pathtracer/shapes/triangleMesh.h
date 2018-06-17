@@ -24,6 +24,7 @@
 #include <material.h>
 #include <math/vector.h>
 #include <math/aabb.h>
+#include <collision/AABBTree.h>
 #include "shape.h"
 #include "triangle.h"
 
@@ -73,7 +74,7 @@ private:
 		normalize(hit.normal);
 	}
 
-	std::vector<Triangle> mTriangles;
+	AABBTree<2> mBVH;
 	std::vector<uint16_t> mIndices;
 	std::vector<VtxInfo> mVtxData;
 };
@@ -133,10 +134,9 @@ TriangleMesh::TriangleMesh(
 {
 	mVtxData = vertices;
 	auto nTris = indices.size() / 3;
-	mTriangles.resize(nTris);
 	mIndices.resize(indices.size());
 
-	mBBox.clear();
+	std::vector<Triangle> triangles(nTris);
 	for(auto i = 0; i < nTris; ++i)
 	{
 		auto i0 = indices[3*i+0];
@@ -146,29 +146,20 @@ TriangleMesh::TriangleMesh(
 		mIndices[3*i+1] = i1;
 		mIndices[3*i+2] = i2;
 		// Construct the triangle
-		mTriangles[i] = Triangle(mVtxData[i0].position, mVtxData[i1].position, mVtxData[i2].position);
+		triangles[i] = Triangle(mVtxData[i0].position, mVtxData[i1].position, mVtxData[i2].position);
 
 		// Update bounding box
 		mBBox.add(mVtxData[i0].position);
 		mBBox.add(mVtxData[i1].position);
 		mBBox.add(mVtxData[i2].position);
 	}
+
+	mBVH = AABBTree<2>(triangles);
+	mBBox = mBVH.bbox();
 }
 
 //-------------------------------------------------------------------------------------------------
 inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
 {
-	bool hit_any = false;
-
-	for(auto& triangle : mTriangles)
-	{
-		float f0, f1;
-		if(triangle.hit(r, tMin, tMax, collision, f0, f1))
-		{
-			hit_any = true;
-			tMax= collision.t;
-		}
-	}
-
-	return hit_any;
+	return mBVH.hit(r, tMin, tMax, collision);
 }
