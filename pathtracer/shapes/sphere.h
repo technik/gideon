@@ -35,7 +35,9 @@ public:
 		: mCenter(center)
 		, mSqRadius(radius*radius)
 		, m(mat)
-	{}
+	{
+		mBBox = math::AABB(center-radius, center+radius);
+	}
 
 	bool hit(
 		const math::Ray& r,

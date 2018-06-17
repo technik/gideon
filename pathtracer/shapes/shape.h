@@ -24,14 +24,21 @@
 
 #include <collision.h>
 #include <math/ray.h>
+#include <math/aabb.h>
 
 class Shape
 {
 public:
+	const math::AABB& bbox() const { return mBBox; }
+
 	virtual bool hit(
 		const math::Ray& r,
 		float tMin,
 		float tMax,
 		HitRecord& collision
 	) const = 0;
+
+protected:
+	math::AABB mBBox; // Bounding box
+
 };

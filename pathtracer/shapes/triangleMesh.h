@@ -86,7 +86,14 @@ public:
 	MultiMesh(const std::vector<TriangleMesh>& mesh, const std::vector<std::shared_ptr<Material>>& mat)
 		: mMeshes(mesh)
 		, mMaterials(mat)
-	{}
+	{
+		mBBox.clear();
+		for(auto& mesh : mMeshes)
+		{
+			mBBox.add(mesh.bbox().min());
+			mBBox.add(mesh.bbox().max());
+		}
+	}
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
 	{
@@ -133,6 +140,10 @@ TriangleMesh::TriangleMesh(
 	{
 		mIndices[i] = uint16_t(indices[i]);
 	}
+
+	mBBox.clear();
+	for(auto& v : vertices)
+		mBBox.add(v.position);
 }
 
 //-------------------------------------------------------------------------------------------------
