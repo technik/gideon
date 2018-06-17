@@ -1,8 +1,5 @@
 //-------------------------------------------------------------------------------------------------
 // Toy path tracer
-//-------------------------------------------------------------------------------------------------
-// Based on the minibook 'Raytracing in one weekend' and Aras P.'s series: Daily pathtracer
-// https://aras-p.info/blog/
 //--------------------------------------------------------------------------------------------------
 // Copyright 2018 Carmelo J Fdez-Aguera
 // 
@@ -76,6 +73,7 @@ private:
 		normalize(hit.normal);
 	}
 
+	std::vector<Triangle> mTriangles;
 	std::vector<uint16_t> mIndices;
 	std::vector<VtxInfo> mVtxData;
 };
@@ -134,31 +132,38 @@ TriangleMesh::TriangleMesh(
 	const std::vector<Idx>& indices)
 {
 	mVtxData = vertices;
+	auto nTris = indices.size() / 3;
+	mTriangles.resize(nTris);
 	mIndices.resize(indices.size());
 
-	for(auto i = 0; i < mIndices.size(); ++i)
-	{
-		mIndices[i] = uint16_t(indices[i]);
-	}
-
 	mBBox.clear();
-	for(auto& v : vertices)
-		mBBox.add(v.position);
+	for(auto i = 0; i < nTris; ++i)
+	{
+		auto i0 = indices[3*i+0];
+		auto i1 = indices[3*i+1];
+		auto i2 = indices[3*i+2];
+		mIndices[3*i+0] = i0;
+		mIndices[3*i+1] = i1;
+		mIndices[3*i+2] = i2;
+		// Construct the triangle
+		mTriangles[i] = Triangle(mVtxData[i0].position, mVtxData[i1].position, mVtxData[i2].position);
+
+		// Update bounding box
+		mBBox.add(mVtxData[i0].position);
+		mBBox.add(mVtxData[i1].position);
+		mBBox.add(mVtxData[i2].position);
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
 inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
 {
-	auto nTris = mIndices.size() / 3;
 	bool hit_any = false;
-	for(int i = 0; i < nTris; ++i)
+
+	for(auto& triangle : mTriangles)
 	{
-		auto i0 = mIndices[3*i+0];
-		auto i1 = mIndices[3*i+1];
-		auto i2 = mIndices[3*i+2];
-		auto tri = Triangle(mVtxData[i0].position, mVtxData[i1].position, mVtxData[i2].position);
 		float f0, f1;
-		if(tri.hit(r, tMin, tMax, collision, f0, f1))
+		if(triangle.hit(r, tMin, tMax, collision, f0, f1))
 		{
 			hit_any = true;
 			tMax= collision.t;
