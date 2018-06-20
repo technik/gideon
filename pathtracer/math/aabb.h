@@ -137,10 +137,13 @@ namespace math
 			Vector t2 = (mMax - _r.o) * _r.n;
 			// Swapping the order of comparison is important because of NaN behavior and SSE
 			auto tEnter = math::min(t2,t1); // Enters
-			_tCollide = std::max(_t0, tEnter.hMax()); // Furthest enter
 			auto tExit = math::max(t1,t2); // Exits
-			float closestExit = std::min(_t1, tExit.hMin());
-			return closestExit >= _tCollide;
+			auto tMin = float4(_t0);
+			auto tMax = float4(_t1);
+			auto maxEnter = math::max(tEnter,tMin); // If nan, return second operand, which is never nan
+			auto minLeave = math::min(tExit,tMax); // If nan, return second operand, which is never nan
+			_tCollide = maxEnter.hMax(); // Furthest enter
+			return minLeave.hMin() >= _tCollide;
 		}
 	private:
 		Vector mMin;
