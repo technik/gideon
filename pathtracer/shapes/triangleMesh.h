@@ -147,19 +147,17 @@ TriangleMesh::TriangleMesh(
 		mIndices[3*i+2] = i2;
 		// Construct the triangle
 		triangles[i] = Triangle(mVtxData[i0].position, mVtxData[i1].position, mVtxData[i2].position);
-
-		// Update bounding box
-		mBBox.add(mVtxData[i0].position);
-		mBBox.add(mVtxData[i1].position);
-		mBBox.add(mVtxData[i2].position);
 	}
 
+	mBBox.clear();
+	for(auto& v : vertices)
+		mBBox.add(v.position);
+
 	mBVH = AABBTree<2>(triangles);
-	mBBox = mBVH.bbox();
 }
 
 //-------------------------------------------------------------------------------------------------
 inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
 {
-	return mBVH.hit(r, tMin, tMax, collision);
+	return mBVH.hit(r, r.implicitSimd(), tMin, tMax, collision);
 }

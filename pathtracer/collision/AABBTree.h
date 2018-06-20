@@ -36,12 +36,12 @@ public:
 		mRoot = Node(triangles, 0);
 	}
 
-	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
+	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, float tMin, float tMax, HitRecord & collision) const
 	{
-		return mRoot.hit(r, r.implicit(), tMin, tMax, collision);
+		return mRoot.hit(r, ri, tMin, tMax, collision);
 	}
 
-	const math::AABB& bbox() const { return mRoot.mBbox; }
+	const math::AABBSimd& bbox() const { return mRoot.mBbox; }
 
 private:
 	struct Node
@@ -75,33 +75,35 @@ private:
 				mChildren.emplace_back(childTris, nextAxis);
 
 				// Update bbox
-				mBbox = math::AABB(mChildren[0].mBbox, mChildren[1].mBbox);
+				mBbox = math::AABBSimd(mChildren[0].mBbox, mChildren[1].mBbox);
 			}
 			else // Leaf node
 			{
-				mBbox.clear();
 				mTriangles = std::move(triangles);
+				AABB rawBBox;
+				rawBBox.clear();
 				for(auto& t : mTriangles)
 				{
-					mBbox.add(t.v[0]);
-					mBbox.add(t.v[1]);
-					mBbox.add(t.v[2]);
+					rawBBox.add(t.v[0]);
+					rawBBox.add(t.v[1]);
+					rawBBox.add(t.v[2]);
 				}
+				mBbox = AABBSimd(rawBBox.min(), rawBBox.max());
 			}
 		}
 
-		bool hit(const math::Ray& r, const math::Ray::Implicit & ri, float tMin, float tMax, HitRecord & collision) const
+		bool hit(const math::Ray& r, const math::Ray::ImplicitSimd& ri, float tMin, float tMax, HitRecord & collision) const
 		{
 			if(!mChildren.empty()) // Non-leaf
 			{
 				// Check children
 				bool hit_any = false;
-				if(mChildren[0].mBbox.intersect(ri, tMin,tMax) && mChildren[0].hit(r,ri,tMin,tMax,collision))
+				if(mChildren[0].mBbox.intersect(ri, tMin,tMax,collision.t) && mChildren[0].hit(r,ri,tMin,tMax,collision))
 				{
 					tMax = collision.t;
 					hit_any = true;
 				}
-				if(mChildren[1].mBbox.intersect(ri, tMin,tMax) && mChildren[1].hit(r,ri,tMin,tMax,collision))
+				if(mChildren[1].mBbox.intersect(ri, tMin,tMax,collision.t) && mChildren[1].hit(r,ri,tMin,tMax,collision))
 				{
 					tMax = collision.t;
 					hit_any = true;
@@ -127,7 +129,7 @@ private:
 			}
 		}
 
-		math::AABB mBbox;
+		math::AABBSimd mBbox;
 		std::vector<Node> mChildren;
 		std::vector<Triangle> mTriangles;
 	};
