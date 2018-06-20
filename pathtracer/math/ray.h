@@ -58,12 +58,7 @@ namespace math
 				1.f / mDirection.y(),
 				1.f / mDirection.z()
 			);
-			Vec3f origin(
-				mDirection.x() ? -mOrigin.x() * invDir.x() : 0.f,
-				mDirection.y() ? -mOrigin.y() * invDir.y() : 0.f,
-				mDirection.z() ? -mOrigin.z() * invDir.z() : 0.f
-			);
-			return Implicit{origin, invDir};
+			return Implicit{mOrigin, invDir};
 		}
 
 		ImplicitSimd implicitSimd() const {

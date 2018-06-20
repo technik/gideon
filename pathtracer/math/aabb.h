@@ -21,6 +21,7 @@
 
 #include "vector.h"
 #include "ray.h"
+#include "linear.h"
 
 namespace math
 {
@@ -74,46 +75,17 @@ namespace math
 		}
 
 		// Intersection and distance
-		/// find intersection between this box and a ray.
-		/// \return t, where t >= 0.f if an intersetion happens at the positive side of the ray,
-		/// or t < 0.f otherwise (either no intersection, or intersection at the negative side of the ray).
-		float intersect(const Ray::Implicit& _r) const {
-			Vector t1 = mMin * _r.n + _r.o;
-			Vector t2 = mMax * _r.n + _r.o;
-			float tmin = std::min(t1.x(), t2.x());
-			float tmax = std::max(t1.x(), t2.x());
-			tmin = std::max(tmin, std::min(t1.y(), t2.y()));
-			tmax = std::min(tmax, std::max(t1.y(), t2.y()));
-			tmin = std::max(tmin, std::min(t1.z(), t2.z()));
-			tmax = std::min(tmax, std::max(t1.z(), t2.z()));
-			return tmax >= tmin ? tmin : std::numeric_limits<float>::infinity();
-		}
-
-		/// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
-		bool intersect(const Ray::Implicit& _r, float _tmin, float _tmax) const {
-			Vector t1 = mMin *_r.n + _r.o;
-			Vector t2 = mMax *_r.n + _r.o;
-			_tmin = std::max(_tmin, std::min(t1.x(), t2.x()));
-			_tmax = std::min(_tmax, std::max(t1.x(), t2.x()));
-			_tmin = std::max(_tmin, std::min(t1.y(), t2.y()));
-			_tmax = std::min(_tmax, std::max(t1.y(), t2.y()));
-			_tmin = std::max(_tmin, std::min(t1.z(), t2.z()));
-			_tmax = std::min(_tmax, std::max(t1.z(), t2.z()));
-			return _tmax >= _tmin;
-		}
-
 		/// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
 		/// Also, store the minimun intersection distance into _tout
-		bool intersect(const Ray::Implicit& _r, float _tmin, float _tmax, float& _tout) const {
-			Vector t1 = mMin *_r.n + _r.o;
-			Vector t2 = mMax *_r.n + _r.o;
-			_tmin = std::max(_tmin, std::min(t1.x(), t2.x()));
-			_tmax = std::min(_tmax, std::max(t1.x(), t2.x()));
-			_tmin = std::max(_tmin, std::min(t1.y(), t2.y()));
-			_tmax = std::min(_tmax, std::max(t1.y(), t2.y()));
-			_tout = std::max(_tmin, std::min(t1.z(), t2.z()));
-			_tmax = std::min(_tmax, std::max(t1.z(), t2.z()));
-			return _tmax >= _tout;
+		bool intersect(const Ray::Implicit& _r, float _tmin, float _tmax, float& _maxEnter) const {
+			Vector t1 = (mMin -_r.o)*_r.n;
+			Vector t2 = (mMax -_r.o)*_r.n;
+			// Swapping the order of comparison is important because of NaN behavior
+			auto tEnter = math::min(t1,t2);
+			auto tLeave = math::max(t2,t1);
+			_maxEnter = math::max(tEnter.x(), math::max(tEnter.y(), math::max(tEnter.z(), _tmin)));
+			auto minLeave = math::min(tLeave.x(), math::min(tLeave.y(), math::min(tLeave.z(), _tmax)));
+			return minLeave >= _maxEnter;
 		}
 	private:
 		Vector mMin;

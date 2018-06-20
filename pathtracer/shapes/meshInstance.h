@@ -45,7 +45,7 @@ public:
 	{
 		math::Ray localRay (mXFormInv.transformPos(r.origin()), mXFormInv.transformDir(r.direction()));
 
-		if(mMesh->bbox().intersect(localRay.implicit(), tMin, tMax))
+		if(mMesh->bbox().intersect(localRay.implicit(), tMin, tMax, tMin))
 		{
 			if(mMesh->hit(localRay, tMin, tMax, collision))
 			{

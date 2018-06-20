@@ -256,7 +256,7 @@ void testAABB_Ray_intersect()
 	{ diagonal, unitBox,  -std::numeric_limits<float>::infinity(), 0.f, true },
 	{ diagonal, unitBox,  -std::numeric_limits<float>::infinity(), 1.f, true }
 	};
-	//testAABBArray(testCases);
+	testAABBArray(testCases);
 	testAABBArraySIMD(testCases);
 }
 

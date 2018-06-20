@@ -29,4 +29,14 @@ namespace math
 	{
 		return a*(1-x)+b*x;
 	}
+
+	inline float max(float a, float b)
+	{
+		return a>b?a:b; // Same NaN behavior as simd
+	}
+
+	inline float min(float a, float b)
+	{
+		return a<b?a:b; // Same NaN behavior as simd
+	}
 }
