@@ -20,6 +20,8 @@
 
 #include "loadGltf.h"
 #include "scene.h"
+#include <materials/Lambertian.h>
+#include <materials/pbrMaterial.h>
 #include "math/matrix.h"
 #include "math/quaterrnion.h"
 #include "math/vector.h"

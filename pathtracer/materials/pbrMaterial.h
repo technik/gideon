@@ -1,9 +1,6 @@
 //-------------------------------------------------------------------------------------------------
 // Toy path tracer
 //-------------------------------------------------------------------------------------------------
-// Based on the minibook 'Raytracing in one weekend' and Aras P.'s series: Daily pathtracer
-// https://aras-p.info/blog/
-//--------------------------------------------------------------------------------------------------
 // Copyright 2018 Carmelo J Fdez-Aguera
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software
@@ -22,36 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include <math/ray.h>
-#include <math/vector.h>
-#include "collision.h"
-#include "math/random.h"
-#include "textures/textureSampler.h"
-
-class Material
-{
-public:
-	virtual bool scatter(const math::Ray& in, HitRecord& record, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const = 0;
-};
-
-class Lambertian : public Material
-{
-public:
-	Lambertian(const math::Vec3f& c) : albedo(c) {}
-	bool scatter(const math::Ray& ray, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
-	{
-		/*attenuation = math::Vec3f(hit.t/5.f);//hit.normal;
-		return true;*/
-		if(dot(hit.normal, ray.direction()) > 0.f)
-			hit.normal = - hit.normal;
-		auto target = hit.normal + random.unit_vector();
-		out = math::Ray(hit.p, normalize(target));
-		attenuation = albedo;
-		return true;
-	}
-
-	math::Vec3f albedo;
-};
+#include "material.h"
 
 class PBRMaterial : public Material
 {
@@ -76,7 +44,7 @@ public:
 		auto physics = physicsMap ? physicsMap->sample(hit.uv) : math::Vec3f(1.f);
 		auto roughness = physics.y();
 		auto metalness = physics.z();
-					
+
 		math::Vec3f baseColor;
 		if(albedoMap)
 			baseColor = albedoMap->sample(hit.uv);
@@ -113,20 +81,4 @@ public:
 	std::shared_ptr<Sampler> albedoMap;
 	std::shared_ptr<Sampler> physicsMap;
 	std::shared_ptr<Sampler> aoMap;
-};
-
-class Metal : public Material
-{
-public:
-	Metal(const math::Vec3f& c, float f) : albedo(c), fuzz(f) {}
-	bool scatter(const math::Ray& in, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
-	{
-		auto reflected = reflect(normalize(in.direction()), hit.normal);
-		out = math::Ray(hit.p, reflected + random.unit_vector()*fuzz);
-		attenuation = albedo;
-		return dot(out.direction(), hit.normal) > 0.f;
-	}
-
-	math::Vec3f albedo;
-	float fuzz;
 };

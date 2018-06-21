@@ -1,9 +1,6 @@
 //-------------------------------------------------------------------------------------------------
 // Toy path tracer
 //-------------------------------------------------------------------------------------------------
-// Based on the minibook 'Raytracing in one weekend' and Aras P.'s series: Daily pathtracer
-// https://aras-p.info/blog/
-//--------------------------------------------------------------------------------------------------
 // Copyright 2018 Carmelo J Fdez-Aguera
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software
@@ -22,52 +19,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include <math/ray.h>
-#include <math/vector.h>
-#include "shape.h"
+#include "material.h"
 
-class Material;
-
-class Sphere : public Shape
+class Lambertian : public Material
 {
 public:
-	Sphere(){}
-	Sphere(const math::Vec3f& center, float radius, Material* mat)
-		: mCenter(center)
-		, mSqRadius(radius*radius)
-		, m(mat)
+	Lambertian(const math::Vec3f& c) : albedo(c) {}
+	bool scatter(const math::Ray& ray, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
 	{
-		mBBox = math::AABB(center-radius, center+radius);
+		/*attenuation = math::Vec3f(hit.t/5.f);//hit.normal;
+		return true;*/
+		if(dot(hit.normal, ray.direction()) > 0.f)
+			hit.normal = - hit.normal;
+		auto target = hit.normal + random.unit_vector();
+		out = math::Ray(hit.p, normalize(target));
+		attenuation = albedo;
+		return true;
 	}
 
-	bool hit(
-		const math::Ray& r,
-		float tMin,
-		float tMax,
-		HitRecord& collision
-	) const override
-	{
-		auto ro = r.origin() - mCenter; // Ray origin relative to sphere's center
-		float a = r.direction().sqNorm();
-		float b = dot(ro, r.direction());
-		float c = ro.sqNorm() - mSqRadius;
-		auto discriminant = b*b-a*c;
-		if(discriminant >= 0)
-		{
-			float t = (-b - sqrt(discriminant)) / a;
-			if(t > tMin && t < tMax) {
-				collision.t = t;
-				collision.p = r.at(t);
-				collision.normal = normalize(collision.p - mCenter);
-				collision.material = m;
-				return true;
-			}
-		}
-		return false;
-	}
-
-private:
-	math::Vec3f mCenter;
-	float mSqRadius;
-	Material* m;
+	math::Vec3f albedo;
 };

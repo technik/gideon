@@ -21,7 +21,7 @@
 
 #include <cassert>
 #include <vector>
-#include <material.h>
+#include <materials/material.h>
 #include <math/vector.h>
 #include <math/aabb.h>
 #include <collision/AABBTree.h>
