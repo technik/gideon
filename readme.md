@@ -6,6 +6,8 @@ and the [Daily Pathtracer](http://aras-p.info/blog/2018/03/28/Daily-Pathtracer-P
 
 * [Part 1: Basic Jobs System](https://technik90.blogspot.com/2018/06/the-other-pathtracer-basic-job-system.html)
 * [Part 2: The Triangle](https://technik90.blogspot.com/2018/06/the-other-pathtracer-2-triangle.html)
+* [Part 3: Complex Scenes](https://technik90.blogspot.com/2018/06/the-other-pathtracer-3-complex-scenes.html)
+* [Part 4: Optimizing AABB-Ray intersections](https://technik90.blogspot.com/2018/06/the-other-pathtracer-4-optimizing-aabb.html)
 
 ![Screenshot](/screenshot.png?raw=true)
 
