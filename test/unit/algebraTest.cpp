@@ -137,7 +137,7 @@ void testAABB(const AABB& aabb, const Ray& r, float t0, float t1, bool mustInter
 void testAABBSimd(const AABBSimd& aabb, const Ray& r, float t0, float t1, bool mustIntersect)
 {
 	float t;
-	assert(aabb.intersect(r.implicitSimd(), t0, t1, t) == mustIntersect);
+	assert(aabb.intersect(r.implicitSimd(), float4(t0), float4(t1), t) == mustIntersect);
 }
 
 struct AABBTestCase {
