@@ -159,5 +159,5 @@ TriangleMesh::TriangleMesh(
 //-------------------------------------------------------------------------------------------------
 inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
 {
-	return mBVH.hit(r, r.implicitSimd(), tMin, tMax, collision);
+	return mBVH.hit(r, r.implicitSimd(), math::float4(tMin), math::float4(tMax), collision);
 }

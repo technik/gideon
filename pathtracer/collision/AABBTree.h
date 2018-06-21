@@ -21,6 +21,7 @@
 
 #include <math/aabb.h>
 #include <math/vector.h>
+#include <math/vectorFloat.h>
 #include <shapes/triangle.h>
 #include <vector>
 
@@ -36,7 +37,7 @@ public:
 		mRoot = Node(triangles, 0);
 	}
 
-	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, float tMin, float tMax, HitRecord & collision) const
+	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
 	{
 		return mRoot.hit(r, ri, tMin, tMax, collision);
 	}
@@ -92,7 +93,7 @@ private:
 			}
 		}
 
-		bool hit(const math::Ray& r, const math::Ray::ImplicitSimd& ri, float tMin, float tMax, HitRecord & collision) const
+		bool hit(const math::Ray& r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
 		{
 			if(!mChildren.empty()) // Non-leaf
 			{
@@ -100,15 +101,15 @@ private:
 				bool hit_any = false;
 				if(mChildren[0].mBbox.intersect(ri, tMin,tMax,collision.t) && mChildren[0].hit(r,ri,tMin,tMax,collision))
 				{
-					tMax = collision.t;
+					tMax = float4(collision.t);
 					hit_any = true;
 				}
 				if(mChildren[1].mBbox.intersect(ri, tMin,tMax,collision.t) && mChildren[1].hit(r,ri,tMin,tMax,collision))
 				{
-					tMax = collision.t;
+					tMax = float4(collision.t);
 					hit_any = true;
 				}
-				collision.t = tMax;
+				collision.t = tMax.x();
 				return hit_any;
 			}
 			else // leaf node, check all triangles
@@ -118,10 +119,10 @@ private:
 				for(auto& triangle : mTriangles)
 				{
 					float f0, f1;
-					if(triangle.hit(r, tMin, tMax, collision, f0, f1))
+					if(triangle.hit(r, tMin.x(), tMax.x(), collision, f0, f1))
 					{
 						hit_any = true;
-						tMax= collision.t;
+						tMax= float4(collision.t);
 					}
 				}
 

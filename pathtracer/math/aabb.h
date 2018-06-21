@@ -132,16 +132,14 @@ namespace math
 
 		/// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
 		/// Also, store the minimun intersection distance into _tout
-		bool intersect(const Ray::ImplicitSimd& _r, float _t0, float _t1, float& _tCollide) const {
+		bool intersect(const Ray::ImplicitSimd& _r, float4 _tmin, float4 _tmax, float& _tCollide) const {
 			Vector t1 = (mMin - _r.o) * _r.n;
 			Vector t2 = (mMax - _r.o) * _r.n;
 			// Swapping the order of comparison is important because of NaN behavior and SSE
 			auto tEnter = math::min(t2,t1); // Enters
 			auto tExit = math::max(t1,t2); // Exits
-			auto tMin = float4(_t0);
-			auto tMax = float4(_t1);
-			auto maxEnter = math::max(tEnter,tMin); // If nan, return second operand, which is never nan
-			auto minLeave = math::min(tExit,tMax); // If nan, return second operand, which is never nan
+			auto maxEnter = math::max(tEnter,_tmin); // If nan, return second operand, which is never nan
+			auto minLeave = math::min(tExit,_tmax); // If nan, return second operand, which is never nan
 			_tCollide = maxEnter.hMax(); // Furthest enter
 			return minLeave.hMin() >= _tCollide;
 		}
