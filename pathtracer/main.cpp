@@ -46,8 +46,6 @@
 using namespace math;
 using namespace std;
 
-Background* skyBg = nullptr;
-
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
 {
@@ -63,12 +61,12 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 		{
 			return color(scattered, world, depth+1, random) * attenuation + emitted;
 		}
-		return emitted;
+		return Vec3f(0.f);
 	}
 	else
 	{
 		auto unitDirection = normalize(r.direction());
-		return skyBg->sample(unitDirection);
+		return world.background->sample(unitDirection);
 	}
 }
 
@@ -130,45 +128,6 @@ void threadRoutine(
 }
 
 //--------------------------------------------------------------------------------------------------
-Scene loadScene(const CmdLineParams& params)
-{
-	// Geometry
-	Scene world;
-	if(!params.scene.empty())
-	{
-		loadGltf(params.scene.c_str(), world, float(params.sx)/params.sy, params.overrideMaterials);
-	}
-
-	// Background
-	if(params.background.empty())
-	{
-		skyBg = new GradientBackground ({0.5f, 0.7f, 1.f}, Vec3f(1.f));
-	}
-	else
-	{
-		skyBg = new HDRBackground(params.background.c_str());
-	}
-
-	// Camera
-	if(params.sphericalRender)
-	{
-		world.cameras().emplace_back(make_shared<SphericalCamera>(Vec3f(0.f), Vec3f{0.f,0.f,1.f}, Vec3f{0.f,0.f,1.f}));
-	}
-	if(world.cameras().empty()) // Create a default camera
-	{
-		Vec3f camPos { -1.0f, 0.0f, 4.f}; // Damaged helmet
-										  //Vec3f camPos { 189.95187377929688f, 579.0979614257813f, -386.1866149902344f }; // Reciprocating saw
-		Vec3f camLookAt { 0.f, 0.f, 0.f };
-		//Vec3f camPos { 0.f, 0.0f, 0.f};
-		//Vec3f camLookAt { 0.f, 0.f, -1.f };
-		auto aspectRatio = float(params.sx)/params.sy;
-		world.cameras().emplace_back(make_shared<FrustumCamera>(camPos, camLookAt, 3.14159f*params.fov/180, aspectRatio));
-	}
-
-	return world;
-}
-
-//--------------------------------------------------------------------------------------------------
 int main(int _argc, const char** _argv)
 {
 	CmdLineParams params(_argc, _argv);
@@ -177,7 +136,8 @@ int main(int _argc, const char** _argv)
 	Image outputImage(params.sx, params.sy);
 
 	// Scene
-	Scene world = loadScene(params);
+	Scene world;
+	world.loadFromCommandLine(params);
 
 	// Divide the image in tiles that can be consumed as jobs
 	if(!(size.x1%params.tileSize == 0) ||

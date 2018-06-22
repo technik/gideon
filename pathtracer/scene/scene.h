@@ -19,17 +19,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include <camera/frustumCamera.h>
-#include <math/aabb.h>
-#include <math/vector.h>
-#include <math/quaterrnion.h>
-#include "math/random.h"
-#include "shapes/sphere.h"
-#include "shapes/triangleMesh.h"
+#include <camera/camera.h>
 #include "shapes/meshInstance.h"
 #include <vector>
-#include <fx/gltf.h>
-#include <fstream>
+
+struct CmdLineParams;
+class RandomGenerator;
+class Background;
 
 class Scene
 {
@@ -49,52 +45,17 @@ public:
 	const std::vector<std::shared_ptr<Camera>>& cameras() const { return mCameras; }
 	std::vector<std::shared_ptr<Camera>>& cameras() { return mCameras; }
 
-	//--------------------------------------------------------------------------------------------------
 	bool hit(
 		const math::Ray& r,
 		float tMin,
 		float tMax,
 		HitRecord& collision
-	) const
-	{
-		float t = tMax;
-		bool hit_anything = false;
-		for(auto h : mRenderables)
-		{
-			HitRecord tmp_hit;
-			if(h->hit(r, tMin, t, tmp_hit))
-			{
-				collision = tmp_hit;
-				t = tmp_hit.t;
-				hit_anything = true;
-			}
-		}
+	) const;
 
-		return hit_anything;
-	}
+	void generateRandomScene(RandomGenerator& random);
+	void loadFromCommandLine(const CmdLineParams&);
 
-	//--------------------------------------------------------------------------------------------------
-	void generateRandomScene(RandomGenerator& random)
-	{
-		// TODO: Recover this functionality
-		/*mShapes.reserve(1+21*21);
-		for(int i = 0; i < 21; ++i)
-		for(int j = 0; j < 21; ++j)
-		{
-		math::Vec3f albedo = {random.scalar(), random.scalar(), random.scalar()};
-		Material* mat = nullptr;
-		float p = random.scalar();
-		if(p > 0.2f)
-		mat = new Lambertian(albedo);
-		else
-		mat = new Metal(albedo, random.scalar()*0.2f);
-		float h = 0.2f;
-		math::Vec3f center = math::Vec3f(float(i-10), h-0.5f, float(j-10)+-2.f) + math::Vec3f(0.8f*random.scalar(),0.f,0.8f*random.scalar());
-		// Add the sphere
-		mShapes.push_back(new Sphere(center, h, mat));
-		}
-		mShapes.emplace_back(new Sphere(math::Vec3f(0.f, -1000.5f, 0.f), 1000.f, new Lambertian(math::Vec3f(0.5f))));*/
-	}
+	Background* background = nullptr;
 
 private:
 	std::vector<std::shared_ptr<MeshInstance>>	mRenderables;

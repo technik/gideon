@@ -20,11 +20,13 @@
 
 #include "loadGltf.h"
 #include "scene.h"
+#include <camera/frustumCamera.h>
 #include <materials/Lambertian.h>
 #include <materials/pbrMaterial.h>
 #include "math/matrix.h"
 #include "math/quaterrnion.h"
 #include "math/vector.h"
+#include <fx/gltf.h>
 
 using namespace math;
 using namespace fx;
