@@ -112,15 +112,15 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 	{
 		Ray scattered;
 		Vec3f attenuation;
-		if(depth < 10 && hit.material->scatter(r, hit, attenuation, scattered, random))
+		Vec3f emitted;
+		if(depth < 10 && hit.material->scatter(r, hit, attenuation, emitted, scattered, random))
 		{
-			return attenuation * color(scattered, world, depth+1, random);
+			return color(scattered, world, depth+1, random) * attenuation + emitted;
 		}
-		return Vec3f(0.f);
+		return emitted;
 	}
 	else
 	{
-		//return Vec3f(0.f);
 		auto unitDirection = normalize(r.direction());
 		return skyBg->sample(unitDirection);
 	}

@@ -24,9 +24,17 @@
 class ModelSpaceNormalMaterial : public Material
 {
 public:
-	bool scatter(const math::Ray& in, HitRecord& record, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
+	bool scatter(
+		const math::Ray& in,
+		HitRecord& hit,
+		math::Vec3f& attenuation,
+		math::Vec3f& emitted,
+		math::Ray& out,
+		RandomGenerator& random
+	) const override
 	{
-		attenuation = record.normal;
+		emitted = hit.normal;
+		attenuation = math::Vec3f(0.f);
 		return false; // Do not scatter
 	}
 };

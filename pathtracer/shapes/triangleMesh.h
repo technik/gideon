@@ -38,6 +38,7 @@ public:
 	{
 		math::Vec3f position;
 		math::Vec3f normal;
+		math::Vec4f tangent;
 		math::Vec2f uv;
 
 		VtxInfo lerp(const VtxInfo& b, float x) const;

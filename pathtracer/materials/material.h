@@ -28,15 +28,30 @@
 class Material
 {
 public:
-	virtual bool scatter(const math::Ray& in, HitRecord& record, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const = 0;
+	virtual bool scatter(
+		const math::Ray& in,
+		HitRecord& hit,
+		math::Vec3f& attenuation,
+		math::Vec3f& emitted,
+		math::Ray& out,
+		RandomGenerator& random
+	) const = 0;
 };
 
 class Metal : public Material
 {
 public:
 	Metal(const math::Vec3f& c, float f) : albedo(c), fuzz(f) {}
-	bool scatter(const math::Ray& in, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
+	bool scatter(
+		const math::Ray& in,
+		HitRecord& hit,
+		math::Vec3f& attenuation,
+		math::Vec3f& emitted,
+		math::Ray& out,
+		RandomGenerator& random
+	) const override
 	{
+		emitted = math::Vec3f(0.f);
 		auto reflected = reflect(normalize(in.direction()), hit.normal);
 		out = math::Ray(hit.p, reflected + random.unit_vector()*fuzz);
 		attenuation = albedo;

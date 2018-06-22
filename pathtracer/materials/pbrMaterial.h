@@ -38,8 +38,16 @@ public:
 		return F0 + (1.f - F0) * pow(1.f - cosTheta, 5.f);
 	}
 
-	bool scatter(const math::Ray& in, HitRecord& hit, math::Vec3f& attenuation, math::Ray& out, RandomGenerator& random) const override
+	bool scatter(
+		const math::Ray& in,
+		HitRecord& hit,
+		math::Vec3f& attenuation,
+		math::Vec3f& emitted,
+		math::Ray& out,
+		RandomGenerator& random
+	) const override
 	{
+		emitted = math::Vec3f(0.f);
 		//auto ao = aoMap->sample(hit.u, hit.v).r(); // b is metalness
 		auto physics = physicsMap ? physicsMap->sample(hit.uv) : math::Vec3f(1.f);
 		auto roughness = physics.y();
