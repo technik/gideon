@@ -30,6 +30,7 @@ struct CmdLineParams
 	unsigned sx = 640;
 	unsigned sy = 480;
 	unsigned ns = 4;
+	unsigned nThreads = 4;
 	bool overrideMaterials = false;
 	float fov = 45.f;
 	unsigned tileSize = 20;

@@ -18,13 +18,9 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include <algorithm>
-#include <atomic>
-#include <chrono>
 #include <cstddef>
 #include <iostream>
 #include <vector>
-#include <thread>
 
 #include <background.h>
 #include "camera/frustumCamera.h"
@@ -35,6 +31,7 @@
 #include "scene/scene.h"
 #include "scene/loadGltf.h"
 #include "textures/image.h"
+#include "threadPool.h"
 
 // ------ Single header libraries ------
 #define STBI_MSC_SECURE_CRT
@@ -102,32 +99,6 @@ void traceImageSegment(
 }
 
 //--------------------------------------------------------------------------------------------------
-// Would prefer to pass things by reference, but std::thread creates local copies of the objects in that case
-void threadRoutine(
-	const Scene* world,
-	Image* dst,
-	const std::vector<Rect>* tiles,
-	std::atomic<size_t>* tileCounter,
-	unsigned nSamples)
-{
-	assert(world);
-	assert(dst);
-	assert(tiles);
-	assert(tileCounter);
-
-	RandomGenerator random;
-
-	size_t selfCounter = (*tileCounter)++;
-	while(selfCounter < tiles->size()) // Valid job
-	{
-		auto& tile = (*tiles)[selfCounter];
-		traceImageSegment(*world, tile, *dst, random, nSamples);
-		cout << selfCounter << "\n";
-		selfCounter = (*tileCounter)++;
-	}
-}
-
-//--------------------------------------------------------------------------------------------------
 int main(int _argc, const char** _argv)
 {
 	CmdLineParams params(_argc, _argv);
@@ -144,6 +115,7 @@ int main(int _argc, const char** _argv)
 		!(size.y1%params.tileSize == 0))
 	{
 		std::cout << "Incompatible tile and image size. Image size (" << size.x1 << "x" << size.y1 << ") must be an exact multiple of tile size (" << params.tileSize << ")\n";
+		return -1;
 	}
     const auto xTiles = size.x1 / params.tileSize;
     const auto yTiles = size.y1 / params.tileSize;
@@ -155,33 +127,22 @@ int main(int _argc, const char** _argv)
 			tiles.emplace_back(i*params.tileSize, j*params.tileSize, params.tileSize*(i+1u), params.tileSize*(j+1u));
 		}
 
+	// Independent random generators for each thread
+	std::vector<RandomGenerator> random(params.nThreads);
+
 	// Allocate threads to consume
-	std::atomic<size_t> tileCounter = 0; // Atomic counter for lock-free jobs
-	const int nThreads = 16;
-	std::vector<std::thread> ts(nThreads);
-
-	// Run jobs
-	cout << "Running " << nThreads << " threads for " << tiles.size() << " tiles\n";
-	auto start = chrono::high_resolution_clock::now();
-
-	for(int i = 0; i < nThreads; ++i)
+	ThreadPool taskQueue(params.nThreads);
+	if(taskQueue.run(
+		random,
+		tiles,
+		[&world, &outputImage, params](RandomGenerator& random, Rect& window){
+			traceImageSegment(world, window, outputImage, random, params.ns);
+		},
+		cout))
 	{
-		ts[i] = std::thread(threadRoutine, &world, &outputImage, &tiles, &tileCounter, params.ns);
-		if(!ts[i].joinable())
-		{
-			return -1;
-		}
-	}
-	for(int i = 0; i < nThreads; ++i)
-		ts[i].join();
+		// Save final image
+		outputImage.saveAsSRGB(params.output.c_str());
+	};
 
-	chrono::duration<double> runningTime = chrono::high_resolution_clock::now() - start;
-	auto seconds = runningTime.count();
-	auto numRays = size.x1*size.y1*params.ns;
-	cout << "Running time: " << seconds << "\nRays per second: " << numRays/seconds << "\n";
-
-	// Save final image
-	outputImage.saveAsSRGB(params.output.c_str());
-
-	return 0;
+	return -1; // Something failed, we shouldn't reach this point
 }

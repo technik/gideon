@@ -63,6 +63,11 @@ int CmdLineParams::process(const vector<string>& args, int i)
 		ns = atoi(args[i+1].c_str());
 		return 2;
 	}
+	if(arg == "-t") // threads
+	{
+		nThreads = atoi(args[i+1].c_str());
+		return 2;
+	}
 	if(arg == "-w")
 	{
 		sx = atoi(args[i+1].c_str());
