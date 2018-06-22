@@ -22,14 +22,18 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
+#include <fstream>
 #include <thread>
 #include <vector>
+
+#include <nlohmann/json.hpp>
 
 class ThreadPool
 {
 public:
 	ThreadPool(size_t nWorkers)
 		: mWorkers(nWorkers)
+		, mMetrics(nWorkers)
 	{}
 
 	template<class TaskData, class ThreadData, class Op>
@@ -42,8 +46,10 @@ public:
 			return false;
 		}
 
-		// Reset task counter
+		// Reset counter and metrics
 		mTaskCounter = 0;
+		for(auto& metric : mMetrics)
+			metric.reset(taskData.size());
 
 		// Start global profiling
 		log << "Running " << mWorkers.size() << " worker threads for " << taskData.size() << " tasks\n";
@@ -52,7 +58,14 @@ public:
 		// Run jobs
 		for(int i = 0; i < mWorkers.size(); ++i)
 		{
-			mWorkers[i] = std::thread(workerRoutine<TaskData,ThreadData,Op>, std::ref(threadData[i]), std::ref(taskData), &mTaskCounter, std::cref(operation));
+			mWorkers[i] = std::thread(
+				workerRoutine<TaskData,ThreadData,Op>,
+				std::ref(mMetrics[i]),
+				std::ref(threadData[i]),
+				std::ref(taskData),
+				&mTaskCounter,
+				std::cref(operation));
+
 			if(!mWorkers[i].joinable())
 			{
 				return false;
@@ -67,14 +80,27 @@ public:
 		auto seconds = runningTime.count();
 		log << "Running time: " << seconds << " seconds\n";
 
+		logMetrics(seconds);
+
 		return true;
 	}
 
 private:
 	using AtomicCounter = std::atomic<size_t>;
 
+	struct ThreadMetrics
+	{
+		std::vector<double> runTimes;
+
+		void reset(size_t expectedMaxTasksPerThread)
+		{
+			runTimes.clear();
+			runTimes.reserve(expectedMaxTasksPerThread);
+		}
+	};
+
 	template<class TaskData, class ThreadData, class Op>
-	static void workerRoutine(ThreadData& threadData, std::vector<TaskData>& taskData, AtomicCounter* globalCounter, const Op& operation)
+	static void workerRoutine(ThreadMetrics& metrics, ThreadData& threadData, std::vector<TaskData>& taskData, AtomicCounter* globalCounter, const Op& operation)
 	{
 		assert(globalCounter);
 		assert(threadData);
@@ -83,12 +109,33 @@ private:
 		size_t selfCounter = (*globalCounter)++;
 		while(selfCounter < taskData.size()) // There's still work to do, keep runing tasks
 		{
+			// Grab a new task
 			auto& task = taskData[selfCounter];
+
+			// Run task
+			auto taskStart = std::chrono::high_resolution_clock::now();
 			operation(threadData, task);
+			std::chrono::duration<double> taskDuration = std::chrono::high_resolution_clock::now() - taskStart;;
+			metrics.runTimes.push_back(taskDuration.count());
+
+			// Update task counter
 			selfCounter = (*globalCounter)++;
 		}
 	}
 
+	void logMetrics(double totalRunTime)
+	{
+		nlohmann::json log;
+		log["runtime"] = totalRunTime;
+		auto& threadLog = log["threads"];
+		threadLog = nlohmann::json::array();
+		for(auto& t : mMetrics)
+			threadLog.push_back(t.runTimes);
+
+		std::ofstream("metrics.json") << log;
+	}
+
 	AtomicCounter	mTaskCounter;
 	std::vector<std::thread> mWorkers;
+	std::vector<ThreadMetrics> mMetrics;
 };
