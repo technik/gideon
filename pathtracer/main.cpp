@@ -190,7 +190,7 @@ int main(int _argc, const char** _argv)
 			std::chrono::duration<float> tileDuration = std::chrono::high_resolution_clock::now() - tileStart;
 
 			depthMap.pixel(x,y) = Vec3f(float(metrics.maxRecursion)/MAX_DEPTH, 0.f, float(metrics.totalRecursion/window.area())/MAX_DEPTH);
-			timeMap.pixel(x,y) = 40.f*tileDuration.count();
+			timeMap.pixel(x,y) = 10.f*tileDuration.count();
 		},
 		cout))
 	{
