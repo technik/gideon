@@ -103,8 +103,6 @@ private:
 	static void workerRoutine(ThreadMetrics& metrics, ThreadData& threadData, std::vector<TaskData>& taskData, AtomicCounter* globalCounter, const Op& operation)
 	{
 		assert(globalCounter);
-		assert(threadData);
-		assert(taskData);
 
 		size_t selfCounter = (*globalCounter)++;
 		while(selfCounter < taskData.size()) // There's still work to do, keep runing tasks
