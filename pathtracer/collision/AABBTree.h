@@ -41,7 +41,12 @@ public:
 
 	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
 	{
-		return hitNode(mNodes[0], r, ri, tMin, tMax, collision);
+		auto hit_any = hitNode(mNodes[0], r, ri, tMin, tMax, collision);
+		if(hit_any)
+		{
+			collision.p = r.at(collision.t);
+		}
+		return hit_any;
 	}
 
 	const math::AABBSimd& bbox() const { return mRoot.mBbox; }
@@ -136,9 +141,11 @@ private:
 		{
 			bool hit_any = false;
 
+			auto stMin = tMin.x();
+			auto p0 = r.at(stMin);
 			for(auto& triangle : node.mTriangles)
 			{
-				if(triangle.hit(r, tMin.x(), tMax.x(), collision))
+				if(triangle.hit(r, stMin, tMax.x(), p0, collision))
 				{
 					hit_any = true;
 					tMax= float4(collision.t);

@@ -46,23 +46,20 @@ public:
 		const math::Ray& r,
 		float tMin,
 		float tMax,
+		const math::Vec3f& p0,
 		HitRecord& collision
 	) const
 	{
-		auto p0 = r.at(tMin);
-		auto a0 = cross(v[0]-p0, edge0);
-		auto a1 = cross(v[1]-p0, edge1);
-		auto a2 = cross(v[2]-p0, edge2);
-
-		if((dot(a0,r.direction()) < 0.f) && (dot(a1,r.direction()) < 0.f) && (dot(a2,r.direction()) < 0.f))
+		float t = dot(r.direction(), v[0]);
+		if( t >= tMin && t < tMax)
 		{
-			float t = dot(r.direction(), v[0]);
-			if( t >= tMin && t < tMax)
-			{
-				auto p = r.at(t);
+			auto a0 = cross(v[0]-p0, edge0);
+			auto a1 = cross(v[1]-p0, edge1);
+			auto a2 = cross(v[2]-p0, edge2);
 
+			if((dot(a0,r.direction()) < 0.f) && (dot(a1,r.direction()) < 0.f) && (dot(a2,r.direction()) < 0.f))
+			{
 				collision.t = t;
-				collision.p = p;
 				collision.normal = mNormal;
 
 				return true;
