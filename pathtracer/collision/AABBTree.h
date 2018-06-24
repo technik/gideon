@@ -39,12 +39,13 @@ public:
 
 	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
 	{
-		return mRoot.hit(r, ri, tMin, tMax, collision);
+		return hitNode(mRoot, r, ri, tMin, tMax, collision);
 	}
 
 	const math::AABBSimd& bbox() const { return mRoot.mBbox; }
 
 private:
+
 	struct Node
 	{
 		Node() {
@@ -93,46 +94,51 @@ private:
 			}
 		}
 
-		bool hit(const math::Ray& r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
+		bool isLeaf() const
 		{
-			if(!mChildren.empty()) // Non-leaf
-			{
-				// Check children
-				bool hit_any = false;
-				if(mChildren[0].mBbox.intersect(ri, tMin,tMax,collision.t) && mChildren[0].hit(r,ri,tMin,tMax,collision))
-				{
-					tMax = float4(collision.t);
-					hit_any = true;
-				}
-				if(mChildren[1].mBbox.intersect(ri, tMin,tMax,collision.t) && mChildren[1].hit(r,ri,tMin,tMax,collision))
-				{
-					tMax = float4(collision.t);
-					hit_any = true;
-				}
-				collision.t = tMax.x();
-				return hit_any;
-			}
-			else // leaf node, check all triangles
-			{
-				bool hit_any = false;
-
-				for(auto& triangle : mTriangles)
-				{
-					if(triangle.hit(r, tMin.x(), tMax.x(), collision))
-					{
-						hit_any = true;
-						tMax= float4(collision.t);
-					}
-				}
-
-				return hit_any;
-			}
+			return mChildren.empty();
 		}
 
 		math::AABBSimd mBbox;
 		std::vector<Node> mChildren;
 		std::vector<Triangle> mTriangles;
 	};
+
+	bool hitNode(const Node& node, const math::Ray& r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
+	{
+		if(!node.isLeaf()) // Non-leaf
+		{
+			// Check children
+			bool hit_any = false;
+			if(node.mChildren[0].mBbox.intersect(ri, tMin,tMax,collision.t) && hitNode(node.mChildren[0],r,ri,tMin,tMax,collision))
+			{
+				tMax = float4(collision.t);
+				hit_any = true;
+			}
+			if(node.mChildren[1].mBbox.intersect(ri, tMin,tMax,collision.t) && hitNode(node.mChildren[1],r,ri,tMin,tMax,collision))
+			{
+				tMax = float4(collision.t);
+				hit_any = true;
+			}
+			collision.t = tMax.x();
+			return hit_any;
+		}
+		else // leaf node, check all triangles
+		{
+			bool hit_any = false;
+
+			for(auto& triangle : node.mTriangles)
+			{
+				if(triangle.hit(r, tMin.x(), tMax.x(), collision))
+				{
+					hit_any = true;
+					tMax= float4(collision.t);
+				}
+			}
+
+			return hit_any;
+		}
+	}
 
 	Node mRoot;
 };
