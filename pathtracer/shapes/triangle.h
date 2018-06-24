@@ -40,8 +40,6 @@ public:
 		edge1 = v[2]-v[1];
 		edge2 = v[0]-v[2];
 		mNormal = normalize(cross(edge0,edge1));
-
-		mPlaneOffset = dot(v[0],mNormal);
 	}
 
 	bool hit(
@@ -58,12 +56,7 @@ public:
 
 		if((dot(a0,r.direction()) < 0.f) && (dot(a1,r.direction()) < 0.f) && (dot(a2,r.direction()) < 0.f))
 		{
-			auto p1 = r.at(tMax);
-
-			auto offset0 = dot(p0, mNormal);
-			auto offset1 = dot(p1, mNormal);
-
-			float t = tMin + (tMax-tMin)*(mPlaneOffset-offset0)/(offset1-offset0);
+			float t = dot(r.direction(), v[0]);
 			if( t >= tMin && t < tMax)
 			{
 				auto p = r.at(t);
@@ -95,5 +88,4 @@ public:
 	math::Vec3f edge1;
 	math::Vec3f edge2;
 	math::Vec3f mNormal;
-	float mPlaneOffset;
 };
