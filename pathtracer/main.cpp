@@ -43,8 +43,12 @@
 using namespace math;
 using namespace std;
 
+namespace {
+	constexpr int MAX_DEPTH = 10;
+}
+
 //--------------------------------------------------------------------------------------------------
-Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
+Vec3f color(const Ray& r, const Scene& world, int& depth, RandomGenerator& random)
 {
 	constexpr float nearPlane = 1e-5f;
 	constexpr float farPlane = 1e3f;
@@ -54,9 +58,9 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 		Ray scattered;
 		Vec3f attenuation;
 		Vec3f emitted;
-		if(depth < 10 && hit.material->scatter(r, hit, attenuation, emitted, scattered, random))
+		if(depth < MAX_DEPTH && hit.material->scatter(r, hit, attenuation, emitted, scattered, random))
 		{
-			return color(scattered, world, depth+1, random) * attenuation + emitted;
+			return color(scattered, world, ++depth, random) * attenuation + emitted;
 		}
 		return Vec3f(0.f);
 	}
@@ -69,17 +73,25 @@ Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random
 
 using Rect = math::Rectangle<size_t>;
 
+struct TileMetrics
+{
+	int maxRecursion = 0;
+	int totalRecursion = 0;
+};
+
 //--------------------------------------------------------------------------------------------------
 void traceImageSegment(
 	const Scene& world,
 	Rect window,
 	Image& dst,
 	RandomGenerator& random,
-	unsigned nSamples)
+	unsigned nSamples,
+	TileMetrics& metrics)
 {
 	const auto totalNx = dst.width();
 	const auto totalNy = dst.height();
 	auto& cam = *world.cameras().front();
+
 
 	for(size_t i = window.y0; i < window.y1; ++i)
 		for(size_t j = window.x0; j < window.x1; ++j)
@@ -90,13 +102,24 @@ void traceImageSegment(
 				float u = float(j+random.scalar())/totalNx;
 				float v = 1.f-float(i+random.scalar())/totalNy;
 				Ray r = cam.get_ray(u,v);
-				accum += color(r, world, 0, random);
+				int depth = 0;
+				accum += color(r, world, depth, random);
+
+				// Save metrics
+				metrics.maxRecursion = std::max(depth, metrics.maxRecursion);
+				metrics.totalRecursion += depth;
 			}
 			accum /= float(nSamples);
 
 			dst.pixel(j,i) = accum;
 		}
 }
+
+struct ThreadInfo
+{
+	RandomGenerator random;
+	int index;
+};
 
 //--------------------------------------------------------------------------------------------------
 int main(int _argc, const char** _argv)
@@ -127,21 +150,57 @@ int main(int _argc, const char** _argv)
 			tiles.emplace_back(i*params.tileSize, j*params.tileSize, params.tileSize*(i+1u), params.tileSize*(j+1u));
 		}
 
-	// Independent random generators for each thread
-	std::vector<RandomGenerator> random(params.nThreads);
+	// Prepare independent data for each thread
+	std::vector<ThreadInfo> threadData(params.nThreads);
+	for(int i = 0; i < threadData.size(); ++i)
+	{
+		threadData[i].index = i;
+	}
+
+	// Debug images
+	Image threadMap(xTiles, yTiles);
+	Image depthMap(xTiles, yTiles);
+	Image timeMap(xTiles, yTiles);
 
 	// Allocate threads to consume
 	ThreadPool taskQueue(params.nThreads);
 	if(taskQueue.run(
-		random,
+		threadData,
 		tiles,
-		[&world, &outputImage, params](RandomGenerator& random, Rect& window){
-			traceImageSegment(world, window, outputImage, random, params.ns);
+		[&world,
+		&outputImage,
+		&threadMap,
+		&depthMap,
+		&timeMap,
+		params]
+		(ThreadInfo& ti, Rect& window){
+			auto tileStart = std::chrono::high_resolution_clock::now();
+
+			TileMetrics metrics;
+
+			traceImageSegment(world, window, outputImage, ti.random, params.ns, metrics);
+			auto x = window.x0 / params.tileSize;
+			auto y = window.y0 / params.tileSize;
+			auto threadId = ti.index;
+			threadMap.pixel(x,y) = Vec3f(
+				float(ti.index),
+				float(ti.index)/2,
+				float(ti.index)/4);
+
+			std::chrono::duration<float> tileDuration = std::chrono::high_resolution_clock::now() - tileStart;
+
+			depthMap.pixel(x,y) = Vec3f(float(metrics.maxRecursion)/MAX_DEPTH, 0.f, float(metrics.totalRecursion/window.area())/MAX_DEPTH);
+			timeMap.pixel(x,y) = 40.f*tileDuration.count();
 		},
 		cout))
 	{
 		// Save final image
 		outputImage.saveAsSRGB(params.output.c_str());
+
+		// Save debug images
+		threadMap.saveAsLinearRGB("threadMap.png");
+		depthMap.saveAsLinearRGB("depthMap.png");
+		timeMap.saveAsLinearRGB("timeMap.png");
 	};
 
 	return -1; // Something failed, we shouldn't reach this point

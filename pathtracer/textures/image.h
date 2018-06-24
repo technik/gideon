@@ -83,6 +83,23 @@ public:
 		stbi_write_png(fileName, (int)sx, (int)sy, 3, tmpBuffer.data(), rowStride);
 	}
 
+	void saveAsLinearRGB(const char* fileName) const
+	{
+		std::vector<uint8_t> tmpBuffer;
+		const auto nPixels = area();
+		tmpBuffer.reserve(nPixels);
+		for(size_t i = 0; i < nPixels; ++i) 
+		{
+			auto& c = mData[i];
+			tmpBuffer.push_back(floatToLinearByteColor(c.x()));
+			tmpBuffer.push_back(floatToLinearByteColor(c.y()));
+			tmpBuffer.push_back(floatToLinearByteColor(c.z()));
+		}
+
+		const int rowStride = int(3*sx);
+		stbi_write_png(fileName, (int)sx, (int)sy, 3, tmpBuffer.data(), rowStride);
+	}
+
 private:
 
 	static uint8_t floatToByteColor(float value)
@@ -90,6 +107,12 @@ private:
 		auto clampedVal = std::clamp(value,0.f,1.f);
 		auto sRGBVal = std::pow(clampedVal, 1.f/2.23f);
 		return uint8_t(sRGBVal*255);
+	}
+
+	static uint8_t floatToLinearByteColor(float value)
+	{
+		auto clampedVal = std::clamp(value,0.f,1.f);
+		return uint8_t(clampedVal*255);
 	}
 
 	size_t sx, sy;

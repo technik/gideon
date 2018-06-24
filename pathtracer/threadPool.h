@@ -115,7 +115,7 @@ private:
 			// Run task
 			auto taskStart = std::chrono::high_resolution_clock::now();
 			operation(threadData, task);
-			std::chrono::duration<double> taskDuration = std::chrono::high_resolution_clock::now() - taskStart;;
+			std::chrono::duration<double> taskDuration = std::chrono::high_resolution_clock::now() - taskStart;
 			metrics.runTimes.push_back(taskDuration.count());
 
 			// Update task counter
@@ -125,6 +125,7 @@ private:
 
 	void logMetrics(double totalRunTime)
 	{
+		// Log raw data
 		nlohmann::json log;
 		log["runtime"] = totalRunTime;
 		auto& threadLog = log["threads"];
