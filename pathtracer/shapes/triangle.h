@@ -59,7 +59,10 @@ public:
 
 			if((dot(a0,r.direction()) < 0.f) && (dot(a1,r.direction()) < 0.f) && (dot(a2,r.direction()) < 0.f))
 			{
+				auto p = r.at(t);
+
 				collision.t = t;
+				collision.p = p;
 				collision.normal = mNormal;
 
 				return true;

@@ -41,12 +41,7 @@ public:
 
 	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
 	{
-		auto hit_any = hitNode(mNodes[0], r, ri, tMin, tMax, collision);
-		if(hit_any)
-		{
-			collision.p = r.at(collision.t);
-		}
-		return hit_any;
+		return hitNode(mNodes[0], r, ri, tMin, tMax, collision);
 	}
 
 	const math::AABBSimd& bbox() const { return mRoot.mBbox; }
