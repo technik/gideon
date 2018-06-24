@@ -52,11 +52,11 @@ public:
 	) const
 	{
 		auto p0 = r.at(tMin);
-		auto a0 = cross(v[0]-p0, r.direction());
-		auto a1 = cross(v[1]-p0, r.direction());
-		auto a2 = cross(v[2]-p0, r.direction());
+		auto a0 = cross(v[0]-p0, edge0);
+		auto a1 = cross(v[1]-p0, edge1);
+		auto a2 = cross(v[2]-p0, edge2);
 
-		if((dot(a0,edge0) >= 0.f) && (dot(a1,edge1) >= 0.f) && (dot(a2,edge2) >= 0.f))
+		if((dot(a0,r.direction()) < 0.f) && (dot(a1,r.direction()) < 0.f) && (dot(a2,r.direction()) < 0.f))
 		{
 			auto p1 = r.at(tMax);
 
@@ -64,13 +64,16 @@ public:
 			auto offset1 = dot(p1, mNormal);
 
 			float t = tMin + (tMax-tMin)*(mPlaneOffset-offset0)/(offset1-offset0);
-			auto p = r.at(t);
+			if( t >= tMin && t < tMax)
+			{
+				auto p = r.at(t);
 
-			collision.t = t;
-			collision.p = p;
-			collision.normal = mNormal;
+				collision.t = t;
+				collision.p = p;
+				collision.normal = mNormal;
 
-			return true;
+				return true;
+			}
 		}
 
 		return false;
