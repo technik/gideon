@@ -34,12 +34,14 @@ public:
 	AABBTree() = default;
 	AABBTree(const std::vector<Triangle>& triangles)
 	{
-		mRoot = Node(triangles, 0);
+		mNodes.reserve(2*triangles.size()-1);
+		mNodes.resize(1);
+		mNodes[0] = Node(triangles, 0, mNodes);
 	}
 
 	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
 	{
-		return hitNode(mRoot, r, ri, tMin, tMax, collision);
+		return hitNode(mNodes[0], r, ri, tMin, tMax, collision);
 	}
 
 	const math::AABBSimd& bbox() const { return mRoot.mBbox; }
@@ -51,7 +53,8 @@ private:
 		Node() {
 			mBbox.clear();
 		};
-		Node(std::vector<Triangle> triangles, unsigned sortAxis)
+
+		Node(std::vector<Triangle> triangles, unsigned sortAxis, std::vector<Node>& nodes)
 		{
 			if(triangles.size() > nMaxLeafElements) // To many elements, branch
 			{
@@ -67,20 +70,24 @@ private:
 				// Create children nodes
 				auto middle = triangles.size() / 2;
 				auto nextAxis = (sortAxis+1)%3;
+				mChildA = nodes.size();
+				mChildB = mChildA+1;
+				nodes.resize(nodes.size()+2);
 				// Child A
 				std::vector<Triangle> childTris;
 				childTris.insert(childTris.begin(), triangles.begin(), triangles.begin()+middle);
-				mChildren.emplace_back(childTris, nextAxis);
+				nodes[mChildA] = Node(childTris, nextAxis, nodes);
 				// Child B
 				childTris.clear();
 				childTris.insert(childTris.begin(), triangles.begin()+middle, triangles.end());
-				mChildren.emplace_back(childTris, nextAxis);
+				nodes[mChildB] = Node(childTris, nextAxis, nodes);
 
 				// Update bbox
-				mBbox = math::AABBSimd(mChildren[0].mBbox, mChildren[1].mBbox);
+				mBbox = math::AABBSimd(nodes[mChildA].mBbox, nodes[mChildB].mBbox);
 			}
 			else // Leaf node
 			{
+				mChildA = mChildB = 0;
 				mTriangles = std::move(triangles);
 				AABB rawBBox;
 				rawBBox.clear();
@@ -96,11 +103,11 @@ private:
 
 		bool isLeaf() const
 		{
-			return mChildren.empty();
+			return mChildA == mChildB;
 		}
 
 		math::AABBSimd mBbox;
-		std::vector<Node> mChildren;
+		size_t mChildA, mChildB;
 		std::vector<Triangle> mTriangles;
 	};
 
@@ -110,12 +117,14 @@ private:
 		{
 			// Check children
 			bool hit_any = false;
-			if(node.mChildren[0].mBbox.intersect(ri, tMin,tMax,collision.t) && hitNode(node.mChildren[0],r,ri,tMin,tMax,collision))
+			auto& nodeA = mNodes[node.mChildA];
+			if(nodeA.mBbox.intersect(ri, tMin,tMax,collision.t) && hitNode(nodeA,r,ri,tMin,tMax,collision))
 			{
 				tMax = float4(collision.t);
 				hit_any = true;
 			}
-			if(node.mChildren[1].mBbox.intersect(ri, tMin,tMax,collision.t) && hitNode(node.mChildren[1],r,ri,tMin,tMax,collision))
+			auto& nodeB = mNodes[node.mChildB];
+			if(nodeB.mBbox.intersect(ri, tMin,tMax,collision.t) && hitNode(nodeB,r,ri,tMin,tMax,collision))
 			{
 				tMax = float4(collision.t);
 				hit_any = true;
@@ -140,5 +149,5 @@ private:
 		}
 	}
 
-	Node mRoot;
+	std::vector<Node> mNodes;
 };
