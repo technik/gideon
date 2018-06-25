@@ -41,14 +41,14 @@ public:
 		mXFormScaleSign = det > 0? 1.f : -1.f;
 	}
 
-	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
+	bool hit(const math::Ray & r, float tMax, HitRecord & collision) const
 	{
 		math::Ray localRay (mXFormInv.transformPos(r.origin()), mXFormInv.transformDir(r.direction()));
 
         float tout;
-		if(mMesh->bbox().intersect(localRay.implicit(), tMin, tMax, tout))
+		if(mMesh->bbox().intersect(localRay.implicit(), tMax, tout))
 		{
-			if(mMesh->hit(localRay, tMin, tMax, collision))
+			if(mMesh->hit(localRay, tMax, collision))
 			{
 				collision.normal = mXForm.transformDir(mXFormScaleSign * collision.normal);
 				collision.p = mXForm.transformPos(collision.p);

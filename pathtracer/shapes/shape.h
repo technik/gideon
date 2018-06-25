@@ -30,7 +30,6 @@ public:
 
 	virtual bool hit(
 		const math::Ray& r,
-		float tMin,
 		float tMax,
 		HitRecord& collision
 	) const = 0;

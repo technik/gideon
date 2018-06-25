@@ -40,9 +40,9 @@ public:
 		initNode(mNodes[0], mTriangles.begin(), mTriangles.end(), 0);
 	}
 
-	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
+	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, math::float4 tMax, HitRecord & collision) const
 	{
-		return hitNode(mNodes[0], r, ri, tMin, tMax, collision);
+		return hitNode(mNodes[0], r, ri, tMax, collision);
 	}
 
 	const math::AABBSimd& bbox() const { return mRoot.mBbox; }
@@ -109,20 +109,20 @@ private:
 		}
 	}
 
-	bool hitNode(const Node& node, const math::Ray& r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
+	bool hitNode(const Node& node, const math::Ray& r, const math::Ray::ImplicitSimd& ri, math::float4 tMax, HitRecord & collision) const
 	{
 		if(!node.isLeaf) // Non-leaf
 		{
 			// Check children
 			bool hit_any = false;
 			auto& nodeA = mNodes[node.mChildA];
-			if(nodeA.mBbox.intersect(ri, tMin,tMax,collision.t) && hitNode(nodeA,r,ri,tMin,tMax,collision))
+			if(nodeA.mBbox.intersect(ri,tMax,collision.t) && hitNode(nodeA,r,ri,tMax,collision))
 			{
 				tMax = float4(collision.t);
 				hit_any = true;
 			}
 			auto& nodeB = mNodes[node.mChildB];
-			if(nodeB.mBbox.intersect(ri, tMin,tMax,collision.t) && hitNode(nodeB,r,ri,tMin,tMax,collision))
+			if(nodeB.mBbox.intersect(ri,tMax,collision.t) && hitNode(nodeB,r,ri,tMax,collision))
 			{
 				tMax = float4(collision.t);
 				hit_any = true;
@@ -135,7 +135,7 @@ private:
 			bool hit_any = false;
 			for(auto i = node.mChildA; i != node.mChildB; ++i)
 			{
-				if(mTriangles[i].hit(r, tMin.x(), tMax.x(), collision))
+				if(mTriangles[i].hit(r, tMax.x(), collision))
 				{
 					hit_any = true;
 					tMax= float4(collision.t);

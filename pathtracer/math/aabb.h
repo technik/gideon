@@ -87,6 +87,20 @@ namespace math
 			auto minLeave = math::min(tLeave.x(), math::min(tLeave.y(), math::min(tLeave.z(), _tmax)));
 			return minLeave >= _maxEnter;
 		}
+
+		// Intersection and distance
+		/// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
+		/// Also, store the minimun intersection distance into _tout
+		bool intersect(const Ray::Implicit& _r, float _tmax, float& _maxEnter) const {
+			Vector t1 = (mMin -_r.o)*_r.n;
+			Vector t2 = (mMax -_r.o)*_r.n;
+			// Swapping the order of comparison is important because of NaN behavior
+			auto tEnter = math::min(t1,t2);
+			auto tLeave = math::max(t2,t1);
+			_maxEnter = math::max(tEnter.x(), math::max(tEnter.y(), math::max(tEnter.z(), 0.f)));
+			auto minLeave = math::min(tLeave.x(), math::min(tLeave.y(), math::min(tLeave.z(), _tmax)));
+			return minLeave >= _maxEnter;
+		}
 	private:
 		Vector mMin;
 		Vector mMax;
@@ -132,13 +146,13 @@ namespace math
 
 		/// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
 		/// Also, store the minimun intersection distance into _tout
-		bool intersect(const Ray::ImplicitSimd& _r, float4 _tmin, float4 _tmax, float& _tCollide) const {
+		bool intersect(const Ray::ImplicitSimd& _r, float4 _tmax, float& _tCollide) const {
 			Vector t1 = (mMin - _r.o) * _r.n;
 			Vector t2 = (mMax - _r.o) * _r.n;
 			// Swapping the order of comparison is important because of NaN behavior and SSE
 			auto tEnter = math::min(t2,t1); // Enters
 			auto tExit = math::max(t1,t2); // Exits
-			auto maxEnter = math::max(tEnter,_tmin); // If nan, return second operand, which is never nan
+			auto maxEnter = math::max(tEnter,float4(0.f)); // If nan, return second operand, which is never nan
 			auto minLeave = math::min(tExit,_tmax); // If nan, return second operand, which is never nan
 			_tCollide = maxEnter.hMax(); // Furthest enter
 			return minLeave.hMin() >= _tCollide;

@@ -33,7 +33,6 @@ using namespace math;
 //--------------------------------------------------------------------------------------------------
 bool Scene::hit(
 	const math::Ray& r,
-	float tMin,
 	float tMax,
 	HitRecord& collision
 ) const
@@ -43,7 +42,7 @@ bool Scene::hit(
 	for(auto h : mRenderables)
 	{
 		HitRecord tmp_hit;
-		if(h->hit(r, tMin, t, tmp_hit))
+		if(h->hit(r, t, tmp_hit))
 		{
 			collision = tmp_hit;
 			t = tmp_hit.t;

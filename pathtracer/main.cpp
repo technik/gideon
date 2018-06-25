@@ -50,10 +50,10 @@ namespace {
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Scene& world, int& depth, RandomGenerator& random)
 {
-	constexpr float nearPlane = 1e-5f;
+	assert(abs(r.direction().sqNorm()-1) < 1e-4f);
 	constexpr float farPlane = 1e3f;
 	HitRecord hit;
-	if(world.hit(r, nearPlane, farPlane, hit))
+	if(world.hit(r, farPlane, hit))
 	{
 		Ray scattered;
 		Vec3f attenuation;
@@ -66,8 +66,7 @@ Vec3f color(const Ray& r, const Scene& world, int& depth, RandomGenerator& rando
 	}
 	else
 	{
-		auto unitDirection = normalize(r.direction());
-		return world.background->sample(unitDirection);
+		return world.background->sample(r.direction());
 	}
 }
 
