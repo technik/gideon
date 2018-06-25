@@ -48,6 +48,11 @@ public:
 		HitRecord& collision
 	) const;
 
+	float area() const
+	{
+		return 0.5f*cross(v[1]-v[0],v[2]-v[1]).norm();
+	}
+
 	const math::Vec3f& vtx(size_t i) const
 	{
 		return v[i];
