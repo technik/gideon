@@ -26,6 +26,8 @@
 #include <math/ray.h>
 #include <math/vector.h>
 
+struct HitRecord;
+
 class Triangle
 {
 public:
@@ -36,9 +38,8 @@ public:
 		const math::Vec3f& v2)
 		: v({v0,v1,v2})
 	{
-		edge0 = v[1]-v[0];
-		edge1 = v[2]-v[1];
-		edge2 = v[0]-v[2];
+		auto edge0 = v[1]-v[0];
+		auto edge1 = v[2]-v[1];
 		mNormal = normalize(cross(edge0,edge1));
 
 		mPlaneOffset = dot(v[0],mNormal);
@@ -49,35 +50,7 @@ public:
 		float tMin,
 		float tMax,
 		HitRecord& collision
-	) const
-	{
-		auto p0 = r.at(tMin);
-		auto a0 = cross(v[0]-p0, edge0);
-		auto a1 = cross(v[1]-p0, edge1);
-		auto a2 = cross(v[2]-p0, edge2);
-
-		if((dot(a0,r.direction()) < 0.f) && (dot(a1,r.direction()) < 0.f) && (dot(a2,r.direction()) < 0.f))
-		{
-			auto p1 = r.at(tMax);
-
-			auto offset0 = dot(p0, mNormal);
-			auto offset1 = dot(p1, mNormal);
-
-			float t = tMin + (tMax-tMin)*(mPlaneOffset-offset0)/(offset1-offset0);
-			if( t >= tMin && t < tMax)
-			{
-				auto p = r.at(t);
-
-				collision.t = t;
-				collision.p = p;
-				collision.normal = mNormal;
-
-				return true;
-			}
-		}
-
-		return false;
-	}
+	) const;
 
 	const math::Vec3f& vtx(size_t i) const
 	{
@@ -91,9 +64,6 @@ public:
 
 //private:
 	std::array<math::Vec3f,3> v;
-	math::Vec3f edge0;
-	math::Vec3f edge1;
-	math::Vec3f edge2;
 	math::Vec3f mNormal;
 	float mPlaneOffset;
 };

@@ -34,9 +34,10 @@ public:
 	AABBTree() = default;
 	AABBTree(const std::vector<Triangle>& triangles)
 	{
+		mTriangles = triangles;
 		mNodes.reserve(2*triangles.size()-1);
 		mNodes.resize(1);
-		initNode(mNodes[0], triangles, 0);
+		initNode(mNodes[0], mTriangles.begin(), mTriangles.end(), 0);
 	}
 
 	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
@@ -54,58 +55,55 @@ private:
 			mBbox.clear();
 		};
 
-		bool isLeaf() const
-		{
-			return mChildA == mChildB;
-		}
-
 		math::AABBSimd mBbox;
 		size_t mChildA, mChildB;
-		std::vector<Triangle> mTriangles;
+		bool isLeaf = false;
 	};
 
-	void initNode(Node& node, std::vector<Triangle> triangles, unsigned sortAxis)
+	void initNode(
+		Node& node,
+		std::vector<Triangle>::iterator triangleBegin,
+		std::vector<Triangle>::iterator triangleEnd,
+		unsigned sortAxis)
 	{
-		if(triangles.size() > nMaxLeafElements) // To many elements, branch
+		auto nTris = triangleEnd-triangleBegin;
+		if(nTris > nMaxLeafElements) // To many elements, branch
 		{
 			// Approximately sort triangles along the given axis
 			math::Vec3f axis(0.f);
 			axis[sortAxis] = 1.f;
-			std::sort(triangles.begin(), triangles.end(),
+			std::sort(triangleBegin, triangleEnd,
 				[axis](Triangle& a, Triangle& b) -> bool {
-				auto da = dot(a.centroid(), axis); 
-				auto db = dot(b.centroid(), axis); 
-				return da < db;
-			});
+					auto da = dot(a.centroid(), axis); 
+					auto db = dot(b.centroid(), axis); 
+					return da < db;
+				});
 			// Create children nodes
-			auto middle = triangles.size() / 2;
+			auto middle = triangleBegin+nTris/2;
 			auto nextAxis = (sortAxis+1)%3;
 			node.mChildA = mNodes.size();
 			node.mChildB = node.mChildA+1;
 			mNodes.resize(mNodes.size()+2);
 			// Child A
-			std::vector<Triangle> childTris;
-			childTris.insert(childTris.begin(), triangles.begin(), triangles.begin()+middle);
-			initNode(mNodes[node.mChildA], childTris, nextAxis);
+			initNode(mNodes[node.mChildA], triangleBegin, middle, nextAxis);
 			// Child B
-			childTris.clear();
-			childTris.insert(childTris.begin(), triangles.begin()+middle, triangles.end());
-			initNode(mNodes[node.mChildB], childTris, nextAxis);
+			initNode(mNodes[node.mChildB], middle, triangleEnd, nextAxis);
 
 			// Update bbox
 			node.mBbox = math::AABBSimd(mNodes[node.mChildA].mBbox, mNodes[node.mChildB].mBbox);
 		}
 		else // Leaf node
 		{
-			node.mChildA = node.mChildB = 0;
-			node.mTriangles = std::move(triangles);
+			node.isLeaf = true;
 			AABB rawBBox;
 			rawBBox.clear();
-			for(auto& t : node.mTriangles)
+			node.mChildA = triangleBegin-mTriangles.begin();
+			node.mChildB = triangleEnd-mTriangles.begin();
+			for(auto t = triangleBegin; t != triangleEnd; ++t)
 			{
-				rawBBox.add(t.v[0]);
-				rawBBox.add(t.v[1]);
-				rawBBox.add(t.v[2]);
+				rawBBox.add(t->v[0]);
+				rawBBox.add(t->v[1]);
+				rawBBox.add(t->v[2]);
 			}
 			node.mBbox = AABBSimd(rawBBox.min(), rawBBox.max());
 		}
@@ -113,7 +111,7 @@ private:
 
 	bool hitNode(const Node& node, const math::Ray& r, const math::Ray::ImplicitSimd& ri, math::float4 tMin, math::float4 tMax, HitRecord & collision) const
 	{
-		if(!node.isLeaf()) // Non-leaf
+		if(!node.isLeaf) // Non-leaf
 		{
 			// Check children
 			bool hit_any = false;
@@ -135,10 +133,9 @@ private:
 		else // leaf node, check all triangles
 		{
 			bool hit_any = false;
-
-			for(auto& triangle : node.mTriangles)
+			for(auto i = node.mChildA; i != node.mChildB; ++i)
 			{
-				if(triangle.hit(r, tMin.x(), tMax.x(), collision))
+				if(mTriangles[i].hit(r, tMin.x(), tMax.x(), collision))
 				{
 					hit_any = true;
 					tMax= float4(collision.t);
@@ -150,4 +147,5 @@ private:
 	}
 
 	std::vector<Node> mNodes;
+	std::vector<Triangle> mTriangles;
 };
