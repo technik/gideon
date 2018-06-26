@@ -74,12 +74,14 @@ private:
 			axis[sortAxis] = 1.f;
 			std::sort(triangleBegin, triangleEnd,
 				[axis](Triangle& a, Triangle& b) -> bool {
-					auto da = dot(a.centroid(), axis); 
-					auto db = dot(b.centroid(), axis); 
-					return da < db;
-				});
-			// Create children nodes
+				auto da = dot(a.centroid(), axis); 
+				auto db = dot(b.centroid(), axis); 
+				return da < db;
+			});
+			// Try a bunch of possible splits
 			auto middle = triangleBegin+nTris/2;
+
+			// Create children nodes
 			auto nextAxis = (sortAxis+1)%3;
 			node.mChildA = mNodes.size();
 			node.mChildB = node.mChildA+1;
@@ -91,22 +93,39 @@ private:
 
 			// Update bbox
 			node.mBbox = math::AABBSimd(mNodes[node.mChildA].mBbox, mNodes[node.mChildB].mBbox);
+			return;
 		}
-		else // Leaf node
+
+		node.isLeaf = true;
+		node.mChildA = triangleBegin-mTriangles.begin();
+		node.mChildB = triangleEnd-mTriangles.begin();
+		AABB rawBBox = triangleRangeBounds(triangleBegin, triangleEnd);
+		node.mBbox = AABBSimd(rawBBox.min(), rawBBox.max());
+	}
+
+	AABB triangleRangeBounds(
+		std::vector<Triangle>::iterator triangleBegin,
+		std::vector<Triangle>::iterator triangleEnd)
+	{
+		AABB bounds;
+		bounds.clear();
+		for(auto t = triangleBegin; t != triangleEnd; ++t)
 		{
-			node.isLeaf = true;
-			AABB rawBBox;
-			rawBBox.clear();
-			node.mChildA = triangleBegin-mTriangles.begin();
-			node.mChildB = triangleEnd-mTriangles.begin();
-			for(auto t = triangleBegin; t != triangleEnd; ++t)
-			{
-				rawBBox.add(t->v[0]);
-				rawBBox.add(t->v[1]);
-				rawBBox.add(t->v[2]);
-			}
-			node.mBbox = AABBSimd(rawBBox.min(), rawBBox.max());
+			rawBBox.add(t->v[0]);
+			rawBBox.add(t->v[1]);
+			rawBBox.add(t->v[2]);
 		}
+		return bounds;
+	}
+
+	AABB triangleBounds(const Triangl& t)
+	{
+		AABB bounds(
+			math::min(t.v[0],t.v[1])
+			math::max(t.v[1],t.v[2])
+		);
+		bounds.add(t.v[2]);
+		return bounds;
 	}
 
 	bool hitNode(const Node& node, const math::Ray& r, const math::Ray::ImplicitSimd& ri, math::float4 tMax, HitRecord & collision) const

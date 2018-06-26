@@ -46,6 +46,11 @@ namespace math
 		{
 		}
 
+		float area() const {
+			auto h = mMax-mMin;
+			return 2.f*(h.x()*h.y()+h.x()*h.z()+h.y()*h.z());
+		}
+
 		// Size, position and volume
 		/// Make the Box empty
 		void clear() {
@@ -62,7 +67,7 @@ namespace math
 		void add(const Vector& v)
 		{
 			mMin = math::min(mMin, v);
-			mMax = math::max(mMax, v);
+			mMax = math::max(v, mMax);
 		}
 
 		const Vector& min() const { return mMin; }
