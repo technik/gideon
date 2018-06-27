@@ -51,6 +51,12 @@ namespace math
 			float4 n; // 1 / dir
 		};
 
+		struct Simd // Ray replicated in 4 simd lanes
+		{
+			Vec3f4 o;
+			Vec3f4 d;
+		};
+
 		// Compute an implicit representation of the ray. Useful for batched intersection tests.
 		Implicit implicit() const {
 			Vec3f invDir(

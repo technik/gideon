@@ -63,6 +63,10 @@ namespace math
 			return float4(_mm_add_ps(m, b.m));
 		}
 
+		void operator+=(const float4& b) {
+			m = _mm_add_ps(m, b.m);
+		}
+
 		float4 operator-(const float4& b) const {
 			return float4(_mm_sub_ps(m, b.m));
 		}
@@ -77,6 +81,10 @@ namespace math
 
 		float4 operator<=(const float4& b) const {
 			return float4(_mm_cmple_ps(m, b.m));
+		}
+
+		float4 operator>=(const float4& b) const {
+			return float4(_mm_cmpge_ps(m, b.m));
 		}
 
 		bool any() const
@@ -135,6 +143,7 @@ namespace math
 		return v.x();
 	}
 
+
 	//-----------------------------------------------------------------
 	// A single vec3 implemented using simd packed 4 floats
 	class VecSimd3f
@@ -179,6 +188,10 @@ namespace math
 	{
 		return VecSimd3f(_mm_max_ps(a.m,b.m));
 	}
+
+	//-----------------------------------------------------------------
+	// A pack of 4 vec3 implemented using simd packed 4 floats
+	using Vec3f4 = Vector3<float4>; // simd4 vectors of 3 components
 
 	//-----------------------------------------------------------------
 	// Explicitly SIMD set of 8 Vec3fs

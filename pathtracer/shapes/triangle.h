@@ -66,6 +66,38 @@ public:
 public:
 	std::array<math::Vec3f,3> v;
 	math::Vec3f mNormal;
+
+	struct Simd
+	{
+		math::Vec3f4 v; // Packed vertices
+		math::Vec3f4 normal; // normal in simd format
+		math::Vec3f mNormal;
+
+		bool hit(
+			const math::Ray::Simd& r,
+			float tMax,
+			HitRecord& collision
+		) const;
+	};
+
+	Simd simd() {
+		return {
+			// Packed vertices
+			math::Vec3f4(
+				math::float4(v[0].x(), v[1].x(), v[2].x(), v[2].x()),
+				math::float4(v[0].y(), v[1].y(), v[2].y(), v[2].y()),
+				math::float4(v[0].z(), v[1].z(), v[2].z(), v[2].z())
+			),
+			// Single simd normal
+			math::Vec3f4(
+				math::float4(mNormal.x()),
+				math::float4(mNormal.y()),
+				math::float4(mNormal.z())
+			),
+			// regular normal
+			mNormal
+		};
+	}
 };
 
 inline bool Triangle::hit(
@@ -91,10 +123,44 @@ inline bool Triangle::hit(
 
 		if( t >= 0.f && t < tMax)
 		{
-			auto p = r.at(t);
-
 			collision.t = t;
-			collision.p = p;
+			collision.normal = mNormal;
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+inline bool Triangle::Simd::hit(
+	const math::Ray::Simd& r,
+	float tMax,
+	HitRecord& collision
+) const
+{
+
+	auto rd = r.d;
+
+	auto h = v-r.o;
+
+	auto hTo = math::Vec3f4(
+		h.x().shuffle<1,2,0,0>(),
+		h.y().shuffle<1,2,0,0>(),
+		h.z().shuffle<1,2,0,0>()
+	);
+
+	auto a = cross(h,hTo);
+
+	auto zero = math::float4(0.f);
+
+	if((dot(a,rd) >= zero).none())
+	{
+		float t = (dot(normal, h)/dot(rd, normal)).x();
+
+		if( t >= 0.f && t < tMax)
+		{
+			collision.t = t;
 			collision.normal = mNormal;
 
 			return true;

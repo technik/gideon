@@ -103,24 +103,24 @@ private:
 		node.mBbox = AABBSimd(rawBBox.min(), rawBBox.max());
 	}
 
-	AABB triangleRangeBounds(
+	math::AABB triangleRangeBounds(
 		std::vector<Triangle>::iterator triangleBegin,
 		std::vector<Triangle>::iterator triangleEnd)
 	{
-		AABB bounds;
+		math::AABB bounds;
 		bounds.clear();
 		for(auto t = triangleBegin; t != triangleEnd; ++t)
 		{
-			rawBBox.add(t->v[0]);
-			rawBBox.add(t->v[1]);
-			rawBBox.add(t->v[2]);
+			bounds.add(t->v[0]);
+			bounds.add(t->v[1]);
+			bounds.add(t->v[2]);
 		}
 		return bounds;
 	}
 
-	AABB triangleBounds(const Triangl& t)
+	math::AABB triangleBounds(const Triangle& t)
 	{
-		AABB bounds(
+		math::AABB bounds(
 			math::min(t.v[0],t.v[1])
 			math::max(t.v[1],t.v[2])
 		);

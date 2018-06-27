@@ -51,7 +51,8 @@ public:
 			if(mMesh->hit(localRay, tMax, collision))
 			{
 				collision.normal = mXForm.transformDir(mXFormScaleSign * collision.normal);
-				collision.p = mXForm.transformPos(collision.p);
+				auto localHitPoint = localRay.at(collision.t);
+				collision.p = mXForm.transformPos(localHitPoint);
 				return true;
 			}
 		}
