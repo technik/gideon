@@ -157,9 +157,10 @@ private:
 		else // leaf node, check all triangles
 		{
 			bool hit_any = false;
+			auto simdRay = r.simd();
 			for(auto i = node.mChildA; i != node.mChildB; ++i)
 			{
-				if(mTriangles[i].hit(r.simd(), tMax.x(), collision))
+				if(mTriangles[i].hit(simdRay, tMax.x(), collision))
 				{
 					hit_any = true;
 					tMax= float4(collision.t);
