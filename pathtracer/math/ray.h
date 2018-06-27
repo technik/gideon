@@ -57,8 +57,16 @@ namespace math
 			Vec3f4 d;
 		};
 
+		Simd simd() const {
+			return {
+				math::Vec3f4( mOrigin.x(), mOrigin.y(), mOrigin.z() ),
+				math::Vec3f4( mDirection.x(), mDirection.y(), mDirection.z() )
+			};
+		}
+
 		// Compute an implicit representation of the ray. Useful for batched intersection tests.
-		Implicit implicit() const {
+		Implicit implicit() const
+		{
 			Vec3f invDir(
 				1.f / mDirection.x(),
 				1.f / mDirection.y(),
@@ -67,7 +75,8 @@ namespace math
 			return Implicit{mOrigin, invDir};
 		}
 
-		ImplicitSimd implicitSimd() const {
+		ImplicitSimd implicitSimd() const
+		{
 			float4 origin = float4(mOrigin);
 			Vec3f invDir = {
 				1.f / mDirection.x(),

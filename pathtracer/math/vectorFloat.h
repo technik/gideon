@@ -52,7 +52,7 @@ namespace math
 			m = _mm_set_ps(v.z(), v.z(), v.y(), v.x());
 		}
 
-		explicit float4(float x)
+		float4(float x)
 		{
 			m = _mm_set_ps1(x);
 		}
@@ -114,6 +114,21 @@ namespace math
 
 		float x() const {
 			return _mm_cvtss_f32(m);
+		}
+
+		float y() const {
+			auto t = shuffle<1,1,1,1>();
+			return _mm_cvtss_f32(t.m);
+		}
+
+		float z() const {
+			auto t = shuffle<2,2,2,2>();
+			return _mm_cvtss_f32(t.m);
+		}
+
+		float w() const {
+			auto t = shuffle<3,3,3,3>();
+			return _mm_cvtss_f32(t.m);
 		}
 
 		__m128 m;

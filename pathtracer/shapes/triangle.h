@@ -80,7 +80,7 @@ public:
 		) const;
 	};
 
-	Simd simd() {
+	Simd simd() const {
 		return {
 			// Packed vertices
 			math::Vec3f4(
@@ -89,11 +89,7 @@ public:
 				math::float4(v[0].z(), v[1].z(), v[2].z(), v[2].z())
 			),
 			// Single simd normal
-			math::Vec3f4(
-				math::float4(mNormal.x()),
-				math::float4(mNormal.y()),
-				math::float4(mNormal.z())
-			),
+			math::Vec3f4(mNormal.x(),mNormal.y(), mNormal.z()),
 			// regular normal
 			mNormal
 		};
@@ -139,9 +135,7 @@ inline bool Triangle::Simd::hit(
 	HitRecord& collision
 ) const
 {
-
 	auto rd = r.d;
-
 	auto h = v-r.o;
 
 	auto hTo = math::Vec3f4(
@@ -151,7 +145,6 @@ inline bool Triangle::Simd::hit(
 	);
 
 	auto a = cross(h,hTo);
-
 	auto zero = math::float4(0.f);
 
 	if((dot(a,rd) >= zero).none())

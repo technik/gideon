@@ -32,12 +32,16 @@ class AABBTree
 {
 public:
 	AABBTree() = default;
-	AABBTree(const std::vector<Triangle>& triangles)
+	AABBTree(std::vector<Triangle>& triangles)
 	{
-		mTriangles = triangles;
+		// Construct tree
 		mNodes.reserve(2*triangles.size()-1);
 		mNodes.resize(1);
-		initNode(mNodes[0], mTriangles.begin(), mTriangles.end(), 0);
+		initNode(mNodes[0], triangles.begin(), triangles.end(), triangles, 0);
+		// Create simd versions of the triangles
+		mTriangles.reserve(triangles.size());
+		for(auto& t : triangles)
+			mTriangles.emplace_back(t.simd());
 	}
 
 	bool hit(const math::Ray & r, const math::Ray::ImplicitSimd& ri, math::float4 tMax, HitRecord & collision) const
@@ -64,6 +68,7 @@ private:
 		Node& node,
 		std::vector<Triangle>::iterator triangleBegin,
 		std::vector<Triangle>::iterator triangleEnd,
+		std::vector<Triangle>& triangles,
 		unsigned sortAxis)
 	{
 		auto nTris = triangleEnd-triangleBegin;
@@ -87,9 +92,9 @@ private:
 			node.mChildB = node.mChildA+1;
 			mNodes.resize(mNodes.size()+2);
 			// Child A
-			initNode(mNodes[node.mChildA], triangleBegin, middle, nextAxis);
+			initNode(mNodes[node.mChildA], triangleBegin, middle, triangles, nextAxis);
 			// Child B
-			initNode(mNodes[node.mChildB], middle, triangleEnd, nextAxis);
+			initNode(mNodes[node.mChildB], middle, triangleEnd, triangles, nextAxis);
 
 			// Update bbox
 			node.mBbox = math::AABBSimd(mNodes[node.mChildA].mBbox, mNodes[node.mChildB].mBbox);
@@ -97,8 +102,8 @@ private:
 		}
 
 		node.isLeaf = true;
-		node.mChildA = triangleBegin-mTriangles.begin();
-		node.mChildB = triangleEnd-mTriangles.begin();
+		node.mChildA = triangleBegin-triangles.begin();
+		node.mChildB = triangleEnd-triangles.begin();
 		AABB rawBBox = triangleRangeBounds(triangleBegin, triangleEnd);
 		node.mBbox = AABBSimd(rawBBox.min(), rawBBox.max());
 	}
@@ -154,7 +159,7 @@ private:
 			bool hit_any = false;
 			for(auto i = node.mChildA; i != node.mChildB; ++i)
 			{
-				if(mTriangles[i].hit(r, tMax.x(), collision))
+				if(mTriangles[i].hit(r.simd(), tMax.x(), collision))
 				{
 					hit_any = true;
 					tMax= float4(collision.t);
@@ -166,5 +171,5 @@ private:
 	}
 
 	std::vector<Node> mNodes;
-	std::vector<Triangle> mTriangles;
+	std::vector<Triangle::Simd> mTriangles;
 };
