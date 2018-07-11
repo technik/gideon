@@ -118,7 +118,7 @@ private:
 
 				for(auto& triangle : mTriangles)
 				{
-					if(triangle.hit(r, tMin.x(), tMax.x(), collision))
+					if(triangle.hit(r, tMax.x(), collision))
 					{
 						hit_any = true;
 						tMax= float4(collision.t);

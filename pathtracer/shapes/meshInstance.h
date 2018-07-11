@@ -43,7 +43,10 @@ public:
 
 	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
 	{
-		math::Ray localRay (mXFormInv.transformPos(r.origin()), mXFormInv.transformDir(r.direction()));
+		auto localDir = mXFormInv.transformDir(r.direction());
+		//auto norm = 1 / std::sqrt(dot(localDir, localDir));
+		//localDir *= norm;
+		math::Ray localRay (mXFormInv.transformPos(r.origin()), localDir);
 
         float tout;
 		if(mMesh->bbox().intersect(localRay.implicit(), tMin, tMax, tout))
@@ -52,6 +55,7 @@ public:
 			{
 				collision.normal = mXForm.transformDir(mXFormScaleSign * collision.normal);
 				collision.p = mXForm.transformPos(collision.p);
+			//	collision.t *= norm;
 				return true;
 			}
 		}

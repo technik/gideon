@@ -52,6 +52,7 @@ public:
 		return math::Ray(
 			origin,
 			ll_corner + u*horizontal + v*vertical
+			//normalize(ll_corner + u*horizontal + v*vertical)
 		);
 	}
 

@@ -38,47 +38,42 @@ public:
 	{
 		edge0 = v[1]-v[0];
 		edge1 = v[2]-v[1];
+		edge2 = v[0]-v[2];
 		mNormal = normalize(cross(edge0,edge1));
-
-		mPlaneOffset = dot(v[0],mNormal);
+		mPlaneOffset = dot(mNormal, v[0]);
 	}
 
-	bool hit(
-		const math::Ray& r,
-		float tMin,
-		float tMax,
-		HitRecord& collision
-	) const
-	{
-		auto p0 = r.at(tMin);
-		auto p1 = r.at(tMax);
+bool hit(const math::Ray& r, float tMax, HitRecord& collision) const
+{
+    auto p0 = r.origin();
+    auto p1 = r.at(tMax);
+    auto a0 = cross(p0-v[0], edge0);
+    auto a1 = cross(p0-v[1], edge1);
+    auto a2 = cross(p0-v[2], edge2);
 
-		auto offset0 = dot(p0, mNormal);
-		auto offset1 = dot(p1, mNormal);
+    if((dot(a0,r.direction()) > 0.f)
+    && (dot(a1,r.direction()) > 0.f)
+    && (dot(a2,r.direction()) > 0.f))
+    {
+        auto offset0 = dot(p0, mNormal);
+        auto offset1 = dot(p1, mNormal);
+        float t = tMax*(mPlaneOffset-offset0)/(offset1-offset0);
+		//float t = dot(r.direction(), v[0]-p0);
+        
+        if( t >= 0.0 && t < tMax)
+        {
+            auto p = r.at(t);
 
-		if((offset0-mPlaneOffset)*(offset1-mPlaneOffset) <= 0.f) // Line segment intersects the plane of the triangle
-		{
-			float t = tMin + (tMax-tMin)*(mPlaneOffset-offset0)/(offset1-offset0);
-			auto p = r.at(t);
+            collision.t = t;
+            collision.p = p;
+            collision.normal = mNormal;
 
-			auto c0 = cross(edge0,p-v[0]);
-			auto c1 = cross(edge1,p-v[1]);
-			if(dot(c0,c1) >= 0.f)
-			{
-				auto edge2 = v[0]-v[2];
-				auto c2 = cross(edge2,p-v[2]);
-				if(dot(c1,c2) >= 0.f)
-				{
-					collision.t = t;
-					collision.p = p;
-					collision.normal = mNormal;
-					return true;
-				}
-			}
-		}
+            return true;
+        }
+    }
 
-		return false;
-	}
+    return false;
+}
 
 	const math::Vec3f& vtx(size_t i) const
 	{
@@ -94,6 +89,7 @@ public:
 	std::array<math::Vec3f,3> v;
 	math::Vec3f edge0;
 	math::Vec3f edge1;
+	math::Vec3f edge2;
 	math::Vec3f mNormal;
 	float mPlaneOffset;
 };
