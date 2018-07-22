@@ -40,40 +40,37 @@ public:
 		edge1 = v[2]-v[1];
 		edge2 = v[0]-v[2];
 		mNormal = normalize(cross(edge0,edge1));
-		mPlaneOffset = dot(mNormal, v[0]);
 	}
 
-bool hit(const math::Ray& r, float tMax, HitRecord& collision) const
-{
-    auto p0 = r.origin();
-    auto p1 = r.at(tMax);
-    auto a0 = cross(p0-v[0], edge0);
-    auto a1 = cross(p0-v[1], edge1);
-    auto a2 = cross(p0-v[2], edge2);
+	bool hit(const math::Ray& r, float tMax, HitRecord& collision) const
+	{
+		auto p0 = r.origin();
+		auto h0 = v[0]-p0;
 
-    if((dot(a0,r.direction()) > 0.f)
-    && (dot(a1,r.direction()) > 0.f)
-    && (dot(a2,r.direction()) > 0.f))
-    {
-        auto offset0 = dot(p0, mNormal);
-        auto offset1 = dot(p1, mNormal);
-        float t = tMax*(mPlaneOffset-offset0)/(offset1-offset0);
-		//float t = dot(r.direction(), v[0]-p0);
+		auto a0 = cross(edge0, h0);
+		auto a1 = cross(edge1, v[1]-p0);
+		auto a2 = cross(edge2, v[2]-p0);
+
+		if((dot(a0,r.direction()) > 0.f)
+		&& (dot(a1,r.direction()) > 0.f)
+		&& (dot(a2,r.direction()) > 0.f))
+		{
+			float t = dot(mNormal, h0)/dot(r.direction(), mNormal);
         
-        if( t >= 0.0 && t < tMax)
-        {
-            auto p = r.at(t);
+			if( t >= 0.0 && t < tMax)
+			{
+				auto p = r.at(t);
 
-            collision.t = t;
-            collision.p = p;
-            collision.normal = mNormal;
+				collision.t = t;
+				collision.p = p;
+				collision.normal = mNormal;
 
-            return true;
-        }
-    }
+				return true;
+			}
+		}
 
-    return false;
-}
+		return false;
+	}
 
 	const math::Vec3f& vtx(size_t i) const
 	{
@@ -91,5 +88,4 @@ bool hit(const math::Ray& r, float tMax, HitRecord& collision) const
 	math::Vec3f edge1;
 	math::Vec3f edge2;
 	math::Vec3f mNormal;
-	float mPlaneOffset;
 };
