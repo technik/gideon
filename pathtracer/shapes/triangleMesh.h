@@ -48,7 +48,7 @@ public:
 		const std::vector<VtxInfo>& vertices,
 		const std::vector<Idx>& indices);
 
-	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override;
+	bool hit(const math::Ray & r, float tMax, HitRecord & collision) const override;
 
 private:
 
@@ -94,12 +94,12 @@ public:
 		}
 	}
 
-	bool hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const override
+	bool hit(const math::Ray & r, float tMax, HitRecord & collision) const override
 	{
 		bool hit_any = false;
 		for(size_t i = 0; i < mMeshes.size(); ++i)
 		{
-			if(mMeshes[i].hit(r, tMin, tMax, collision))
+			if(mMeshes[i].hit(r, tMax, collision))
 			{
 				collision.material = mMaterials[i].get();
 				tMax = collision.t;
@@ -157,7 +157,7 @@ TriangleMesh::TriangleMesh(
 }
 
 //-------------------------------------------------------------------------------------------------
-inline bool TriangleMesh::hit(const math::Ray & r, float tMin, float tMax, HitRecord & collision) const
+inline bool TriangleMesh::hit(const math::Ray & r, float tMax, HitRecord & collision) const
 {
-	return mBVH.hit(r, r.implicitSimd(), math::float4(tMin), math::float4(tMax), collision);
+	return mBVH.hit(r, r.implicitSimd(), math::float4(tMax), collision);
 }

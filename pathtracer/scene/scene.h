@@ -52,7 +52,6 @@ public:
 	//--------------------------------------------------------------------------------------------------
 	bool hit(
 		const math::Ray& r,
-		float tMin,
 		float tMax,
 		HitRecord& collision
 	) const
@@ -62,7 +61,7 @@ public:
 		for(auto h : mRenderables)
 		{
 			HitRecord tmp_hit;
-			if(h->hit(r, tMin, t, tmp_hit))
+			if(h->hit(r, t, tmp_hit))
 			{
 				collision = tmp_hit;
 				t = tmp_hit.t;

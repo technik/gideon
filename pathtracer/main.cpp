@@ -105,10 +105,9 @@ float sh(int l, int m, float cosTheta, float phi)
 //--------------------------------------------------------------------------------------------------
 Vec3f color(const Ray& r, const Scene& world, int depth, RandomGenerator& random)
 {
-	constexpr float nearPlane = 0.f;//1e-5f;
 	constexpr float farPlane = 1e3f;
 	HitRecord hit;
-	if(world.hit(r, nearPlane, farPlane, hit))
+	if(world.hit(r, farPlane, hit))
 	{
 		Ray scattered;
 		Vec3f attenuation;
