@@ -307,13 +307,14 @@ bool loadGltf(const char* fileName, Scene& dstScene, float aspectRatio, bool ove
 		{
 			if(node.camera == 0)
 			{
-				auto& camDesc = document.cameras[nodeNdx];
+				auto& camDesc = document.cameras[0];
 				auto xForm = transforms[nodeNdx];
 				auto pos = xForm.transformPos(math::Vec3f(0.f));
 				auto lookDir = xForm.transformDir({0.f,0.f,-1.f});
 				dstScene.addCamera(make_shared<FrustumCamera>(pos, pos+lookDir, camDesc.perspective.yfov, aspectRatio));
 				break;
 			}
+			++nodeNdx;
 		}
 	}
 
