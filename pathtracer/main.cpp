@@ -91,18 +91,27 @@ void traceImageSegment(
 	const auto totalNy = dst.height();
 	auto& cam = *world.cameras().front();
 
+	// Preallocate rays
+	std::vector<Ray> rays;
+	rays.reserve(window.area() * nSamples);
+	for (size_t i = window.y0; i < window.y1; ++i)
+		for (size_t j = window.x0; j < window.x1; ++j)
+			for (size_t s = 0; s < nSamples; ++s)
+			{
+				float u = float(j+random.scalar())/totalNx;
+				float v = 1.f-float(i+random.scalar())/totalNy;
+				rays.push_back(cam.get_ray(u,v));
+			}
 
+	size_t k = 0;
 	for(size_t i = window.y0; i < window.y1; ++i)
 		for(size_t j = window.x0; j < window.x1; ++j)
 		{
 			Vec3f accum(0.f);
 			for(size_t s = 0; s < nSamples; ++s)
 			{
-				float u = float(j+random.scalar())/totalNx;
-				float v = 1.f-float(i+random.scalar())/totalNy;
-				Ray r = cam.get_ray(u,v);
 				int depth = 0;
-				accum += color(r, world, depth, random);
+				accum += color(rays[k++], world, depth, random);
 
 				// Save metrics
 				metrics.maxRecursion = std::max(depth, metrics.maxRecursion);
