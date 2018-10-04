@@ -58,4 +58,6 @@ bool ShapeArray<Leaf>::hit(const math::Ray& r, float tMax, HitRecord& collision)
 			hit_anything = true;
 		}
 	}
+
+	return hit_anything;
 }

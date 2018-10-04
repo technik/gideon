@@ -21,6 +21,7 @@
 
 #include <camera/camera.h>
 #include "shapes/meshInstance.h"
+#include <collision/shapeArray.h>
 #include <vector>
 
 struct CmdLineParams;
@@ -32,9 +33,9 @@ class Scene
 public:
 	Scene() {}
 
-	void addRenderable(const std::shared_ptr<MeshInstance>& renderable) 
+	void addRenderable(const MeshInstance& renderable) 
 	{
-		mRenderables.emplace_back(renderable);
+		mMeshes.append(renderable);
 	}
 
 	void addCamera(const std::shared_ptr<Camera>& cam)
@@ -57,6 +58,16 @@ public:
 	Background* background = nullptr;
 
 private:
-	std::vector<std::shared_ptr<MeshInstance>>	mRenderables;
+	ShapeArray<MeshInstance> mMeshes;
 	std::vector<std::shared_ptr<Camera>>	mCameras;
 };
+
+//--------------------------------------------------------------------------------------------------
+inline bool Scene::hit(
+	const math::Ray& r,
+	float tMax,
+	HitRecord& collision
+) const
+{
+	return mMeshes.hit(r, tMax, collision);
+}

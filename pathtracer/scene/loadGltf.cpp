@@ -331,7 +331,7 @@ bool loadGltf(const char* fileName, Scene& dstScene, float aspectRatio, bool ove
 		const auto& node = document.nodes[i];
 		if(node.mesh >= 0)
 		{
-			dstScene.addRenderable(make_shared<MeshInstance>(meshes[node.mesh], transforms[i]));
+			dstScene.addRenderable(MeshInstance(meshes[node.mesh], transforms[i]));
 		}
 	}
 

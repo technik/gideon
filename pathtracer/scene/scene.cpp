@@ -31,29 +31,6 @@ using namespace std;
 using namespace math;
 
 //--------------------------------------------------------------------------------------------------
-bool Scene::hit(
-	const math::Ray& r,
-	float tMax,
-	HitRecord& collision
-) const
-{
-	float t = tMax;
-	bool hit_anything = false;
-	for(auto h : mRenderables)
-	{
-		HitRecord tmp_hit;
-		if(h->hit(r, t, tmp_hit))
-		{
-			collision = tmp_hit;
-			t = tmp_hit.t;
-			hit_anything = true;
-		}
-	}
-
-	return hit_anything;
-}
-
-//--------------------------------------------------------------------------------------------------
 void Scene::generateRandomScene(RandomGenerator& random)
 {
 	// TODO: Recover this functionality
