@@ -168,8 +168,6 @@ int main(int _argc, const char** _argv)
 		tiles,
 		[&world,
 		&outputImage,
-		&threadMap,
-		&depthMap,
 		&timeMap,
 		params]
 		(ThreadInfo& ti, Rect& window){
@@ -180,15 +178,9 @@ int main(int _argc, const char** _argv)
 			traceImageSegment(world, window, outputImage, ti.random, params.ns, metrics);
 			auto x = window.x0 / params.tileSize;
 			auto y = window.y0 / params.tileSize;
-			auto threadId = ti.index;
-			threadMap.pixel(x,y) = Vec3f(
-				float(ti.index),
-				float(ti.index)/2,
-				float(ti.index)/4);
 
 			std::chrono::duration<float> tileDuration = std::chrono::high_resolution_clock::now() - tileStart;
 
-			depthMap.pixel(x,y) = Vec3f(float(metrics.maxRecursion)/MAX_DEPTH, 0.f, float(metrics.totalRecursion/window.area())/MAX_DEPTH);
 			timeMap.pixel(x,y) = 10.f*tileDuration.count();
 		},
 		cout))
