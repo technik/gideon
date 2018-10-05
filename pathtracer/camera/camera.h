@@ -29,4 +29,6 @@ class Camera
 {
 public:
 	virtual math::Ray get_ray(float u, float v) const = 0;
+	virtual void get_rays(size_t n, const math::Vec2f* uvs, math::Ray* dst) = 0;
+
 };

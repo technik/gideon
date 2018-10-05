@@ -55,6 +55,18 @@ public:
 		);
 	}
 
+	void get_rays(size_t n, const math::Vec2f* uvs, math::Ray* dst) override
+	{
+		for (size_t i = 0; i < n; ++i)
+		{
+			const auto& uv = uvs[i];
+			dst[i] = {
+				origin,
+				normalize(ll_corner + uv.x() * horizontal + uv.y() * vertical)
+			};
+		}
+	}
+
 private:
 	math::Vec3f ll_corner;
 	math::Vec3f horizontal;

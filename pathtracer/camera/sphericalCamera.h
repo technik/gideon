@@ -44,6 +44,22 @@ public:
 
 	math::Ray get_ray(float u, float v) const override
 	{
+		return get_ray_impl(u, v);
+	}
+
+	void get_rays(size_t n, const math::Vec2f* uvs, math::Ray* dst) override
+	{
+		for (size_t i = 0; i < n; ++i)
+		{
+			auto& uv = uvs[i];
+			dst[i] = get_ray_impl(uv.x(), uv.y());
+		}
+	}
+
+private:
+
+	math::Ray get_ray_impl(float u, float v) const
+	{
 		auto phi = (math::Constants<float>::twoPi * u);
 		auto theta = (math::Constants<float>::pi * v);
 		auto cosTheta = std::cos(theta);
@@ -52,14 +68,13 @@ public:
 		auto sinPhi = std::sin(phi);
 		return math::Ray(
 			origin,
-			math::Vec3f(sinTheta*cosPhi,sinTheta*sinPhi,-cosTheta)
+			math::Vec3f(sinTheta*cosPhi, sinTheta*sinPhi, -cosTheta)
 			/*-cosTheta*up +
 			sinTheta*cosPhi*fwd+
 			sinTheta*sinPhi*side*/
 		);
 	}
 
-private:
 	math::Vec3f origin;
 	math::Vec3f up;
 	math::Vec3f fwd;
