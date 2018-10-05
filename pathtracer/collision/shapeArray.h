@@ -35,10 +35,12 @@ public:
 
 	void append(const Leaf& leaf)
 	{
+		mChildBBoxes.push_back(leaf.aabb());
 		mLeafs.push_back(leaf);
 	}
 
 private:
+	std::vector<math::AABB> mChildBBoxes;
 	std::vector<Leaf> mLeafs;
 };
 
@@ -48,15 +50,24 @@ bool ShapeArray<Leaf>::hit(const math::Ray& r, float tMax, HitRecord& collision)
 {
 	float t = tMax;
 	bool hit_anything = false;
-	for (int i = 0; i < mLeafs.size(); ++i)
+	int leafNdx = 0;
+
+	auto implicitRay = r.implicit();
+	for (auto& aabb : mChildBBoxes)
 	{
-		HitRecord tmp_hit;
-		if (mLeafs[i].hit(r, t, tmp_hit))
+		if (aabb.intersect(implicitRay, t))
 		{
-			collision = tmp_hit;
-			t = tmp_hit.t;
-			hit_anything = true;
+			auto& leaf = mLeafs[leafNdx];
+			HitRecord tmp_hit;
+			if (leaf.hit(r, t, tmp_hit))
+			{
+				collision = tmp_hit;
+				t = tmp_hit.t;
+				hit_anything = true;
+			}
 		}
+
+		++leafNdx;
 	}
 
 	return hit_anything;
