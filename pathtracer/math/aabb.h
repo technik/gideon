@@ -22,6 +22,7 @@
 #include "vector.h"
 #include "ray.h"
 #include "linear.h"
+#include "matrix.h"
 
 namespace math
 {
@@ -45,6 +46,9 @@ namespace math
 			, mMax(math::max(a.max(),b.max()))
 		{
 		}
+
+		// Transformation
+		static AABB enclosingAabb(const Matrix34f&, const AABB& orientedBBox);
 
 		float area() const {
 			auto h = mMax-mMin;
@@ -73,7 +77,7 @@ namespace math
 		const Vector& min() const { return mMin; }
 		const Vector& max() const { return mMax; }
 		Vector size() const { return mMax - mMin; }
-		Vector origin() const { return 0.5f*(mMin + mMax); }
+		Vector center() const { return 0.5f*(mMin + mMax); }
 
 		bool contains(const Vector& _point) const {
 			return (math::min(_point, mMin) == mMin) && (math::max(_point, mMax) == mMax);
@@ -81,7 +85,7 @@ namespace math
 
 		// Intersection and distance
 		/// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
-		/// Also, store the minimun intersection distance into _tout
+		/// Also, store the minimun intersection distance into _maxEnter
 		bool intersect(const Ray::Implicit& _r, float _tmin, float _tmax, float& _maxEnter) const {
 			Vector t1 = (mMin -_r.o)*_r.n;
 			Vector t2 = (mMax -_r.o)*_r.n;
@@ -95,7 +99,7 @@ namespace math
 
 		// Intersection and distance
 		/// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
-		/// Also, store the minimun intersection distance into _tout
+		/// Also, store the minimun intersection distance into _maxEnter
 		bool intersect(const Ray::Implicit& _r, float _tmax, float& _maxEnter) const {
 			Vector t1 = (mMin -_r.o)*_r.n;
 			Vector t2 = (mMax -_r.o)*_r.n;
@@ -103,6 +107,20 @@ namespace math
 			auto tEnter = math::min(t1,t2);
 			auto tLeave = math::max(t2,t1);
 			_maxEnter = math::max(tEnter.x(), math::max(tEnter.y(), math::max(tEnter.z(), 0.f)));
+			auto minLeave = math::min(tLeave.x(), math::min(tLeave.y(), math::min(tLeave.z(), _tmax)));
+			return minLeave >= _maxEnter;
+		}
+
+		// Intersection and distance, the fastest version
+		/// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
+		/// Also, store the minimun intersection distance into _maxEnter
+		bool intersect(const Ray::Implicit& _r, float _tmax) const {
+			Vector t1 = (mMin - _r.o)*_r.n;
+			Vector t2 = (mMax - _r.o)*_r.n;
+			// Swapping the order of comparison is important because of NaN behavior
+			auto tEnter = math::min(t1, t2);
+			auto tLeave = math::max(t2, t1);
+			float _maxEnter = math::max(tEnter.x(), math::max(tEnter.y(), math::max(tEnter.z(), 0.f)));
 			auto minLeave = math::min(tLeave.x(), math::min(tLeave.y(), math::min(tLeave.z(), _tmax)));
 			return minLeave >= _maxEnter;
 		}
@@ -166,4 +184,16 @@ namespace math
 		Vector mMin;
 		Vector mMax;
 	};
+
+	//------------------------------------------------------------------------------------------------------------------
+	inline AABB AABB::enclosingAabb(const Matrix34f& transform, const AABB& orientedBBox)
+	{
+		auto center = orientedBBox.center();
+		auto halfSize = orientedBBox.max() - center;
+
+		auto newCenter = transform.transformPos(center);
+		auto newHalfSize = math::abs(transform.transformDir(halfSize));
+
+		return AABB(newCenter - newHalfSize, newCenter + newHalfSize);
+	}
 }
