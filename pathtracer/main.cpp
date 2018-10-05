@@ -79,6 +79,30 @@ struct TileMetrics
 };
 
 //--------------------------------------------------------------------------------------------------
+void generateSampleUVsInWindow(
+	RandomGenerator& random,
+	Rect window,
+	unsigned nSamples,
+	Image& dst,
+	std::vector<math::Vec2f>& uvs)
+{
+	const auto totalNx = dst.width();
+	const auto totalNy = dst.height();
+
+	uvs.reserve(window.area() * nSamples);
+	float randomCarry = random.scalar();
+	for (size_t i = window.y0; i < window.y1; ++i)
+		for (size_t j = window.x0; j < window.x1; ++j)
+			for (size_t s = 0; s < nSamples; ++s)
+			{
+				float u = float(j + randomCarry) / totalNx;
+				randomCarry = random.scalar();
+				float v = 1.f - float(i + randomCarry) / totalNy;
+				uvs.emplace_back(u, v);
+			}
+}
+
+//--------------------------------------------------------------------------------------------------
 void traceImageSegment(
 	const Scene& world,
 	Rect window,
@@ -87,21 +111,12 @@ void traceImageSegment(
 	unsigned nSamples,
 	TileMetrics& metrics)
 {
-	const auto totalNx = dst.width();
-	const auto totalNy = dst.height();
-	auto& cam = *world.cameras().front();
+	std::vector<Vec2f> uvs;
+	generateSampleUVsInWindow(random, window, nSamples, dst, uvs);
 
-	// Preallocate rays
-	std::vector<Ray> rays;
-	rays.reserve(window.area() * nSamples);
-	for (size_t i = window.y0; i < window.y1; ++i)
-		for (size_t j = window.x0; j < window.x1; ++j)
-			for (size_t s = 0; s < nSamples; ++s)
-			{
-				float u = float(j+random.scalar())/totalNx;
-				float v = 1.f-float(i+random.scalar())/totalNy;
-				rays.push_back(cam.get_ray(u,v));
-			}
+	auto& cam = *world.cameras().front();
+	std::vector<Ray> rays(uvs.size());
+	cam.get_rays(rays.size(), uvs.data(), rays.data());
 
 	size_t k = 0;
 	for(size_t i = window.y0; i < window.y1; ++i)
