@@ -26,6 +26,10 @@
 class Shape
 {
 public:
+	Shape() {
+		mBBox.clear();
+	}
+
 	const math::AABB& bbox() const { return mBBox; }
 
 	virtual bool hit(
