@@ -63,34 +63,34 @@ private:
 	};
 
 	struct Node {
-		ChildInfo mChildren[2];
+		Child mChildren[2];
 	};
 
 private:
 	void initSubtree(
 		Node& root,
-		std::vector<Leaf>::iterator triangleBegin,
-		std::vector<Leaf>::iterator triangleEnd,
+		typename std::vector<Leaf>::iterator triangleBegin,
+		typename std::vector<Leaf>::iterator triangleEnd,
 		unsigned sortAxis,
 		math::AABB& subtreeBBox
 	);
 
-	static bool hitSubtree(
+	bool hitSubtree(
 		const Node& root,
 		const math::Ray& r,
 		float tMax,
-		HitRecord& collision);
+		HitRecord& collision) const;
 
 	void initNodeChild(
 		Child& child,
-		std::vector<Leaf>::iterator elementsBegin,
-		std::vector<Leaf>::iterator elementsEnd,
+		typename std::vector<Leaf>::iterator elementsBegin,
+		typename std::vector<Leaf>::iterator elementsEnd,
 		unsigned nextAxis);
-	void initLeafNodeChild(Child&, std::vector<Leaf>::iterator leaf);
+	void initLeafNodeChild(Child&, typename std::vector<Leaf>::iterator leaf);
 	void initBranchNodeChild(
 		Child& child,
-		std::vector<Leaf>::iterator elementsBegin,
-		std::vector<Leaf>::iterator elementsEnd,
+		typename std::vector<Leaf>::iterator elementsBegin,
+		typename std::vector<Leaf>::iterator elementsEnd,
 		unsigned nextAxis);
 
 private:
@@ -102,8 +102,8 @@ private:
 template<class Leaf>
 void AABBTree2<Leaf>::initSubtree(
 	Node& root,
-	std::vector<Leaf>::iterator elementsBegin,
-	std::vector<Leaf>::iterator elementsEnd,
+	typename std::vector<Leaf>::iterator elementsBegin,
+	typename std::vector<Leaf>::iterator elementsEnd,
 	unsigned sortAxis,
 	math::AABB& subtreeBBox
 ){
@@ -124,7 +124,7 @@ void AABBTree2<Leaf>::initSubtree(
 	// Find the middle element, making sure the first half is always >= the second half
 	// This is useful for nodes with one child branch and one child leaf, so the branch
 	// Always takes the first place
-	auto middle = (elementsBegin+nTris+1)/2;
+	auto middle = elementsBegin+(nElements+1)/2;
 	assert((middle - elementsBegin) >= (elementsEnd - middle));
 
 	// Init node children
@@ -142,7 +142,7 @@ bool AABBTree2<Leaf>::hitSubtree(
 	const Node& root,
 	const math::Ray& r,
 	float tMax,
-	HitRecord& collision)
+	HitRecord& collision) const
 {
 	float t = tMax;
 	bool hit_anything = false;
@@ -176,8 +176,8 @@ bool AABBTree2<Leaf>::hitSubtree(
 template<class Leaf>
 void AABBTree2<Leaf>::initNodeChild(
 	Child& child,
-	std::vector<Leaf>::iterator elementsBegin,
-	std::vector<Leaf>::iterator elementsEnd,
+	typename std::vector<Leaf>::iterator elementsBegin,
+	typename std::vector<Leaf>::iterator elementsEnd,
 	unsigned nextAxis)
 {
 	auto numElements = elementsEnd - elementsBegin;
@@ -189,7 +189,9 @@ void AABBTree2<Leaf>::initNodeChild(
 
 //----------------------------------------------------------------------------------------
 template<class Leaf>
-void AABBTree2<Leaf>::initLeafNodeChild(Child& child, std::vector<Leaf>::iterator leafIter)
+void AABBTree2<Leaf>::initLeafNodeChild(
+	Child& child,
+	typename std::vector<Leaf>::iterator leafIter)
 {
 	auto& leaf = *leafIter;
 	child.mBBox = leaf.bbox();
@@ -201,8 +203,8 @@ void AABBTree2<Leaf>::initLeafNodeChild(Child& child, std::vector<Leaf>::iterato
 template<class Leaf>
 void AABBTree2<Leaf>::initBranchNodeChild(
 	Child& child,
-	std::vector<Leaf>::iterator elementsBegin,
-	std::vector<Leaf>::iterator elementsEnd,
+	typename std::vector<Leaf>::iterator elementsBegin,
+	typename std::vector<Leaf>::iterator elementsEnd,
 	unsigned nextAxis)
 {
 	child.mIsLeaf = false;

@@ -24,7 +24,7 @@
 #include <materials/material.h>
 #include <math/vector.h>
 #include <math/aabb.h>
-#include <collision/AABBTree.h>
+#include <collision/AABBTree2.h>
 #include "shape.h"
 #include "triangle.h"
 
@@ -75,7 +75,7 @@ private:
 		normalize(hit.normal);
 	}
 
-	AABBTree<2> mBVH;
+	AABBTree2<Triangle> mBVH;
 	std::vector<uint16_t> mIndices;
 	std::vector<VtxInfo> mVtxData;
 };
@@ -154,11 +154,12 @@ TriangleMesh::TriangleMesh(
 	for(auto& v : vertices)
 		mBBox.add(v.position);
 
-	mBVH = AABBTree<2>(triangles);
+	mBVH = AABBTree2(triangles);
 }
 
 //-------------------------------------------------------------------------------------------------
 inline bool TriangleMesh::hit(const math::Ray & r, float tMax, HitRecord & collision) const
 {
-	return mBVH.hit(r, r.implicitSimd(), math::float4(tMax), collision);
+	return mBVH.hit(r, tMax, collision);
+	//return mBVH.hit(r, r.implicitSimd(), math::float4(tMax), collision);
 }

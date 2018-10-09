@@ -23,6 +23,7 @@
 #pragma once
 
 #include <array>
+#include <math/aabb.h>
 #include <math/ray.h>
 #include <math/vector.h>
 #include "collision.h"
@@ -47,6 +48,15 @@ public:
 		float tMax,
 		HitRecord& collision
 	) const;
+
+	math::AABB bbox() const {
+		math::AABB box;
+		box.clear();
+		box.add(v[0]);
+		box.add(v[1]);
+		box.add(v[2]);
+		return box;
+	}
 
 	float area() const
 	{
