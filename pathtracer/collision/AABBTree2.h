@@ -30,7 +30,14 @@ class AABBTree2 final : public Shape
 {
 public:
 	AABBTree2() = default;
-	AABBTree2(std::vector<Leaf>& triangles);
+	AABBTree2(std::vector<Leaf>& elements)
+	{
+		mLeafs = elements;
+		// Construct tree
+		mNodes.reserve(2*elements.size()-1);
+		mNodes.resize(1);
+		initSubtree(mNodes[0], mLeafs.begin(), mLeafs.end(), 0, mBBox);
+	}
 
 	bool hit(
 		const math::Ray& r,
@@ -39,7 +46,7 @@ public:
 	) const override
 	{
 		// You should test against BBox before. And that should always return
-		// fals when there are no nodes
+		// false when there are no nodes
 		assert(mNodes.size() > 0);
 
 		return hitSubtree(mNodes.front(), r, tMax, collision);
@@ -48,9 +55,11 @@ public:
 private:
 
 	struct Child {
-		math::AABB mBbox;
+		math::AABB mBBox;
 		size_t mIndex;
 		bool mIsLeaf;
+
+		bool isLeaf() const { return mIsLeaf; }
 	};
 
 	struct Node {
@@ -58,13 +67,148 @@ private:
 	};
 
 private:
+	void initSubtree(
+		Node& root,
+		std::vector<Leaf>::iterator triangleBegin,
+		std::vector<Leaf>::iterator triangleEnd,
+		unsigned sortAxis,
+		math::AABB& subtreeBBox
+	);
+
 	static bool hitSubtree(
 		const Node& root,
 		const math::Ray& r,
 		float tMax,
 		HitRecord& collision);
 
+	void initNodeChild(
+		Child& child,
+		std::vector<Leaf>::iterator elementsBegin,
+		std::vector<Leaf>::iterator elementsEnd,
+		unsigned nextAxis);
+	void initLeafNodeChild(Child&, std::vector<Leaf>::iterator leaf);
+	void initBranchNodeChild(
+		Child& child,
+		std::vector<Leaf>::iterator elementsBegin,
+		std::vector<Leaf>::iterator elementsEnd,
+		unsigned nextAxis);
+
 private:
 	std::vector<Node> mNodes;
 	std::vector<Leaf> mLeafs;
 };
+
+//----------------------------------------------------------------------------------------
+template<class Leaf>
+void AABBTree2<Leaf>::initSubtree(
+	Node& root,
+	std::vector<Leaf>::iterator elementsBegin,
+	std::vector<Leaf>::iterator elementsEnd,
+	unsigned sortAxis,
+	math::AABB& subtreeBBox
+){
+	auto nElements = elementsEnd-elementsBegin;
+	assert(nElements >= 2); // Otherwise, we should be initializing a leaf
+
+	// Approximately sort triangles along the given axis
+	math::Vec3f axis(0.f);
+	axis[sortAxis] = 1.f;
+	std::sort(elementsBegin, elementsEnd,
+		[axis](Triangle& a, Triangle& b) -> bool {
+		auto da = dot(a.centroid(), axis); 
+		auto db = dot(b.centroid(), axis); 
+		return da < db;
+	});
+	// TODO: Try a bunch of possible splits
+
+	// Find the middle element, making sure the first half is always >= the second half
+	// This is useful for nodes with one child branch and one child leaf, so the branch
+	// Always takes the first place
+	auto middle = (elementsBegin+nTris+1)/2;
+	assert((middle - elementsBegin) >= (elementsEnd - middle));
+
+	// Init node children
+	auto nextAxis = (sortAxis+1)%3;
+	initNodeChild(root.mChildren[0], elementsBegin, middle, nextAxis);
+	initNodeChild(root.mChildren[1], middle, elementsEnd, nextAxis);
+
+	// Update bbox
+	subtreeBBox = math::AABB(root.mChildren[0].mBBox, root.mChildren[1].mBBox);
+}
+
+//----------------------------------------------------------------------------------------
+template<class Leaf>
+bool AABBTree2<Leaf>::hitSubtree(
+	const Node& root,
+	const math::Ray& r,
+	float tMax,
+	HitRecord& collision)
+{
+	float t = tMax;
+	bool hit_anything = false;
+
+	for (auto& child : root.mChildren)
+	{
+		HitRecord tmp_hit;
+		if(child.isLeaf()) {
+			if(mLeafs[child.mIndex].hit(r, t, tmp_hit))
+			{
+				collision = tmp_hit;
+				t = tmp_hit.t;
+				hit_anything = true;
+			}
+		} 
+		else {
+			if(hitSubtree(mNodes[child.mIndex], r, t, tmp_hit))
+			{
+				collision = tmp_hit;
+				t = tmp_hit.t;
+				hit_anything = true;
+			}
+		}
+
+	}
+
+	return hit_anything;
+}
+
+//----------------------------------------------------------------------------------------
+template<class Leaf>
+void AABBTree2<Leaf>::initNodeChild(
+	Child& child,
+	std::vector<Leaf>::iterator elementsBegin,
+	std::vector<Leaf>::iterator elementsEnd,
+	unsigned nextAxis)
+{
+	auto numElements = elementsEnd - elementsBegin;
+	if(numElements > 1)
+		initBranchNodeChild(child, elementsBegin, elementsEnd, nextAxis);
+	else // Child A is a leaf
+		initLeafNodeChild(child, elementsBegin);
+}
+
+//----------------------------------------------------------------------------------------
+template<class Leaf>
+void AABBTree2<Leaf>::initLeafNodeChild(Child& child, std::vector<Leaf>::iterator leafIter)
+{
+	auto& leaf = *leafIter;
+	child.mBBox = leaf.bbox();
+	child.mIndex = leafIter-mLeafs.begin();
+	child.mIsLeaf = true;
+}
+
+//----------------------------------------------------------------------------------------
+template<class Leaf>
+void AABBTree2<Leaf>::initBranchNodeChild(
+	Child& child,
+	std::vector<Leaf>::iterator elementsBegin,
+	std::vector<Leaf>::iterator elementsEnd,
+	unsigned nextAxis)
+{
+	child.mIsLeaf = false;
+	child.mIndex = mNodes.size();
+	mNodes.push_back({});
+	initSubtree(mNodes.back(), 
+		elementsBegin, elementsEnd,
+		nextAxis, child.mBBox);
+}
