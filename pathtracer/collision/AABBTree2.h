@@ -55,7 +55,8 @@ public:
 		// false when there are no nodes
 		assert(mNodes.size() > 0);
 
-		return hitSubtree(mNodes.front(), r, tMax, collision);
+		auto ris = r.implicitSimd();
+		return hitSubtree(mNodes.front(), r, ris, tMax, collision);
 	}
 
 private:
@@ -85,6 +86,7 @@ private:
 	bool hitSubtree(
 		const Node& root,
 		const math::Ray& r,
+		const math::Ray::ImplicitSimd& ris,
 		float tMax,
 		HitRecord& collision) const;
 
@@ -154,13 +156,13 @@ template<class Element, class Leaf>
 bool AABBTree2<Element, Leaf>::hitSubtree(
 	const Node& root,
 	const math::Ray& r,
+	const math::Ray::ImplicitSimd& ris,
 	float tMax,
 	HitRecord& collision) const
 {
 	float t = tMax;
 	bool hit_anything = false;
 
-	auto ris = r.implicitSimd();
 	bool hitA = root.mChildren[0].mBBox.intersect(ris, tMax);
 	bool hitB = root.mChildren[1].mBBox.intersect(ris, tMax);
 
@@ -174,7 +176,7 @@ bool AABBTree2<Element, Leaf>::hitSubtree(
 				hit_anything = true;
 			}
 		}
-		else if(hitSubtree(mNodes[child.mIndex], r, t, tmp_hit)) {
+		else if(hitSubtree(mNodes[child.mIndex], r, ris, t, tmp_hit)) {
 				collision = tmp_hit;
 				t = tmp_hit.t;
 				hit_anything = true;
@@ -189,7 +191,7 @@ bool AABBTree2<Element, Leaf>::hitSubtree(
 				hit_anything = true;
 			}
 		}
-		else if(hitSubtree(mNodes[child.mIndex], r, t, tmp_hit)) {
+		else if(hitSubtree(mNodes[child.mIndex], r, ris, t, tmp_hit)) {
 			collision = tmp_hit;
 			t = tmp_hit.t;
 			hit_anything = true;
