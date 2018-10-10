@@ -75,7 +75,7 @@ private:
 		normalize(hit.normal);
 	}
 
-	AABBTree2<Triangle> mBVH;
+	AABBTree2<Triangle, Triangle::Simd> mBVH;
 	std::vector<uint16_t> mIndices;
 	std::vector<VtxInfo> mVtxData;
 };
@@ -154,7 +154,7 @@ TriangleMesh::TriangleMesh(
 	for(auto& v : vertices)
 		mBBox.add(v.position);
 
-	mBVH = AABBTree2(triangles);
+	mBVH = AABBTree2<Triangle, Triangle::Simd>(triangles);
 }
 
 //-------------------------------------------------------------------------------------------------

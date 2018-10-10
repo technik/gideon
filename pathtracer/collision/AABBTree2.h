@@ -25,19 +25,21 @@
 #include <vector>
 
 /// Two way AABB tree
-template<class Leaf>
+template<class Element, class Leaf>
 class AABBTree2 final : public Shape
 {
 public:
 	AABBTree2() = default;
-	AABBTree2(std::vector<Leaf>& elements)
+	AABBTree2(std::vector<Element>& elements)
 	{
-		mLeafs = elements;
 		// Construct tree
 		mNodes.reserve(2*elements.size()-1);
 		mNodes.resize(1);
 		math::AABBSimd simdBBox;
-		initSubtree(mNodes[0], mLeafs.begin(), mLeafs.end(), 0, simdBBox);
+		initSubtree(mNodes[0], elements.begin(), elements.end(), elements, 0, simdBBox);
+		mLeafs.resize(elements.size());
+		for(size_t i = 0; i < elements.size(); ++i)
+			mLeafs[i] = elements[i].simd();
 		auto min = math::Vec3f(simdBBox.min().x(), simdBBox.min().y(), simdBBox.min().z());
 		auto max = math::Vec3f(simdBBox.max().x(), simdBBox.max().y(), simdBBox.max().z());
 		mBBox = { min, max };
@@ -73,8 +75,9 @@ private:
 private:
 	void initSubtree(
 		Node& root,
-		typename std::vector<Leaf>::iterator triangleBegin,
-		typename std::vector<Leaf>::iterator triangleEnd,
+		typename std::vector<Element>::iterator elementsBegin,
+		typename std::vector<Element>::iterator elementsEnd,
+		const std::vector<Element>& leafs,
 		unsigned sortAxis,
 		math::AABBSimd& subtreeBBox
 	);
@@ -87,14 +90,19 @@ private:
 
 	void initNodeChild(
 		Child& child,
-		typename std::vector<Leaf>::iterator elementsBegin,
-		typename std::vector<Leaf>::iterator elementsEnd,
+		typename std::vector<Element>::iterator elementsBegin,
+		typename std::vector<Element>::iterator elementsEnd,
+		const std::vector<Element>& leafs,
 		unsigned nextAxis);
-	void initLeafNodeChild(Child&, typename std::vector<Leaf>::iterator leaf);
+	void initLeafNodeChild(
+		Child&,
+		typename std::vector<Element>::iterator leaf,
+		const std::vector<Element>& leafs);
 	void initBranchNodeChild(
 		Child& child,
-		typename std::vector<Leaf>::iterator elementsBegin,
-		typename std::vector<Leaf>::iterator elementsEnd,
+		typename std::vector<Element>::iterator elementsBegin,
+		typename std::vector<Element>::iterator elementsEnd,
+		const std::vector<Element>& elements,
 		unsigned nextAxis);
 
 private:
@@ -103,11 +111,12 @@ private:
 };
 
 //----------------------------------------------------------------------------------------
-template<class Leaf>
-void AABBTree2<Leaf>::initSubtree(
+template<class Element, class Leaf>
+void AABBTree2<Element, Leaf>::initSubtree(
 	Node& root,
-	typename std::vector<Leaf>::iterator elementsBegin,
-	typename std::vector<Leaf>::iterator elementsEnd,
+	typename std::vector<Element>::iterator elementsBegin,
+	typename std::vector<Element>::iterator elementsEnd,
+	const std::vector<Element>& elements,
 	unsigned sortAxis,
 	math::AABBSimd& subtreeBBox
 ){
@@ -133,16 +142,16 @@ void AABBTree2<Leaf>::initSubtree(
 
 	// Init node children
 	auto nextAxis = (sortAxis+1)%3;
-	initNodeChild(root.mChildren[0], elementsBegin, middle, nextAxis);
-	initNodeChild(root.mChildren[1], middle, elementsEnd, nextAxis);
+	initNodeChild(root.mChildren[0], elementsBegin, middle, elements, nextAxis);
+	initNodeChild(root.mChildren[1], middle, elementsEnd, elements, nextAxis);
 
 	// Update bbox
 	subtreeBBox = math::AABBSimd(root.mChildren[0].mBBox, root.mChildren[1].mBBox);
 }
 
 //----------------------------------------------------------------------------------------
-template<class Leaf>
-bool AABBTree2<Leaf>::hitSubtree(
+template<class Element, class Leaf>
+bool AABBTree2<Element, Leaf>::hitSubtree(
 	const Node& root,
 	const math::Ray& r,
 	float tMax,
@@ -157,7 +166,7 @@ bool AABBTree2<Leaf>::hitSubtree(
 		if(child.mBBox.intersect(r.implicitSimd(), tMax))
 		{
 			if(child.isLeaf()) {
-				if(mLeafs[child.mIndex].hit(r, t, tmp_hit)) {
+				if(mLeafs[child.mIndex].hit(r.simd(), t, tmp_hit)) {
 					collision = tmp_hit;
 					t = tmp_hit.t;
 					hit_anything = true;
@@ -175,44 +184,47 @@ bool AABBTree2<Leaf>::hitSubtree(
 }
 
 //----------------------------------------------------------------------------------------
-template<class Leaf>
-void AABBTree2<Leaf>::initNodeChild(
+template<class Element, class Leaf>
+void AABBTree2<Element, Leaf>::initNodeChild(
 	Child& child,
-	typename std::vector<Leaf>::iterator elementsBegin,
-	typename std::vector<Leaf>::iterator elementsEnd,
+	typename std::vector<Element>::iterator elementsBegin,
+	typename std::vector<Element>::iterator elementsEnd,
+	const std::vector<Element>& leafs,
 	unsigned nextAxis)
 {
 	auto numElements = elementsEnd - elementsBegin;
 	if(numElements > 1)
-		initBranchNodeChild(child, elementsBegin, elementsEnd, nextAxis);
+		initBranchNodeChild(child, elementsBegin, elementsEnd, leafs, nextAxis);
 	else // Child A is a leaf
-		initLeafNodeChild(child, elementsBegin);
+		initLeafNodeChild(child, elementsBegin, leafs);
 }
 
 //----------------------------------------------------------------------------------------
-template<class Leaf>
-void AABBTree2<Leaf>::initLeafNodeChild(
+template<class Element, class Leaf>
+void AABBTree2<Element, Leaf>::initLeafNodeChild(
 	Child& child,
-	typename std::vector<Leaf>::iterator leafIter)
+	typename std::vector<Element>::iterator leafIter,
+	const std::vector<Element>& leafs)
 {
 	auto& leaf = *leafIter;
 	child.mBBox = math::AABBSimd(leaf.bbox().min(), leaf.bbox().max());
-	child.mIndex = leafIter-mLeafs.begin();
+	child.mIndex = leafIter-leafs.begin();
 	child.mIsLeaf = true;
 }
 
 //----------------------------------------------------------------------------------------
-template<class Leaf>
-void AABBTree2<Leaf>::initBranchNodeChild(
+template<class Element, class Leaf>
+void AABBTree2<Element, Leaf>::initBranchNodeChild(
 	Child& child,
-	typename std::vector<Leaf>::iterator elementsBegin,
-	typename std::vector<Leaf>::iterator elementsEnd,
+	typename std::vector<Element>::iterator elementsBegin,
+	typename std::vector<Element>::iterator elementsEnd,
+	const std::vector<Element>& elements,
 	unsigned nextAxis)
 {
 	child.mIsLeaf = false;
 	child.mIndex = mNodes.size();
 	mNodes.push_back({});
 	initSubtree(mNodes.back(), 
-		elementsBegin, elementsEnd,
+		elementsBegin, elementsEnd, elements,
 		nextAxis, child.mBBox);
 }
