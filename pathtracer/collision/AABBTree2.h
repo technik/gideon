@@ -36,7 +36,11 @@ public:
 		// Construct tree
 		mNodes.reserve(2*elements.size()-1);
 		mNodes.resize(1);
-		initSubtree(mNodes[0], mLeafs.begin(), mLeafs.end(), 0, mBBox);
+		math::AABBSimd simdBBox;
+		initSubtree(mNodes[0], mLeafs.begin(), mLeafs.end(), 0, simdBBox);
+		auto min = math::Vec3f(simdBBox.min().x(), simdBBox.min().y(), simdBBox.min().z());
+		auto max = math::Vec3f(simdBBox.max().x(), simdBBox.max().y(), simdBBox.max().z());
+		mBBox = { min, max };
 	}
 
 	bool hit(
@@ -55,7 +59,7 @@ public:
 private:
 
 	struct Child {
-		math::AABB mBBox;
+		math::AABBSimd mBBox;
 		size_t mIndex;
 		bool mIsLeaf;
 
@@ -72,7 +76,7 @@ private:
 		typename std::vector<Leaf>::iterator triangleBegin,
 		typename std::vector<Leaf>::iterator triangleEnd,
 		unsigned sortAxis,
-		math::AABB& subtreeBBox
+		math::AABBSimd& subtreeBBox
 	);
 
 	bool hitSubtree(
@@ -105,7 +109,7 @@ void AABBTree2<Leaf>::initSubtree(
 	typename std::vector<Leaf>::iterator elementsBegin,
 	typename std::vector<Leaf>::iterator elementsEnd,
 	unsigned sortAxis,
-	math::AABB& subtreeBBox
+	math::AABBSimd& subtreeBBox
 ){
 	auto nElements = elementsEnd-elementsBegin;
 	assert(nElements >= 2); // Otherwise, we should be initializing a leaf
@@ -133,7 +137,7 @@ void AABBTree2<Leaf>::initSubtree(
 	initNodeChild(root.mChildren[1], middle, elementsEnd, nextAxis);
 
 	// Update bbox
-	subtreeBBox = math::AABB(root.mChildren[0].mBBox, root.mChildren[1].mBBox);
+	subtreeBBox = math::AABBSimd(root.mChildren[0].mBBox, root.mChildren[1].mBBox);
 }
 
 //----------------------------------------------------------------------------------------
@@ -157,7 +161,7 @@ bool AABBTree2<Leaf>::hitSubtree(
 				hit_anything = true;
 			}
 		} 
-		else if(child.mBBox.intersect(r.implicit(), tMax))
+		else if(child.mBBox.intersect(r.implicitSimd(), tMax))
 			if(hitSubtree(mNodes[child.mIndex], r, t, tmp_hit)) {
 				collision = tmp_hit;
 				t = tmp_hit.t;
@@ -190,7 +194,7 @@ void AABBTree2<Leaf>::initLeafNodeChild(
 	typename std::vector<Leaf>::iterator leafIter)
 {
 	auto& leaf = *leafIter;
-	child.mBBox = leaf.bbox();
+	child.mBBox = math::AABBSimd(leaf.bbox().min(), leaf.bbox().max());
 	child.mIndex = leafIter-mLeafs.begin();
 	child.mIsLeaf = true;
 }
