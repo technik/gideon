@@ -151,22 +151,24 @@ bool AABBTree2<Leaf>::hitSubtree(
 	float t = tMax;
 	bool hit_anything = false;
 
+	HitRecord tmp_hit;
 	for (auto& child : root.mChildren)
 	{
-		HitRecord tmp_hit;
-		if(child.isLeaf()) {
-			if(mLeafs[child.mIndex].hit(r, t, tmp_hit)) {
-				collision = tmp_hit;
-				t = tmp_hit.t;
-				hit_anything = true;
+		if(child.mBBox.intersect(r.implicitSimd(), tMax))
+		{
+			if(child.isLeaf()) {
+				if(mLeafs[child.mIndex].hit(r, t, tmp_hit)) {
+					collision = tmp_hit;
+					t = tmp_hit.t;
+					hit_anything = true;
+				}
 			}
-		} 
-		else if(child.mBBox.intersect(r.implicitSimd(), tMax))
-			if(hitSubtree(mNodes[child.mIndex], r, t, tmp_hit)) {
-				collision = tmp_hit;
-				t = tmp_hit.t;
-				hit_anything = true;
-			}
+			else if(hitSubtree(mNodes[child.mIndex], r, t, tmp_hit)) {
+					collision = tmp_hit;
+					t = tmp_hit.t;
+					hit_anything = true;
+				}
+		}
 	}
 
 	return hit_anything;
