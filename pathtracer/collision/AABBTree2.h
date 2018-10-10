@@ -160,23 +160,39 @@ bool AABBTree2<Element, Leaf>::hitSubtree(
 	float t = tMax;
 	bool hit_anything = false;
 
+	auto ris = r.implicitSimd();
+	bool hitA = root.mChildren[0].mBBox.intersect(ris, tMax);
+	bool hitB = root.mChildren[1].mBBox.intersect(ris, tMax);
+
 	HitRecord tmp_hit;
-	for (auto& child : root.mChildren)
-	{
-		if(child.mBBox.intersect(r.implicitSimd(), tMax))
-		{
-			if(child.isLeaf()) {
-				if(mLeafs[child.mIndex].hit(r.simd(), t, tmp_hit)) {
-					collision = tmp_hit;
-					t = tmp_hit.t;
-					hit_anything = true;
-				}
+	if(hitA) {
+		auto& child = root.mChildren[0];
+		if(child.isLeaf()) {
+			if(mLeafs[child.mIndex].hit(r.simd(), t, tmp_hit)) {
+				collision = tmp_hit;
+				t = tmp_hit.t;
+				hit_anything = true;
 			}
-			else if(hitSubtree(mNodes[child.mIndex], r, t, tmp_hit)) {
-					collision = tmp_hit;
-					t = tmp_hit.t;
-					hit_anything = true;
-				}
+		}
+		else if(hitSubtree(mNodes[child.mIndex], r, t, tmp_hit)) {
+				collision = tmp_hit;
+				t = tmp_hit.t;
+				hit_anything = true;
+			}
+	}
+	if(hitB) {
+		auto& child = root.mChildren[1];
+		if(child.isLeaf()) {
+			if(mLeafs[child.mIndex].hit(r.simd(), t, tmp_hit)) {
+				collision = tmp_hit;
+				t = tmp_hit.t;
+				hit_anything = true;
+			}
+		}
+		else if(hitSubtree(mNodes[child.mIndex], r, t, tmp_hit)) {
+			collision = tmp_hit;
+			t = tmp_hit.t;
+			hit_anything = true;
 		}
 	}
 
