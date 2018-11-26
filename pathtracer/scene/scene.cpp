@@ -21,6 +21,7 @@
 #include <background.h>
 #include "cmdLineParams.h"
 #include "loadGltf.h"
+#include <materials/splitSumMaterials.h>
 #include <math/vector.h>
 #include <memory>
 #include <camera/sphericalCamera.h>
@@ -83,7 +84,8 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 	// Geometry
 	if (params.testBallScene)
 	{
-		Material* sphereMaterial = new Metal(Vec3f(1.f), 0.5f);
+		auto probe = new FurnaceProbe(0.7f);
+		Material* sphereMaterial = new SplitSumMaterial(probe);
 		auto testBallShape = std::make_shared<Sphere>(Vec3f(0.f), 1.0f, sphereMaterial);
 		Matrix34f xform = Matrix34f::identity();
 		mRenderables.push_back(std::make_shared<MeshInstance>(testBallShape, xform));

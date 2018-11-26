@@ -62,7 +62,7 @@ Vec3f color(const Ray& r, const Scene& world, int& depth, RandomGenerator& rando
 		{
 			return color(scattered, world, ++depth, random) * attenuation + emitted;
 		}
-		return Vec3f(0.f);
+		return emitted;
 	}
 	else
 	{
