@@ -22,13 +22,17 @@
 
 #include "material.h"
 #include <textures/environmentProbe.h>
+#include <textures/textureSampler.h>
+#include <textures/image.h>
 
 class SplitSumMaterial : public Material
 {
 public:
 	SplitSumMaterial(EnvironmentProbe* probe)
 		: m_env(probe)
-	{}
+		, m_iblSampler("ibl.hdr")
+	{
+	}
 
 	bool scatter(
 		const math::Ray& in,
@@ -39,9 +43,13 @@ public:
 		RandomGenerator&// random
 	) const override
 	{
-		emitted = m_env->irradiance(hit.normal);
+		auto ndv = dot(-in.direction(), hit.normal);
+		auto f_ab = m_iblSampler.sample({ ndv, r });
+		emitted = math::Vec3f(f_ab.x(), f_ab.y(), 0.f);
 		return false; // Do not scatter the ray
 	}
 
+	float r = 0.1f;
 	EnvironmentProbe* m_env;
+	BilinearTextureSampler<ClampWrap,ClampWrap> m_iblSampler;
 };
