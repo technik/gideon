@@ -84,8 +84,15 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 	// Geometry
 	if (params.testBallScene)
 	{
-		auto probe = new FurnaceProbe(0.7f);
+		// Furnace environment
+		const float furnaceLevel = 0.5f;
+		auto probe = new FurnaceProbe(furnaceLevel);
+		background = new GradientBackground(Vec3f(furnaceLevel), Vec3f(furnaceLevel));
+
+		// Split sum material
 		Material* sphereMaterial = new SplitSumMaterial(probe);
+
+		// Test sphere
 		auto testBallShape = std::make_shared<Sphere>(Vec3f(0.f), 1.0f, sphereMaterial);
 		Matrix34f xform = Matrix34f::identity();
 		mRenderables.push_back(std::make_shared<MeshInstance>(testBallShape, xform));
@@ -93,17 +100,18 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 	else if(!params.scene.empty())
 	{
 		loadGltf(params.scene.c_str(), *this, float(params.sx)/params.sy, params.overrideMaterials);
+	
+		// Background
+		if(params.background.empty())
+		{
+			background = new GradientBackground ({0.5f, 0.7f, 1.f}, Vec3f(1.f));
+		}
+		else
+		{
+			background = new HDRBackground(params.background.c_str());
+		}
 	}
 
-	// Background
-	if(params.background.empty())
-	{
-		background = new GradientBackground ({0.5f, 0.7f, 1.f}, Vec3f(1.f));
-	}
-	else
-	{
-		background = new HDRBackground(params.background.c_str());
-	}
 
 	// Camera
 	if(params.sphericalRender)

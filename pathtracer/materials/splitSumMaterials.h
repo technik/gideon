@@ -43,13 +43,21 @@ public:
 		RandomGenerator&// random
 	) const override
 	{
-		auto ndv = dot(-in.direction(), hit.normal);
-		auto f_ab = m_iblSampler.sample({ ndv, r });
-		emitted = math::Vec3f(f_ab.x(), f_ab.y(), 0.f);
+		auto f_ab = iblLookUp(in, hit, r);
+		auto reflDir = reflect(in.direction(), hit.normal);
+		emitted = math::Vec3f(f_ab.x() + f_ab.y()) * m_env->radiance(reflDir, r);
 		return false; // Do not scatter the ray
 	}
 
-	float r = 0.1f;
+protected:
+
+	math::Vec3f iblLookUp(const math::Ray& in, HitRecord& hit, float roughness) const
+	{
+		auto ndv = dot(-in.direction(), hit.normal);
+		return m_iblSampler.sample({ ndv, r });
+	}
+
+	float r = 0.5f;
 	EnvironmentProbe* m_env;
 	BilinearTextureSampler<ClampWrap,ClampWrap> m_iblSampler;
 };
