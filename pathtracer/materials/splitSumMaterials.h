@@ -41,23 +41,106 @@ public:
 		math::Vec3f& emitted,
 		math::Ray&,// out,
 		RandomGenerator&// random
-	) const override
-	{
-		auto f_ab = iblLookUp(in, hit, r);
-		auto reflDir = reflect(in.direction(), hit.normal);
-		emitted = math::Vec3f(f_ab.x() + f_ab.y()) * m_env->radiance(reflDir, r);
-		return false; // Do not scatter the ray
-	}
+	) const override = 0;
 
 protected:
 
 	math::Vec3f iblLookUp(const math::Ray& in, HitRecord& hit, float roughness) const
 	{
 		auto ndv = dot(-in.direction(), hit.normal);
-		return m_iblSampler.sample({ ndv, r });
+		return m_iblSampler.sample({ ndv, roughness });
 	}
 
-	float r = 0.5f;
 	EnvironmentProbe* m_env;
 	BilinearTextureSampler<ClampWrap,ClampWrap> m_iblSampler;
+};
+
+class SplitSumReflectorSS : public SplitSumMaterial
+{
+public:
+	SplitSumReflectorSS(EnvironmentProbe* probe, float roughness)
+		: SplitSumMaterial(probe)
+		, r(roughness)
+	{
+	}
+
+	bool scatter(
+		const math::Ray& in,
+		HitRecord& hit,
+		math::Vec3f&,// attenuation,
+		math::Vec3f& emitted,
+		math::Ray&,// out,
+		RandomGenerator&// random
+	) const override
+	{
+		auto f_ab = iblLookUp(in, hit, r);
+		auto Ess = f_ab.x() + f_ab.y();
+		auto reflDir = reflect(in.direction(), hit.normal);
+		emitted = Ess * m_env->radiance(reflDir, r);
+		return false; // Do not scatter the ray further
+	}
+
+private:
+	float r;
+};
+
+class SplitSumReflectorMS : public SplitSumMaterial
+{
+public:
+	SplitSumReflectorMS(EnvironmentProbe* probe, float roughness)
+		: SplitSumMaterial(probe)
+		, r(roughness)
+	{
+	}
+
+	bool scatter(
+		const math::Ray& in,
+		HitRecord& hit,
+		math::Vec3f&,// attenuation,
+		math::Vec3f& emitted,
+		math::Ray&,// out,
+		RandomGenerator&// random
+	) const override
+	{
+		auto f_ab = iblLookUp(in, hit, r);
+		auto Ess = f_ab.x() + f_ab.y();
+		auto Ems = 1.f - Ess;
+
+		auto reflDir = reflect(in.direction(), hit.normal);
+		emitted = Ess * m_env->radiance(reflDir, r) + Ems * m_env->irradiance(hit.normal);
+		return false; // Do not scatter the ray further
+	}
+
+private:
+	float r;
+};
+
+class CopperSS : public SplitSumMaterial
+{
+public:
+	CopperSS(EnvironmentProbe* probe, float roughness)
+		: SplitSumMaterial(probe)
+		, r(roughness)
+		, F0(0.95f, 0.64f, 0.54f)
+	{
+	}
+
+	bool scatter(
+		const math::Ray& in,
+		HitRecord& hit,
+		math::Vec3f&,// attenuation,
+		math::Vec3f& emitted,
+		math::Ray&,// out,
+		RandomGenerator&// random
+	) const override
+	{
+		auto f_ab = iblLookUp(in, hit, r);
+		auto reflDir = reflect(in.direction(), hit.normal);
+		emitted = (F0*f_ab.x() + math::Vec3f(f_ab.y())) * m_env->radiance(reflDir, r);
+		return false; // Do not scatter the ray further
+	}
+
+private:
+	math::Vec3f F0;
+	float r;
 };

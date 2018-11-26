@@ -90,7 +90,8 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 		background = new GradientBackground(Vec3f(furnaceLevel), Vec3f(furnaceLevel));
 
 		// Split sum material
-		Material* sphereMaterial = new SplitSumMaterial(probe);
+		// Material* sphereMaterial = new SplitSumReflectorMS(probe, 1.f); // Perfect reflector
+		Material* sphereMaterial = new CopperSS(probe, 1.0f); // Copper
 
 		// Test sphere
 		auto testBallShape = std::make_shared<Sphere>(Vec3f(0.f), 1.0f, sphereMaterial);
