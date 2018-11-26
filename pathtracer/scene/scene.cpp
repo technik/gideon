@@ -26,6 +26,7 @@
 #include <camera/sphericalCamera.h>
 #include <camera/frustumCamera.h>
 #include "scene.h"
+#include <shapes/sphere.h>
 
 using namespace std;
 using namespace math;
@@ -80,7 +81,14 @@ void Scene::generateRandomScene(RandomGenerator& random)
 void Scene::loadFromCommandLine(const CmdLineParams& params)
 {
 	// Geometry
-	if(!params.scene.empty())
+	if (params.testBallScene)
+	{
+		Material* sphereMaterial = new Metal(Vec3f(1.f), 0.5f);
+		auto testBallShape = std::make_shared<Sphere>(Vec3f(0.f), 1.0f, sphereMaterial);
+		Matrix34f xform = Matrix34f::identity();
+		mRenderables.push_back(std::make_shared<MeshInstance>(testBallShape, xform));
+	}
+	else if(!params.scene.empty())
 	{
 		loadGltf(params.scene.c_str(), *this, float(params.sx)/params.sy, params.overrideMaterials);
 	}

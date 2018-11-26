@@ -42,7 +42,6 @@ public:
 
 	bool hit(
 		const math::Ray& r,
-		float tMin,
 		float tMax,
 		HitRecord& collision
 	) const override
@@ -55,7 +54,7 @@ public:
 		if(discriminant >= 0)
 		{
 			float t = (-b - sqrt(discriminant)) / a;
-			if(t > tMin && t < tMax) {
+			if(t > 0.f && t < tMax) {
 				collision.t = t;
 				collision.p = r.at(t);
 				collision.normal = normalize(collision.p - mCenter);

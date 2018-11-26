@@ -35,6 +35,7 @@ struct CmdLineParams
 	float fov = 45.f;
 	unsigned tileSize = 20;
 	bool sphericalRender = false;
+	bool testBallScene = false;
 
 public:
 	CmdLineParams(int _argc, const char** _argv);

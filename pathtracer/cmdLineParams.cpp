@@ -48,6 +48,11 @@ int CmdLineParams::process(const vector<string>& args, int i)
 		scene = args[i+1];
 		return 2;
 	}
+	if (arg == "-testBall")
+	{
+		testBallScene = true;
+		return 1;
+	}
 	if(arg == "-solid")
 	{
 		overrideMaterials = true;
