@@ -91,7 +91,8 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 
 		// Split sum material
 		// Material* sphereMaterial = new SplitSumReflectorMS(probe, 1.f); // Perfect reflector
-		Material* sphereMaterial = new CopperSS(probe, 1.0f); // Copper
+		//Material* sphereMaterial = new CopperSS(probe, 1.0f); // Copper
+		Material* sphereMaterial = new HeitzReflector(probe, 0.95f); // Copper
 
 		// Test sphere
 		auto testBallShape = std::make_shared<Sphere>(Vec3f(0.f), 1.0f, sphereMaterial);
@@ -112,7 +113,6 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 			background = new HDRBackground(params.background.c_str());
 		}
 	}
-
 
 	// Camera
 	if(params.sphericalRender)

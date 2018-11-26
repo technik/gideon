@@ -25,6 +25,8 @@
 #include <textures/textureSampler.h>
 #include <textures/image.h>
 
+#include "MicrosurfaceScattering.h"
+
 class SplitSumMaterial : public Material
 {
 public:
@@ -143,4 +145,77 @@ public:
 private:
 	math::Vec3f F0;
 	float r;
+};
+
+class HeitzReflector : public SplitSumMaterial
+{
+public:
+	HeitzReflector(EnvironmentProbe* probe, float roughness)
+		: SplitSumMaterial(probe)
+		, r(roughness)
+		, ax(roughness*roughness)
+		, ay(roughness*roughness)
+		, m_reflector(false, false, ax, ay)
+	{
+	}
+
+	bool scatter(
+		const math::Ray& in,
+		HitRecord& hit,
+		math::Vec3f&,// attenuation,
+		math::Vec3f& emitted,
+		math::Ray&,// out,
+		RandomGenerator& random
+	) const override
+	{
+		// Tangent space
+		math::Vec3f tan, bit;
+		branchlessONB(hit.normal, tan, bit);
+		math::Vec3f wsEye = normalize(-in.direction());
+
+		// Transform view dir to local space
+		math::Vec3f tsEye(dot(wsEye, tan), dot(wsEye, bit), dot(wsEye, hit.normal));
+
+		// Random out vector in the hemisphere
+		math::Vec3f tsReflDir = random.unit_vector();
+		tsReflDir.z() = abs(tsReflDir.z());
+		/*math::Vec3f tsIn = random.unit_vector();
+		tsIn.z() = abs(tsIn.z());
+		auto intensity = m_reflector.evalSingleScattering(tsIn, tsReflDir);*/
+		//auto intensity = m_reflector.evalPhaseFunction(tsEye, tsReflDir);
+
+		double value_quadrature = 0;
+		constexpr double thetaStep = 0.05;
+		constexpr double phiStep = 0.05;
+		for (double theta_o = 0; theta_o < math::Pi; theta_o += thetaStep)
+			for (double phi_o = 0; phi_o < math::TwoPi; phi_o += phiStep)
+			{
+				const math::Vec3f wo(cos(phi_o)*sin(theta_o), sin(phi_o)*sin(theta_o), cos(theta_o));
+				value_quadrature += thetaStep * phiStep * abs(sin(theta_o)) * (double)m_reflector.evalSingleScattering(tsEye, wo);
+				//value_quadrature += thetaStep*phiStep*abs(sin(theta_o)) * (double)m_reflector.evalPhaseFunction(tsEye, wo);
+			}
+
+		// Transform reflection direction back to world space
+		math::Vec3f wsRefl = tsReflDir.x() * tan + tsReflDir.y() * bit + tsReflDir.z() * hit.normal;
+		emitted = value_quadrature * m_env->radiance(wsRefl, r);
+		//emitted = intensity * m_env->radiance(wsRefl, r);
+
+		return false; // Do not scatter the ray further
+	}
+
+	// Pixar's method for orthonormal basis generation
+	static void branchlessONB(const math::Vec3f &n, math::Vec3f &b1, math::Vec3f& b2)
+	{
+		float sign = copysignf(1.0f, n.z());
+		const float a = -1.0f / (sign + n.z());
+		const float b = n.x() * n.y() * a;
+		b1 = math::Vec3f(1.0f + sign * n.x() * n.x() * a, sign * b, -sign * n.x());
+		b2 = math::Vec3f(b, sign + n.y() * n.y() * a, -n.y());
+	}
+
+private:
+	math::Vec3f F0;
+	float r;
+	float ax, ay;
+	MicrosurfaceConductor m_reflector;
 };
