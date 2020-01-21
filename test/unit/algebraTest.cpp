@@ -128,22 +128,22 @@ void testHighTriangularMatrixSolve()
 	}
 }
 
-void testAABB(const AABB& aabb, const Ray& r, float t0, float t1, bool mustIntersect)
+void testAABB(const AABB& aabb, const Ray& r, float t1, bool mustIntersect)
 {
 	float t;
-	assert(aabb.intersect(r.implicit(), t0, t1, t) == mustIntersect);
+	assert(aabb.intersect(r.implicit(), t1, t) == mustIntersect);
 }
 
-void testAABBSimd(const AABBSimd& aabb, const Ray& r, float t0, float t1, bool mustIntersect)
+void testAABBSimd(const AABBSimd& aabb, const Ray& r, float t1, bool mustIntersect)
 {
 	float t;
-	assert(aabb.intersect(r.implicitSimd(), float4(t0), float4(t1), t) == mustIntersect);
+	assert(aabb.intersect(r.implicitSimd(), float4(t1), t) == mustIntersect);
 }
 
 struct AABBTestCase {
 	Ray& r;
 	AABB aabb;
-	float tMin, tMax;
+	float tMax;
 	bool mustIntersect;
 };
 
@@ -151,7 +151,7 @@ void testAABBArray(const std::vector<AABBTestCase>& tests)
 {
 	for(auto& test : tests)
 	{
-		testAABB(test.aabb, test.r, test.tMin, test.tMax, test.mustIntersect);
+		testAABB(test.aabb, test.r, test.tMax, test.mustIntersect);
 	}
 }
 
@@ -160,7 +160,7 @@ void testAABBArraySIMD(const std::vector<AABBTestCase>& tests)
 	for(auto& test : tests)
 	{
 		AABBSimd aabb = AABBSimd(test.aabb.min(), test.aabb.max());
-		testAABBSimd(aabb, test.r, test.tMin, test.tMax, test.mustIntersect);
+		testAABBSimd(aabb, test.r, test.tMax, test.mustIntersect);
 	}
 }
 
@@ -180,81 +180,25 @@ void testAABB_Ray_intersect()
 	auto unitBox = AABB(origin, Vec3f(1.f));
 	std::vector<AABBTestCase> testCases = {
 		// Ray origin, direction
-	{ hor00, unitBox, -2.f, -1.f, false },
-	{ hor00, unitBox, -2.f,  2.f, true},
-	{ hor00, unitBox, -2.f,  0.f, true },
-	{ hor00, unitBox,  0.f,  0.f, true },
-	{ hor00, unitBox,  0.f,  1.f, true },
-	{ hor00, unitBox,  0.f,  2.f, true },
-	{ hor00, unitBox,  1.f,  2.f, true },
-	{ hor00, unitBox,  2.f,  4.f, false },
-	{ hor00, unitBox,  2.f,  std::numeric_limits<float>::infinity(), false },
-	{ hor00, unitBox,  1.f,  std::numeric_limits<float>::infinity(), true },
-	{ hor00, unitBox,  0.f,  std::numeric_limits<float>::infinity(), true },
-	{ hor00, unitBox, -1.f,  std::numeric_limits<float>::infinity(), true },
-	{ hor00, unitBox,  -std::numeric_limits<float>::infinity(), -2.f, false },
-	{ hor00, unitBox,  -std::numeric_limits<float>::infinity(), 0.f, true },
-	{ hor05, unitBox,  -std::numeric_limits<float>::infinity(), 1.f, true },
-	{ hor05, unitBox, -2.f, -1.f, false },
-	{ hor05, unitBox, -2.f,  2.f, true},
-	{ hor05, unitBox, -2.f,  0.f, true },
-	{ hor05, unitBox,  0.f,  0.f, true },
-	{ hor05, unitBox,  0.f,  1.f, true },
-	{ hor05, unitBox,  0.f,  2.f, true },
-	{ hor05, unitBox,  1.f,  2.f, true },
-	{ hor05, unitBox,  2.f,  4.f, false },
-	{ hor05, unitBox,  2.f,  std::numeric_limits<float>::infinity(), false },
-	{ hor05, unitBox,  1.f,  std::numeric_limits<float>::infinity(), true },
-	{ hor05, unitBox,  0.f,  std::numeric_limits<float>::infinity(), true },
-	{ hor05, unitBox, -1.f,  std::numeric_limits<float>::infinity(), true },
-	{ hor05, unitBox,  -std::numeric_limits<float>::infinity(), -2.f, false },
-	{ hor05, unitBox,  -std::numeric_limits<float>::infinity(), 0.f, true },
-	{ hor05, unitBox,  -std::numeric_limits<float>::infinity(), 1.f, true },
-	{ hor10, unitBox, -2.f, -1.f, false },
-	{ hor10, unitBox, -2.f,  2.f, true},
-	{ hor10, unitBox, -2.f,  0.f, true },
-	{ hor10, unitBox,  0.f,  0.f, true },
-	{ hor10, unitBox,  0.f,  1.f, true },
-	{ hor10, unitBox,  0.f,  2.f, true },
-	{ hor10, unitBox,  1.f,  2.f, true },
-	{ hor10, unitBox,  2.f,  4.f, false },
-	{ hor10, unitBox,  2.f,  std::numeric_limits<float>::infinity(), false },
-	{ hor10, unitBox,  1.f,  std::numeric_limits<float>::infinity(), true },
-	{ hor10, unitBox,  0.f,  std::numeric_limits<float>::infinity(), true },
-	{ hor10, unitBox, -1.f,  std::numeric_limits<float>::infinity(), true },
-	{ hor10, unitBox,  -std::numeric_limits<float>::infinity(), -2.f, false },
-	{ hor10, unitBox,  -std::numeric_limits<float>::infinity(), 0.f, true },
-	{ hor10, unitBox,  -std::numeric_limits<float>::infinity(), 1.f, true },
-	{ hor15, unitBox, -2.f, -1.f, false },
-	{ hor15, unitBox, -2.f,  2.f, false},
-	{ hor15, unitBox, -2.f,  0.f, false },
-	{ hor15, unitBox,  0.f,  0.f, false },
-	{ hor15, unitBox,  0.f,  1.f, false },
-	{ hor15, unitBox,  0.f,  2.f, false },
-	{ hor15, unitBox,  1.f,  2.f, false },
-	{ hor15, unitBox,  2.f,  4.f, false },
-	{ hor15, unitBox,  2.f,  std::numeric_limits<float>::infinity(), false },
-	{ hor15, unitBox,  1.f,  std::numeric_limits<float>::infinity(), false },
-	{ hor15, unitBox,  0.f,  std::numeric_limits<float>::infinity(), false },
-	{ hor15, unitBox, -1.f,  std::numeric_limits<float>::infinity(), false },
-	{ hor15, unitBox,  -std::numeric_limits<float>::infinity(), -2.f, false },
-	{ hor15, unitBox,  -std::numeric_limits<float>::infinity(), 0.f, false },
-	{ hor15, unitBox,  -std::numeric_limits<float>::infinity(), 1.f, false },
-	{ diagonal, unitBox, -2.f, -1.f, false },
-	{ diagonal, unitBox, -2.f,  2.f, true },
-	{ diagonal, unitBox, -2.f,  0.f, true },
-	{ diagonal, unitBox,  0.f,  0.f, true },
-	{ diagonal, unitBox,  0.f,  1.f, true },
-	{ diagonal, unitBox,  0.f,  2.f, true },
-	{ diagonal, unitBox,  1.f,  2.f, true },
-	{ diagonal, unitBox,  2.f,  4.f, false },
-	{ diagonal, unitBox,  2.f,  std::numeric_limits<float>::infinity(), false },
-	{ diagonal, unitBox,  1.f,  std::numeric_limits<float>::infinity(), true },
-	{ diagonal, unitBox,  0.f,  std::numeric_limits<float>::infinity(), true },
-	{ diagonal, unitBox, -1.f,  std::numeric_limits<float>::infinity(), true },
-	{ diagonal, unitBox,  -std::numeric_limits<float>::infinity(), -2.f, false },
-	{ diagonal, unitBox,  -std::numeric_limits<float>::infinity(), 0.f, true },
-	{ diagonal, unitBox,  -std::numeric_limits<float>::infinity(), 1.f, true }
+	{ hor00, unitBox,  0.f, true },
+	{ hor00, unitBox,  1.f, true },
+	{ hor00, unitBox,  2.f, true },
+	{ hor00, unitBox,  std::numeric_limits<float>::infinity(), true },
+	{ hor05, unitBox,  0.f, true },
+	{ hor05, unitBox,  1.f, true },
+	{ hor05, unitBox,  2.f, true },
+	{ hor05, unitBox,  std::numeric_limits<float>::infinity(), true },
+	{ hor10, unitBox,  0.f, true },
+	{ hor10, unitBox,  1.f, true },
+	{ hor10, unitBox,  2.f, true },
+	{ hor10, unitBox,  std::numeric_limits<float>::infinity(), true },
+	{ hor15, unitBox,  0.f, false },
+	{ hor15, unitBox,  1.f, false },
+	{ hor15, unitBox,  2.f, false },
+	{ diagonal, unitBox,  0.f, true },
+	{ diagonal, unitBox,  1.f, true },
+	{ diagonal, unitBox,  2.f, true },
+	{ diagonal, unitBox,  std::numeric_limits<float>::infinity(), true }
 	};
 	testAABBArray(testCases);
 	testAABBArraySIMD(testCases);

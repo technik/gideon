@@ -273,9 +273,9 @@ namespace math
 	}
 
 	template<class T, int n>
-	auto reflect(const Vector<T,n>& v, const Vector<T,n>& n)
+	auto reflect(const Vector<T,n>& v, const Vector<T,n>& normal)
 	{
-		return v-2*dot(v,n)*n;
+		return v - 2 * dot(v, normal) * normal;
 	}
 
 	template<class T, int n>
