@@ -57,6 +57,8 @@ public:
 	Background* background = nullptr;
 
 private:
+    void buildTLAS();
+
 	std::vector<std::shared_ptr<MeshInstance>>	mRenderables;
 	std::vector<std::shared_ptr<Camera>>	mCameras;
 };

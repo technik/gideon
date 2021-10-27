@@ -22,6 +22,7 @@
 #include <array>
 #include <cassert>
 #include "vector.h"
+#include "aabb.h"
 
 namespace math
 {
@@ -75,6 +76,19 @@ namespace math
 			res(3,3) = 1.f;
 			return res;
 		}
+
+        AABB operator*(const AABB& b) const
+        {
+            Vec3f origin = b.origin();
+            Vec3f halfSize = b.max() - origin;
+            auto t0 = transformDir(-halfSize);
+            auto t1 = transformDir(halfSize);
+            origin = transformPos(origin);
+            auto newMin = origin + Vec3f(min(t0.x(), t1.x()), min(t0.y(), t1.y()), min(t0.z(), t1.z()));
+            auto newMax = origin + Vec3f(max(t0.x(), t1.x()), max(t0.y(), t1.y()), max(t0.z(), t1.z()));
+
+            return AABB(newMin, newMax);
+        }
 
 		Vec3f transformPos(const Vec3f& v) const
 		{

@@ -142,13 +142,13 @@ private:
 			auto& nodeA = mNodes[node.mChildA];
 			if(nodeA.mBbox.intersect(ri,tMax,collision.t) && hitNode(nodeA,r,ri,tMax,collision))
 			{
-				tMax = float4(collision.t);
+				tMax = math::float4(collision.t);
 				hit_any = true;
 			}
 			auto& nodeB = mNodes[node.mChildB];
 			if(nodeB.mBbox.intersect(ri,tMax,collision.t) && hitNode(nodeB,r,ri,tMax,collision))
 			{
-				tMax = float4(collision.t);
+				tMax = math::float4(collision.t);
 				hit_any = true;
 			}
 			collision.t = tMax.x();
@@ -163,7 +163,7 @@ private:
 				if(mTriangles[i].hit(simdRay, tMax.x(), collision))
 				{
 					hit_any = true;
-					tMax= float4(collision.t);
+					tMax= math::float4(collision.t);
 				}
 			}
 

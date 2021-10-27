@@ -6,3 +6,4 @@ vs2017/gideon
 /vs2017/test
 /vs2017/x64/Release
 /build
+/__build

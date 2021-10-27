@@ -130,7 +130,10 @@ int main(int _argc, const char** _argv)
 
 	// Scene
 	Scene world;
+    auto t0 = chrono::high_resolution_clock().now();
 	world.loadFromCommandLine(params);
+    auto loadTime = chrono::high_resolution_clock().now() - t0;
+    cout << "Loaded acceleration structure in " << chrono::duration_cast<chrono::milliseconds>(loadTime).count() << " milliseconds\n";
 
 	// Divide the image in tiles that can be consumed as jobs
 	if(!(size.x1%params.tileSize == 0) ||

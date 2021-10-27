@@ -60,6 +60,12 @@ public:
 		return false;
 	}
 
+    math::AABB aabb() const
+    {
+        return mXForm * mMesh->bbox();
+    }
+
+
 private:
 	std::shared_ptr<const Shape> mMesh;
 	math::Matrix34f mXForm;

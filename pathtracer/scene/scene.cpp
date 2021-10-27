@@ -19,10 +19,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <background.h>
+
+#include <chrono>
+#include <iostream>
+#include <memory>
+
+#include <collision/CWBVH.h>
 #include "cmdLineParams.h"
 #include "loadGltf.h"
 #include <math/vector.h>
-#include <memory>
 #include <camera/sphericalCamera.h>
 #include <camera/frustumCamera.h>
 #include "scene.h"
@@ -83,6 +88,7 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 	if(!params.scene.empty())
 	{
 		loadGltf(params.scene.c_str(), *this, float(params.sx)/params.sy, params.overrideMaterials);
+        buildTLAS();
 	}
 
 	// Background
@@ -110,4 +116,15 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 		auto aspectRatio = float(params.sx)/params.sy;
 		mCameras.emplace_back(make_shared<FrustumCamera>(camPos, camLookAt, 3.14159f*params.fov/180, aspectRatio));
 	}
+}
+
+void Scene::buildTLAS()
+{
+    auto t0 = chrono::high_resolution_clock::now();
+    auto dt = chrono::high_resolution_clock::now() - t0;
+
+    CWBVH tlas;
+    tlas.build(mRenderables);
+
+    std::cout << "BVH construction: " << chrono::duration_cast<chrono::microseconds>(dt).count() * 0.001 << " ms\n";
 }
