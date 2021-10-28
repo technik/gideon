@@ -296,6 +296,15 @@ namespace math
 		return res;
 	}
 
+    template<class T, int n>
+    auto abs(const Vector<T, n>& a)
+    {
+        Vector<T, n> res;
+        for (int i = 0; i < n; ++i)
+            res[i] = std::abs(a[i]);
+        return res;
+    }
+
 	template<class T, int n>
 	constexpr T Vector<T,n>::sqNorm() const {
 		return dot(*this, *this);

@@ -34,30 +34,80 @@ unsigned int expandBits(unsigned int v)
     return v;
 }
 
-struct Node
+struct CWBVH::Node
 {
-    Node(bool leaf = false) : isLeaf(leaf) {}
+    Node(const math::AABB& aabb, bool leaf = false)
+        : isLeaf(leaf)
+        , m_aabb(aabb)
+    {}
+
+    using BlasCallback = std::function<float(uint32_t leafId, float tMax)>;
+
+    virtual float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback&) = 0;
     bool isLeaf = false;
+    math::AABB m_aabb;
 };
 
-struct LeafNode : Node
+struct CWBVH::LeafNode : Node
 {
-    LeafNode(uint32_t id) : Node(true), leafId(id) {}
+    LeafNode(const math::AABB& aabb, uint32_t id)
+        : Node(aabb, true)
+        , leafId(id)
+    {}
+
+    float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback& cb) override
+    {
+        float tBox;
+        //if (m_aabb.intersect(r, tMax, tBox))
+        {
+            float tHit = cb(leafId, tMax);
+            if (tHit >= 0)
+            {
+                hitId = leafId;
+                return tHit;
+            }
+        }
+        return -1;
+    }
     uint32_t leafId;
 };
 
-struct BranchNode : Node
+struct CWBVH::BranchNode : Node
 {
     BranchNode(Node* a, Node* b)
-        : childA(a)
+        : Node(math::AABB(a->m_aabb, b->m_aabb))
+        , childA(a)
         , childB(b)
-    {}
+    {
+    }
+
+    float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback& cb) override
+    {
+        float maxEnter;
+        if (!m_aabb.intersect(r, tMax, maxEnter))
+            return -1;
+
+        float t = -1;
+        if (childA)
+        {
+            t = childA->hitClosest(r, tMax, hitId, cb);
+            if (t > -1)
+                tMax = t;
+        }
+        if (childB)
+        {
+            float tb = childB->hitClosest(r, tMax, hitId, cb);
+            if (tb > -1)
+                t = tb;
+        }
+        return t;
+    }
 
     Node* childA = nullptr;
     Node* childB = nullptr;
 };
 
-int findSplit(uint32_t* sortedMortonCodes,
+int CWBVH::findSplit(uint32_t* sortedMortonCodes,
     int           first,
     int           last)
 {
@@ -97,29 +147,33 @@ int findSplit(uint32_t* sortedMortonCodes,
     return split;
 }
 
-Node* generateHierarchy(uint32_t* sortedMortonCodes,
+CWBVH::Node* CWBVH::generateHierarchy(
+    const math::AABB* sortedLeafAABBs,
+    uint32_t* sortedMortonCodes,
     uint32_t* sortedObjectIDs,
     int           first,
     int           last)
 {
     // Single object => create a leaf node.
     if (first == last)
-        return new LeafNode(sortedObjectIDs[first]);
+        return new LeafNode(sortedLeafAABBs[first], sortedObjectIDs[first]);
 
     // Determine where to split the range.
     int split = findSplit(sortedMortonCodes, first, last);
 
     // Process the resulting sub-ranges recursively.
 
-    Node* childA = generateHierarchy(sortedMortonCodes, sortedObjectIDs,
+    Node* childA = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
         first, split);
-    Node* childB = generateHierarchy(sortedMortonCodes, sortedObjectIDs,
+    Node* childB = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
         split + 1, last);
     return new BranchNode(childA, childB);
 }
 
 void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
 {
+    m_instances = &instances;
+
     // Find the absolute bounding box of all triangles
     // and store their centers
     // TODO: Maybe extend the bounding box to the centers only for improved quantization precision
@@ -161,14 +215,43 @@ void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
         return mortonSections[a] < mortonSections[b];
         });
     std::vector<uint32_t> sortedMortonCodes(instances.size());
+    std::vector<math::AABB> sortedLeafAABBs(instances.size());
     for (size_t i = 0; i < instances.size(); ++i)
     {
         sortedMortonCodes[i] = mortonSections[indices[i]];
+        sortedLeafAABBs[i] = instances[i]->aabb();
     }
 
     // Build a binary tree out of the sorted nodes
-    Node* binTreeRoot = generateHierarchy(sortedMortonCodes.data(),
+    m_binTreeRoot = generateHierarchy(
+        sortedLeafAABBs.data(),
+        sortedMortonCodes.data(),
         indices.data(),
         0,
         instances.size() - 1);
+}
+
+bool CWBVH::hitClosest(
+    const math::Ray& ray,
+    float tMax,
+    HitRecord& collision) const
+{
+    if (!m_binTreeRoot)
+        return false;
+
+    math::Ray::Implicit r = ray.implicit();
+    uint32_t hitId;
+    auto cb = [this,&ray,&collision](uint32_t leafId, float tMax)
+    {
+        HitRecord hitInfo;
+        if((*m_instances)[leafId]->hit(ray, tMax, hitInfo))
+        {
+            collision = hitInfo;
+            return hitInfo.t;
+        }
+        return -1.f;
+    };
+    float tHit = m_binTreeRoot->hitClosest(r, tMax, hitId, cb);
+
+    return tHit >= 0;
 }

@@ -21,6 +21,7 @@
 
 #include <camera/camera.h>
 #include "shapes/meshInstance.h"
+#include <collision/CWBVH.h>
 #include <vector>
 
 struct CmdLineParams;
@@ -59,6 +60,7 @@ public:
 private:
     void buildTLAS();
 
+    CWBVH mTlas;
 	std::vector<std::shared_ptr<MeshInstance>>	mRenderables;
 	std::vector<std::shared_ptr<Camera>>	mCameras;
 };

@@ -42,9 +42,12 @@ bool Scene::hit(
 	HitRecord& collision
 ) const
 {
+    return mTlas.hitClosest(r, tMax, collision);
+
 	float t = tMax;
 	bool hit_anything = false;
-	for(auto h : mRenderables)
+
+    for(auto h : mRenderables)
 	{
 		HitRecord tmp_hit;
 		if(h->hit(r, t, tmp_hit))
@@ -123,8 +126,12 @@ void Scene::buildTLAS()
     auto t0 = chrono::high_resolution_clock::now();
     auto dt = chrono::high_resolution_clock::now() - t0;
 
-    CWBVH tlas;
-    tlas.build(mRenderables);
+    mTlas.build(mRenderables);
 
-    std::cout << "BVH construction: " << chrono::duration_cast<chrono::microseconds>(dt).count() * 0.001 << " ms\n";
+    auto us = chrono::duration_cast<chrono::nanoseconds>(dt).count() * 0.001;
+
+    if(us < 1)
+        std::cout << "BVH construction: " << us << " micros\n";
+    else
+        std::cout << "BVH construction: " << us*0.001 << " ms\n";
 }

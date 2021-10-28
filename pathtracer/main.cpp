@@ -91,7 +91,6 @@ void traceImageSegment(
 	const auto totalNy = dst.height();
 	auto& cam = *world.cameras().front();
 
-
 	for(size_t i = window.y0; i < window.y1; ++i)
 		for(size_t j = window.x0; j < window.x1; ++j)
 		{
@@ -195,6 +194,8 @@ int main(int _argc, const char** _argv)
 		threadMap.saveAsLinearRGB("threadMap.png");
 		depthMap.saveAsLinearRGB("depthMap.png");
 		timeMap.saveAsLinearRGB("timeMap.png");
+
+        return 0;
 	};
 
 	return -1; // Something failed, we shouldn't reach this point

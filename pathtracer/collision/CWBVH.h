@@ -27,9 +27,11 @@
 namespace math
 {
     class Ray;
+    struct AABB;
 }
 
 class MeshInstance;
+struct HitRecord;
 
 // Compressed wide BVH based on Karras 2017
 class CWBVH
@@ -37,10 +39,32 @@ class CWBVH
 public:
     void build(std::vector<std::shared_ptr<MeshInstance>>& instances);
 
-    bool hitAny(const math::Ray&);
-    bool hitClosest(const math::Ray&);
+    //bool hitAny(const math::Ray&, float tMax);
+    bool hitClosest(
+        const math::Ray&,
+        float tMax,
+        HitRecord& collision) const;
+
 
 private:
+    class Node;
+    class LeafNode;
+    class BranchNode;
+
+    Node* m_binTreeRoot;
+    std::vector<std::shared_ptr<MeshInstance>>* m_instances;
+
+    Node* generateHierarchy(
+        const math::AABB* sortedLeafAABBs,
+        uint32_t* sortedMortonCodes,
+        uint32_t* sortedObjectIDs,
+        int           first,
+        int           last);
+
+    int findSplit(uint32_t* sortedMortonCodes,
+        int           first,
+        int           last);
+
     struct InternalNode
     {
         math::Vec3f origin;

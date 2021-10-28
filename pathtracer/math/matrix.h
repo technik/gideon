@@ -30,13 +30,13 @@ namespace math
 	{
 	public:
 		Matrix34f() = default;
-		Matrix34f(const std::array<float,16>& x)
+		Matrix34f(const std::array<float,12>& x)
 			: m(x)
 		{}
 
 		Matrix34f(float x)
 		{
-			for(auto i = 0; i < 16; ++i)
+			for(auto i = 0; i < 12; ++i)
 				m[i] = x;
 		}
 
@@ -70,22 +70,23 @@ namespace math
 				}
 				res(i,3) += (*this)(i,3);
 			}
-			res(3,0) = 0.f;
-			res(3,1) = 0.f;
-			res(3,2) = 0.f;
-			res(3,3) = 1.f;
 			return res;
 		}
 
         AABB operator*(const AABB& b) const
         {
             Vec3f origin = b.origin();
-            Vec3f halfSize = b.max() - origin;
-            auto t0 = transformDir(-halfSize);
-            auto t1 = transformDir(halfSize);
+            Vec3f halfSize = b.max() - origin; // Positive by definition
+
+            Vec3f ex = abs(col<0>() * halfSize.x());
+            Vec3f ey = abs(col<1>() * halfSize.y());
+            Vec3f ez = abs(col<2>() * halfSize.z());
+
+            Vec3f extent = ex + ey + ez;
+
             origin = transformPos(origin);
-            auto newMin = origin + Vec3f(min(t0.x(), t1.x()), min(t0.y(), t1.y()), min(t0.z(), t1.z()));
-            auto newMax = origin + Vec3f(max(t0.x(), t1.x()), max(t0.y(), t1.y()), max(t0.z(), t1.z()));
+            auto newMin = origin + extent;
+            auto newMax = origin - extent;
 
             return AABB(newMin, newMax);
         }
@@ -104,6 +105,20 @@ namespace math
 			return res;
 		}
 
+        template<int i>
+        const Vec3f& col() const
+        {
+            static_assert(i < 4);
+            return reinterpret_cast<const Vec3f&>(m[3 * i]);
+        }
+
+        template<int i>
+        Vec3f& col()
+        {
+            static_assert(i < 4);
+            return reinterpret_cast<Vec3f&>(m[3 * i]);
+        }
+
 		Vec3f transformDir(const Vec3f& v) const
 		{
 			Vec3f res;
@@ -119,16 +134,16 @@ namespace math
 
 		float& operator()(int i, int j)
 		{
-			return m[4*j+i];
+			return m[3*j+i];
 		}
 
 		float operator()(int i, int j) const
 		{
-			return m[4*j+i];
+			return m[3*j+i];
 		}
 
 	private:
-		std::array<float,16> m;
+		std::array<float,12> m;
 	};
 
 	class Matrix44f
@@ -144,7 +159,7 @@ namespace math
 			Vec4f x;
 			for(int i = 0; i < 4; ++i)
 			{
-				assert(abs(L(i,i)) > 1e-4f);
+				assert(std::abs(L(i,i)) > 1e-4f);
 				float accum = 0.f;
 				for(int j = 0; j < i; ++j)
 					accum += L(i,j)*x[j];
@@ -158,7 +173,7 @@ namespace math
 			Vec4f x;
 			for(int i = 3; i >= 0; --i)
 			{
-				assert(abs(U(i,i)) > 1e-4f);
+				assert(std::abs(U(i,i)) > 1e-4f);
 				float accum = 0.f;
 				for(int j = i+1; j < 4; ++j)
 					accum += U(i,j)*x[j];
@@ -270,11 +285,11 @@ namespace math
 			for(auto k = 0; k < 4; k++)
 			{
 				// Find best pivot
-				auto maxA = abs(U.element(k,k));
+				auto maxA = std::abs(U.element(k,k));
 				auto bestI = k;
 				for(auto i = k+1; i < 4; ++i) // Find best pivot in the column
 				{
-					auto absA = abs(U.element(i,k));
+					auto absA = std::abs(U.element(i,k));
 					if(absA > maxA)
 					{
 						maxA = absA;
@@ -329,7 +344,7 @@ namespace math
 		auto x = Matrix44f(*this);
 		auto xi = x.inverse();
 		for(int j = 0; j < 4; ++j)
-			for(int i = 0; i < 4; ++i)
+			for(int i = 0; i < 3; ++i)
 				inv(i,j) = xi(i,j);
 		return inv;
 	}

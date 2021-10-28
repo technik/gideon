@@ -56,10 +56,10 @@ namespace math
 			auto bd = x*z;
 			auto cd = y*z;
 			return Matrix34f({
-				a2+b2-c2-d2,2*(bc+ad), 2*(bd-ac), 0.f, // Column 0
-				2*(bc-ad),a2-b2+c2-d2, 2*(cd+ab), 0.f, // Column 1
-				2*(bd+ac), 2*(cd-ab), a2-b2-c2+d2, 0.f, // Column 2
-				0.f, 0.f, 0.f, 1.f
+				a2+b2-c2-d2,2*(bc+ad), 2*(bd-ac), // Column 0
+				2*(bc-ad),a2-b2+c2-d2, 2*(cd+ab), // Column 1
+				2*(bd+ac), 2*(cd-ab), a2-b2-c2+d2, // Column 2
+				0.f, 0.f, 0.f
 				});
 		}
 
