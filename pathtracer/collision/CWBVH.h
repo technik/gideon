@@ -61,7 +61,8 @@ private:
         uint32_t* sortedMortonCodes,
         uint32_t* sortedObjectIDs,
         int           first,
-        int           last);
+        int           last,
+        math::AABB& treeBB);
 
     int findSplit(uint32_t* sortedMortonCodes,
         int           first,
