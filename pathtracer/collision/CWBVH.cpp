@@ -58,20 +58,18 @@ struct CWBVH::LeafNode : Node
 
     float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback& cb) override
     {
-        //float tBox;
-        //if (m_aabb.intersect(r, tMax, tBox))
+        float tHit = cb(leafId, tMax);
+        if (tHit >= 0)
         {
-            float tHit = cb(leafId, tMax);
-            if (tHit >= 0)
-            {
-                hitId = leafId;
-                return tHit;
-            }
+            hitId = leafId;
+            return tHit;
         }
         return -1;
     }
+
     uint32_t leafId;
 };
+
 
 struct CWBVH::BranchNode : Node
 {
