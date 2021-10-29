@@ -82,5 +82,13 @@ private:
         uint8_t qHiZ[8];
     };
 
+    LeafNode& allocLeaf();
+    BranchNode& allocBranch();
+
+    size_t m_leafCount = 0;
+    size_t m_branchCount = 0;
+    std::unique_ptr<BranchNode[]> m_internalNodes;
+    std::unique_ptr<LeafNode[]> m_leafs;
+
     static_assert(sizeof(InternalNode) == 80);
 };

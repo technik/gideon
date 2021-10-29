@@ -50,6 +50,7 @@ struct CWBVH::Node
 
 struct CWBVH::LeafNode : Node
 {
+    LeafNode() : Node(math::AABB()) {}
     LeafNode(const math::AABB& aabb, uint32_t id)
         : Node(aabb, true)
         , leafId(id)
@@ -74,6 +75,8 @@ struct CWBVH::LeafNode : Node
 
 struct CWBVH::BranchNode : Node
 {
+    BranchNode() : Node(math::AABB()) {}
+
     BranchNode(Node* a, Node* b)
         : Node(math::AABB(a->m_aabb, b->m_aabb))
         , childA(a)
@@ -223,6 +226,10 @@ void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
         sortedLeafAABBs[i] = instances[ndx]->aabb();
     }
 
+    // Allocate enough nodes to hold the tree
+    m_leafs = std::unique_ptr<LeafNode[]>(new LeafNode[instances.size()]());
+    m_internalNodes = std::unique_ptr<BranchNode[]>(new BranchNode[instances.size()-1]());
+
     // Build a binary tree out of the sorted nodes
     m_binTreeRoot = generateHierarchy(
         sortedLeafAABBs.data(),
@@ -255,4 +262,13 @@ bool CWBVH::hitClosest(
     float tHit = m_binTreeRoot->hitClosest(r, tMax, hitId, cb);
 
     return tHit >= 0;
+}
+CWBVH::LeafNode& CWBVH::allocLeaf()
+{
+    return m_leafs[m_leafCount++];
+}
+
+CWBVH::BranchNode& CWBVH::allocBranch()
+{
+    return m_internalNodes[m_branchCount++];
 }
