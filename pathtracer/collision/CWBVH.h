@@ -37,6 +37,8 @@ struct HitRecord;
 class CWBVH
 {
 public:
+    CWBVH();
+    ~CWBVH();
     void build(std::vector<std::shared_ptr<MeshInstance>>& instances);
 
     //bool hitAny(const math::Ray&, float tMax);
@@ -51,8 +53,8 @@ private:
     class LeafNode;
     class BranchNode;
 
-    Node* m_binTreeRoot;
-    std::vector<std::shared_ptr<MeshInstance>>* m_instances;
+    Node* m_binTreeRoot{};
+    std::vector<std::shared_ptr<MeshInstance>>* m_instances{};
 
     Node* generateHierarchy(
         const math::AABB* sortedLeafAABBs,
@@ -82,8 +84,8 @@ private:
         uint8_t qHiZ[8];
     };
 
-    LeafNode& allocLeaf();
-    BranchNode& allocBranch();
+    LeafNode* allocLeaf();
+    BranchNode* allocBranch();
 
     size_t m_leafCount = 0;
     size_t m_branchCount = 0;

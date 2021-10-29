@@ -48,6 +48,14 @@ struct CWBVH::Node
     math::AABB m_aabb;
 };
 
+// Out of line constructor for smart pointers
+CWBVH::CWBVH()
+{}
+
+// Out of line deleter for smart pointers
+CWBVH::~CWBVH()
+{}
+
 struct CWBVH::LeafNode : Node
 {
     LeafNode() : Node(math::AABB()) {}
@@ -159,7 +167,9 @@ CWBVH::Node* CWBVH::generateHierarchy(
 {
     // Single object => create a leaf node.
     if (first == last)
-        return new LeafNode(sortedLeafAABBs[first], sortedObjectIDs[first]);
+    {
+        return new(allocLeaf()) LeafNode(sortedLeafAABBs[first], sortedObjectIDs[first]);
+    }
 
     // Determine where to split the range.
     int split = findSplit(sortedMortonCodes, first, last);
@@ -170,7 +180,7 @@ CWBVH::Node* CWBVH::generateHierarchy(
         first, split);
     Node* childB = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
         split + 1, last);
-    return new BranchNode(childA, childB);
+    return new(allocBranch())BranchNode(childA, childB);
 }
 
 void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
@@ -263,12 +273,12 @@ bool CWBVH::hitClosest(
 
     return tHit >= 0;
 }
-CWBVH::LeafNode& CWBVH::allocLeaf()
+CWBVH::LeafNode* CWBVH::allocLeaf()
 {
-    return m_leafs[m_leafCount++];
+    return &m_leafs[m_leafCount++];
 }
 
-CWBVH::BranchNode& CWBVH::allocBranch()
+CWBVH::BranchNode* CWBVH::allocBranch()
 {
-    return m_internalNodes[m_branchCount++];
+    return &m_internalNodes[m_branchCount++];
 }
