@@ -34,41 +34,13 @@ unsigned int expandBits(unsigned int v)
     return v;
 }
 
-struct CWBVH::Node
+struct CWBVH::BranchNode
 {
     using BlasCallback = std::function<float(uint32_t leafId, float tMax)>;
 
-    virtual float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback&) = 0;
-};
-
-struct CWBVH::LeafNode : Node
-{
-    LeafNode() = default;
-    LeafNode(uint32_t id)
-        : leafId(id)
-    {}
-
-    float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback& cb) override
-    {
-        float tHit = cb(leafId, tMax);
-        if (tHit >= 0)
-        {
-            hitId = leafId;
-            return tHit;
-        }
-        return -1;
-    }
-
-    uint32_t leafId;
-
-    //static_assert(sizeof(CWBVH::LeafNode) == 12);
-};
-
-struct CWBVH::BranchNode : Node
-{
     BranchNode() = default;
 
-    BranchNode(Node* a, Node* b, const math::AABB& childABox, const math::AABB& childBBox)
+    BranchNode(BranchNode* a, BranchNode* b, const math::AABB& childABox, const math::AABB& childBBox)
         : childBBoxA(childABox)
         , childBBoxB(childBBox)
         , childA(a)
@@ -76,23 +48,22 @@ struct CWBVH::BranchNode : Node
     {
     }
 
-    float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback& cb) override
+    float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback& cb)
     {
         float t = -1;
         float maxEnter;
         if (childBBoxA.intersect(r, tMax, maxEnter))
         {
-            /*if (childLeafMask & 1)
+            if (childLeafMask & 1)
             {
-                auto* child = dynamic_cast<LeafNode*>(childA);
-                float tHit = cb(child->leafId, tMax);
+                float tHit = cb(leafIdA, tMax);
                 if (tHit >= 0)
                 {
-                    hitId = child->leafId;
+                    hitId = leafIdA;
                     t = tHit;
                 }
             }
-            else*/
+            else
             {
                 t = childA->hitClosest(r, tMax, hitId, cb);
             }
@@ -101,33 +72,34 @@ struct CWBVH::BranchNode : Node
         }
         if (childBBoxB.intersect(r, tMax, maxEnter))
         {
-            float tb = -1;
-            /*if (childLeafMask & 2)
+            if (childLeafMask & 2)
             {
-                auto* child = dynamic_cast<LeafNode*>(childB);
-                float tHit = cb(child->leafId, tMax);
+                float tHit = cb(leafIdB, tMax);
                 if (tHit >= 0)
                 {
-                    hitId = child->leafId;
-                    tb = tHit;
+                    hitId = leafIdB;
+                    t = tHit;
                 }
             }
-            else*/
+            else
             {
-                tb = childB->hitClosest(r, tMax, hitId, cb);
+                float tb = childB->hitClosest(r, tMax, hitId, cb);
+                if (tb > -1)
+                    t = tb;
             }
-            if (tb > -1)
-                t = tb;
         }
         return t;
     }
 
-    uint32_t childLeafMask = 0;
     math::AABB childBBoxA;
     math::AABB childBBoxB;
 
-    Node* childA = nullptr;
-    Node* childB = nullptr;
+    uint32_t leafIdA{};
+    uint32_t leafIdB{};
+
+    BranchNode* childA = nullptr;
+    BranchNode* childB = nullptr;
+    uint32_t childLeafMask = 0;
 
     //static_assert(sizeof(CWBVH::BranchNode) == 80);
 };
@@ -180,7 +152,7 @@ int CWBVH::findSplit(uint32_t* sortedMortonCodes,
     return split;
 }
 
-CWBVH::Node* CWBVH::generateHierarchy(
+CWBVH::BranchNode* CWBVH::generateHierarchy(
     const math::AABB* sortedLeafAABBs,
     uint32_t* sortedMortonCodes,
     uint32_t* sortedObjectIDs,
@@ -193,7 +165,7 @@ CWBVH::Node* CWBVH::generateHierarchy(
     if (first == last)
     {
         treeBB = sortedLeafAABBs[first];
-        return new(allocLeaf()) LeafNode(sortedObjectIDs[first]);
+        return nullptr;
     }
 
     // Determine where to split the range.
@@ -201,12 +173,24 @@ CWBVH::Node* CWBVH::generateHierarchy(
 
     // Process the resulting sub-ranges recursively.
     math::AABB bboxA, bboxB;
-    Node* childA = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
+    BranchNode* childA = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
         first, split, bboxA);
-    Node* childB = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
+    BranchNode* childB = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
         split + 1, last, bboxB);
     treeBB = math::AABB(bboxA, bboxB);
-    return new(allocBranch())BranchNode(childA, childB, bboxA, bboxB);
+
+    auto branch = new(allocBranch())BranchNode(childA, childB, bboxA, bboxB);
+    if (first == split)
+    {
+        branch->childLeafMask |= 1;
+        branch->leafIdA = sortedObjectIDs[first];
+    }
+    if (split + 1 == last)
+    {
+        branch->childLeafMask |= 2;
+        branch->leafIdB = sortedObjectIDs[last];
+    }
+    return branch;
 }
 
 void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
@@ -263,7 +247,6 @@ void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
     }
 
     // Allocate enough nodes to hold the tree
-    m_leafs = std::unique_ptr<LeafNode[]>(new LeafNode[instances.size()]());
     m_internalNodes = std::unique_ptr<BranchNode[]>(new BranchNode[instances.size()-1]());
 
     // Build a binary tree out of the sorted nodes
@@ -303,10 +286,6 @@ bool CWBVH::hitClosest(
     float tHit = m_binTreeRoot->hitClosest(r, tMax, hitId, cb);
 
     return tHit >= 0;
-}
-CWBVH::LeafNode* CWBVH::allocLeaf()
-{
-    return &m_leafs[m_leafCount++];
 }
 
 CWBVH::BranchNode* CWBVH::allocBranch()

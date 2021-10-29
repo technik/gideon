@@ -47,16 +47,13 @@ public:
         float tMax,
         HitRecord& collision) const;
 
-
 private:
-    class Node;
-    class LeafNode;
-    class BranchNode;
+    struct BranchNode;
 
-    Node* m_binTreeRoot{};
+    BranchNode* m_binTreeRoot{};
     std::vector<std::shared_ptr<MeshInstance>>* m_instances{};
 
-    Node* generateHierarchy(
+    BranchNode* generateHierarchy(
         const math::AABB* sortedLeafAABBs,
         uint32_t* sortedMortonCodes,
         uint32_t* sortedObjectIDs,
@@ -85,13 +82,10 @@ private:
         uint8_t qHiZ[8];
     };
 
-    LeafNode* allocLeaf();
     BranchNode* allocBranch();
 
-    size_t m_leafCount = 0;
     size_t m_branchCount = 0;
     std::unique_ptr<BranchNode[]> m_internalNodes;
-    std::unique_ptr<LeafNode[]> m_leafs;
     math::AABB m_globalAABB;
 
     static_assert(sizeof(InternalNode) == 80);
