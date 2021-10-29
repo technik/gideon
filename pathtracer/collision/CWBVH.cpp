@@ -36,22 +36,16 @@ unsigned int expandBits(unsigned int v)
 
 struct CWBVH::Node
 {
-    Node(bool leaf = false)
-        : isLeaf(leaf)
-    {}
-
     using BlasCallback = std::function<float(uint32_t leafId, float tMax)>;
 
     virtual float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback&) = 0;
-    bool isLeaf = false;
 };
 
 struct CWBVH::LeafNode : Node
 {
     LeafNode() = default;
     LeafNode(uint32_t id)
-        : Node(true)
-        , leafId(id)
+        : leafId(id)
     {}
 
     float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback& cb) override
@@ -67,7 +61,7 @@ struct CWBVH::LeafNode : Node
 
     uint32_t leafId;
 
-static_assert(sizeof(CWBVH::LeafNode) == 16);
+    //static_assert(sizeof(CWBVH::LeafNode) == 12);
 };
 
 struct CWBVH::BranchNode : Node
@@ -86,13 +80,13 @@ struct CWBVH::BranchNode : Node
     {
         float t = -1;
         float maxEnter;
-        if (childA && childBBoxA.intersect(r, tMax, maxEnter))
+        if (childBBoxA.intersect(r, tMax, maxEnter))
         {
             t = childA->hitClosest(r, tMax, hitId, cb);
             if (t > -1)
                 tMax = t;
         }
-        if (childB && childBBoxB.intersect(r, tMax, maxEnter))
+        if (childBBoxB.intersect(r, tMax, maxEnter))
         {
             float tb = childB->hitClosest(r, tMax, hitId, cb);
             if (tb > -1)
@@ -101,13 +95,14 @@ struct CWBVH::BranchNode : Node
         return t;
     }
 
+    uint32_t childLeafMask = 0;
     math::AABB childBBoxA;
     math::AABB childBBoxB;
 
     Node* childA = nullptr;
     Node* childB = nullptr;
 
-    static_assert(sizeof(CWBVH::BranchNode) == 80);
+    //static_assert(sizeof(CWBVH::BranchNode) == 80);
 };
 
 // Out of line constructor for smart pointers
