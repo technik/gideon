@@ -57,7 +57,7 @@ struct CWBVH::LeafNode : Node
 
     float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback& cb) override
     {
-        float tBox;
+        //float tBox;
         //if (m_aabb.intersect(r, tMax, tBox))
         {
             float tHit = cb(leafId, tMax);
@@ -218,8 +218,9 @@ void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
     std::vector<math::AABB> sortedLeafAABBs(instances.size());
     for (size_t i = 0; i < instances.size(); ++i)
     {
-        sortedMortonCodes[i] = mortonSections[indices[i]];
-        sortedLeafAABBs[i] = instances[i]->aabb();
+        auto ndx = indices[i];
+        sortedMortonCodes[i] = mortonSections[ndx];
+        sortedLeafAABBs[i] = instances[ndx]->aabb();
     }
 
     // Build a binary tree out of the sorted nodes

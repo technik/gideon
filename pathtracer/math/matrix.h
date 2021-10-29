@@ -85,8 +85,8 @@ namespace math
             Vec3f extent = ex + ey + ez;
 
             origin = transformPos(origin);
-            auto newMin = origin + extent;
-            auto newMax = origin - extent;
+            auto newMax = origin + extent;
+            auto newMin = origin - extent;
 
             return AABB(newMin, newMax);
         }

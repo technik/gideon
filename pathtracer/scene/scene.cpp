@@ -43,22 +43,6 @@ bool Scene::hit(
 ) const
 {
     return mTlas.hitClosest(r, tMax, collision);
-
-	float t = tMax;
-	bool hit_anything = false;
-
-    for(auto h : mRenderables)
-	{
-		HitRecord tmp_hit;
-		if(h->hit(r, t, tmp_hit))
-		{
-			collision = tmp_hit;
-			t = tmp_hit.t;
-			hit_anything = true;
-		}
-	}
-
-	return hit_anything;
 }
 
 //--------------------------------------------------------------------------------------------------
