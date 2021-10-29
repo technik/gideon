@@ -48,14 +48,6 @@ struct CWBVH::Node
     math::AABB m_aabb;
 };
 
-// Out of line constructor for smart pointers
-CWBVH::CWBVH()
-{}
-
-// Out of line deleter for smart pointers
-CWBVH::~CWBVH()
-{}
-
 struct CWBVH::LeafNode : Node
 {
     LeafNode() : Node(math::AABB()) {}
@@ -117,6 +109,14 @@ struct CWBVH::BranchNode : Node
     Node* childA = nullptr;
     Node* childB = nullptr;
 };
+
+// Out of line constructor for smart pointers
+CWBVH::CWBVH()
+{}
+
+// Out of line deleter for smart pointers
+CWBVH::~CWBVH()
+{}
 
 int CWBVH::findSplit(uint32_t* sortedMortonCodes,
     int           first,
