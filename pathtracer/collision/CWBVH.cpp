@@ -82,13 +82,40 @@ struct CWBVH::BranchNode : Node
         float maxEnter;
         if (childBBoxA.intersect(r, tMax, maxEnter))
         {
-            t = childA->hitClosest(r, tMax, hitId, cb);
+            /*if (childLeafMask & 1)
+            {
+                auto* child = dynamic_cast<LeafNode*>(childA);
+                float tHit = cb(child->leafId, tMax);
+                if (tHit >= 0)
+                {
+                    hitId = child->leafId;
+                    t = tHit;
+                }
+            }
+            else*/
+            {
+                t = childA->hitClosest(r, tMax, hitId, cb);
+            }
             if (t > -1)
                 tMax = t;
         }
         if (childBBoxB.intersect(r, tMax, maxEnter))
         {
-            float tb = childB->hitClosest(r, tMax, hitId, cb);
+            float tb = -1;
+            /*if (childLeafMask & 2)
+            {
+                auto* child = dynamic_cast<LeafNode*>(childB);
+                float tHit = cb(child->leafId, tMax);
+                if (tHit >= 0)
+                {
+                    hitId = child->leafId;
+                    tb = tHit;
+                }
+            }
+            else*/
+            {
+                tb = childB->hitClosest(r, tMax, hitId, cb);
+            }
             if (tb > -1)
                 t = tb;
         }
@@ -191,24 +218,24 @@ void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
     // TODO: Maybe extend the bounding box to the centers only for improved quantization precision
     std::vector<math::Vec3f> centers;
     centers.reserve(instances.size());
-    math::AABB globalAABB;
-    globalAABB.clear();
+    
+    m_globalAABB.clear();
     for (auto& t : instances)
     {
         auto instanceBB = t->aabb();
-        globalAABB.add(instanceBB.min());
-        globalAABB.add(instanceBB.max());
+        m_globalAABB.add(instanceBB.min());
+        m_globalAABB.add(instanceBB.max());
 
         centers.push_back(instanceBB.origin());
     }
-    math::Vec3f invGlobalAABBSize = math::Vec3f(1.f,1.f,1.f) / globalAABB.size();
+    math::Vec3f invGlobalAABBSize = math::Vec3f(1.f,1.f,1.f) / m_globalAABB.size();
 
     // Assign morton code quadrants to each centroid
     std::vector<uint32_t> mortonSections;
     mortonSections.reserve(instances.size());
     for (auto& trianglePos : centers)
     {
-        math::Vec3f normalizedPos = (trianglePos - globalAABB.min()) * invGlobalAABBSize;
+        math::Vec3f normalizedPos = (trianglePos - m_globalAABB.min()) * invGlobalAABBSize;
 
         // Quantize position. 11 bits x, 11 bits y, 10 bits z.
         uint32_t quantX = std::min<uint32_t>(normalizedPos.x() * (1 << 11), (1 << 11) - 1);
@@ -258,6 +285,10 @@ bool CWBVH::hitClosest(
         return false;
 
     math::Ray::Implicit r = ray.implicit();
+    float maxEnter;
+    if (!m_globalAABB.intersect(r, tMax, maxEnter))
+        return false;
+
     uint32_t hitId;
     auto cb = [this,&ray,&collision](uint32_t leafId, float tMax)
     {

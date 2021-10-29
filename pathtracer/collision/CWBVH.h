@@ -23,11 +23,11 @@
 #include <vector>
 
 #include <math/vector.h>
+#include <math/aabb.h>
 
 namespace math
 {
     class Ray;
-    struct AABB;
 }
 
 class MeshInstance;
@@ -92,6 +92,7 @@ private:
     size_t m_branchCount = 0;
     std::unique_ptr<BranchNode[]> m_internalNodes;
     std::unique_ptr<LeafNode[]> m_leafs;
+    math::AABB m_globalAABB;
 
     static_assert(sizeof(InternalNode) == 80);
 };
