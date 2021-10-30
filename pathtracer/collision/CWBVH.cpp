@@ -38,17 +38,12 @@ struct CWBVH::BranchNode
 {
     using BlasCallback = std::function<float(uint32_t leafId, float tMax)>;
 
-    BranchNode() = default;
-
-    BranchNode(BranchNode* a, BranchNode* b, const math::AABB& childABox, const math::AABB& childBBox)
-        : childBBoxA(childABox)
-        , childBBoxB(childBBox)
-        , childA(a)
-        , childB(b)
-    {
-    }
-
-    float hitClosest(math::Ray::Implicit& r, float tMax, uint32_t& hitId, const BlasCallback& cb)
+    float hitClosest(
+        const BranchNode* nodeList,
+        math::Ray::Implicit& r,
+        float tMax,
+        uint32_t& hitId,
+        const BlasCallback& cb) const
     {
         float t = -1;
         float maxEnter;
@@ -65,7 +60,7 @@ struct CWBVH::BranchNode
             }
             else
             {
-                t = childA->hitClosest(r, tMax, hitId, cb);
+                t = nodeList[childA].hitClosest(nodeList, r, tMax, hitId, cb);
             }
             if (t > -1)
                 tMax = t;
@@ -83,7 +78,7 @@ struct CWBVH::BranchNode
             }
             else
             {
-                float tb = childB->hitClosest(r, tMax, hitId, cb);
+                float tb = nodeList[childB].hitClosest(nodeList, r, tMax, hitId, cb);
                 if (tb > -1)
                     t = tb;
             }
@@ -97,11 +92,11 @@ struct CWBVH::BranchNode
     uint32_t leafIdA{};
     uint32_t leafIdB{};
 
-    BranchNode* childA = nullptr;
-    BranchNode* childB = nullptr;
+    uint32_t childA = 0;
+    uint32_t childB = 0;
     uint32_t childLeafMask = 0;
 
-    //static_assert(sizeof(CWBVH::BranchNode) == 80);
+    //static_assert(sizeof(CWBVH::BranchNode) == 68);
 };
 
 // Out of line constructor for smart pointers
@@ -152,7 +147,7 @@ int CWBVH::findSplit(uint32_t* sortedMortonCodes,
     return split;
 }
 
-CWBVH::BranchNode* CWBVH::generateHierarchy(
+uint32_t CWBVH::generateHierarchy(
     const math::AABB* sortedLeafAABBs,
     uint32_t* sortedMortonCodes,
     uint32_t* sortedObjectIDs,
@@ -162,35 +157,44 @@ CWBVH::BranchNode* CWBVH::generateHierarchy(
 )
 {
     // Single object => create a leaf node.
-    if (first == last)
-    {
-        treeBB = sortedLeafAABBs[first];
-        return nullptr;
-    }
+    assert(first != last && "Leafs are supposed to be solved in the parent node");
 
+    auto branchNdx = allocBranch();
     // Determine where to split the range.
     int split = findSplit(sortedMortonCodes, first, last);
 
     // Process the resulting sub-ranges recursively.
     math::AABB bboxA, bboxB;
-    BranchNode* childA = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
-        first, split, bboxA);
-    BranchNode* childB = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
-        split + 1, last, bboxB);
-    treeBB = math::AABB(bboxA, bboxB);
+    auto branch = &m_internalNodes[branchNdx];
 
-    auto branch = new(allocBranch())BranchNode(childA, childB, bboxA, bboxB);
     if (first == split)
     {
+        bboxA = sortedLeafAABBs[first];
         branch->childLeafMask |= 1;
         branch->leafIdA = sortedObjectIDs[first];
     }
+    else
+    {
+        branch->childA = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
+            first, split, bboxA);
+    }
+
     if (split + 1 == last)
     {
+        bboxB = sortedLeafAABBs[last];
         branch->childLeafMask |= 2;
         branch->leafIdB = sortedObjectIDs[last];
     }
-    return branch;
+    else
+    {
+        branch->childB = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
+            split + 1, last, bboxB);
+    }
+
+    branch->childBBoxA = bboxA;
+    branch->childBBoxB = bboxB;
+    treeBB = math::AABB(bboxA, bboxB);
+    return branchNdx;
 }
 
 void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
@@ -251,12 +255,13 @@ void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
 
     // Build a binary tree out of the sorted nodes
     math::AABB treeAABB;
-    m_binTreeRoot = generateHierarchy(
+    auto binTreeRootId = generateHierarchy(
         sortedLeafAABBs.data(),
         sortedMortonCodes.data(),
         indices.data(),
         0,
         instances.size() - 1, treeAABB);
+    m_binTreeRoot = &m_internalNodes[binTreeRootId];
 }
 
 bool CWBVH::hitClosest(
@@ -283,12 +288,12 @@ bool CWBVH::hitClosest(
         }
         return -1.f;
     };
-    float tHit = m_binTreeRoot->hitClosest(r, tMax, hitId, cb);
+    float tHit = m_binTreeRoot->hitClosest(&m_internalNodes[0], r, tMax, hitId, cb);
 
     return tHit >= 0;
 }
 
-CWBVH::BranchNode* CWBVH::allocBranch()
+uint32_t CWBVH::allocBranch()
 {
-    return &m_internalNodes[m_branchCount++];
+    return m_branchCount++;
 }

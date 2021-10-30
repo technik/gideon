@@ -53,7 +53,7 @@ private:
     BranchNode* m_binTreeRoot{};
     std::vector<std::shared_ptr<MeshInstance>>* m_instances{};
 
-    BranchNode* generateHierarchy(
+    uint32_t generateHierarchy(
         const math::AABB* sortedLeafAABBs,
         uint32_t* sortedMortonCodes,
         uint32_t* sortedObjectIDs,
@@ -82,9 +82,9 @@ private:
         uint8_t qHiZ[8];
     };
 
-    BranchNode* allocBranch();
+    uint32_t allocBranch();
+    uint32_t m_branchCount = 0;
 
-    size_t m_branchCount = 0;
     std::unique_ptr<BranchNode[]> m_internalNodes;
     math::AABB m_globalAABB;
 
