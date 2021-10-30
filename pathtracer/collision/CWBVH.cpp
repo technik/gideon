@@ -51,10 +51,10 @@ struct CWBVH::BranchNode
         {
             if (childLeafMask & 1)
             {
-                float tHit = cb(leafIdA, tMax);
+                float tHit = cb(childA, tMax);
                 if (tHit >= 0)
                 {
-                    hitId = leafIdA;
+                    hitId = childA;
                     t = tHit;
                 }
             }
@@ -69,10 +69,10 @@ struct CWBVH::BranchNode
         {
             if (childLeafMask & 2)
             {
-                float tHit = cb(leafIdB, tMax);
+                float tHit = cb(childB, tMax);
                 if (tHit >= 0)
                 {
-                    hitId = leafIdB;
+                    hitId = childB;
                     t = tHit;
                 }
             }
@@ -89,14 +89,11 @@ struct CWBVH::BranchNode
     math::AABB childBBoxA;
     math::AABB childBBoxB;
 
-    uint32_t leafIdA{};
-    uint32_t leafIdB{};
-
     uint32_t childA = 0;
     uint32_t childB = 0;
     uint32_t childLeafMask = 0;
 
-    //static_assert(sizeof(CWBVH::BranchNode) == 68);
+    //static_assert(sizeof(CWBVH::BranchNode) == 60);
 };
 
 // Out of line constructor for smart pointers
@@ -171,7 +168,7 @@ uint32_t CWBVH::generateHierarchy(
     {
         bboxA = sortedLeafAABBs[first];
         branch->childLeafMask |= 1;
-        branch->leafIdA = sortedObjectIDs[first];
+        branch->childA = sortedObjectIDs[first];
     }
     else
     {
@@ -183,7 +180,7 @@ uint32_t CWBVH::generateHierarchy(
     {
         bboxB = sortedLeafAABBs[last];
         branch->childLeafMask |= 2;
-        branch->leafIdB = sortedObjectIDs[last];
+        branch->childB = sortedObjectIDs[last];
     }
     else
     {
