@@ -34,6 +34,12 @@ unsigned int expandBits(unsigned int v)
     return v;
 }
 
+struct CompressedAABB
+{
+    uint8_t low[3];
+    uint8_t high[3];
+};
+
 struct CWBVH::BranchNode
 {
     using BlasCallback = std::function<float(uint32_t leafId, float tMax)>;
@@ -47,7 +53,7 @@ struct CWBVH::BranchNode
     {
         float t = -1;
         float maxEnter;
-        if (childBBoxA.intersect(r, tMax, maxEnter))
+        if (getChildAABB(0).intersect(r, tMax, maxEnter))
         {
             if (childLeafMask & 1)
             {
@@ -65,7 +71,7 @@ struct CWBVH::BranchNode
             if (t > -1)
                 tMax = t;
         }
-        if (childBBoxB.intersect(r, tMax, maxEnter))
+        if (getChildAABB(1).intersect(r, tMax, maxEnter))
         {
             if (childLeafMask & 2)
             {
@@ -86,14 +92,54 @@ struct CWBVH::BranchNode
         return t;
     }
 
-    math::AABB childBBoxA;
-    math::AABB childBBoxB;
+    math::AABB getChildAABB(int childIndex) const
+    {
+        const auto& compressed = childCompressedAABB[childIndex];
+        // recover size
+        math::Vec3f parentExtent = localAABB.size();
+        math::Vec3f low = localAABB.min();
+        low.x() += compressed.low[0] * parentExtent.x() / 255;
+        low.y() += compressed.low[1] * parentExtent.y() / 255;
+        low.z() += compressed.low[2] * parentExtent.z() / 255;
+
+        math::Vec3f high = localAABB.min();
+        high.x() += compressed.high[0] * parentExtent.x() / 255;
+        high.y() += compressed.high[1] * parentExtent.y() / 255;
+        high.z() += compressed.high[2] * parentExtent.z() / 255;
+
+        return math::AABB(low, high);
+    }
+
+    void setChildAABB(const math::AABB& childAABB, int childIndex)
+    {
+        math::Vec3f relMin = childAABB.min() - localAABB.min();
+        math::Vec3f relMax = childAABB.max() - localAABB.min();
+        // Normalize range
+        auto localExtent = localAABB.size();
+        auto normMin = relMin / localExtent;
+        auto normMax = relMax / localExtent;
+
+        // Quantize coordinates
+        CompressedAABB aabb;
+        aabb.low[0] = uint8_t(normMin.x() * 255);
+        aabb.low[1] = uint8_t(normMin.y() * 255);
+        aabb.low[2] = uint8_t(normMin.z() * 255);
+
+        aabb.high[0] = (uint8_t)std::min((normMax.x() * 255)+1, 255.f);
+        aabb.high[1] = (uint8_t)std::min((normMax.y() * 255)+1, 255.f);
+        aabb.high[2] = (uint8_t)std::min((normMax.z() * 255)+1, 255.f);
+
+        // Store compressed in the index
+        childCompressedAABB[childIndex] = aabb;
+    }
 
     uint32_t childA = 0;
     uint32_t childB = 0;
-    uint32_t childLeafMask = 0;
+    math::AABB localAABB;
+    CompressedAABB childCompressedAABB[2];
+    uint8_t childLeafMask = 0;
 
-    //static_assert(sizeof(CWBVH::BranchNode) == 60);
+    //static_assert(sizeof(CWBVH::BranchNode) == 48);
 };
 
 // Out of line constructor for smart pointers
@@ -188,9 +234,10 @@ uint32_t CWBVH::generateHierarchy(
             split + 1, last, bboxB);
     }
 
-    branch->childBBoxA = bboxA;
-    branch->childBBoxB = bboxB;
-    treeBB = math::AABB(bboxA, bboxB);
+    branch->localAABB = math::AABB(bboxA, bboxB);
+    branch->setChildAABB(bboxA, 0);
+    branch->setChildAABB(bboxB, 1);
+    treeBB = branch->localAABB;
     return branchNdx;
 }
 
