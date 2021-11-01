@@ -24,6 +24,26 @@ uint32_t spaceBits(uint32_t x)
     return result;
 }
 
+float floatFromExponent(int8_t e);
+
+// Returns the log2(p) where p is the smallest power of two such that p > abs(x).
+// note that p can be < 0, in cases where 0<abs(x)<1.
+// Assumes non denormal floats.
+int8_t nextPow2Log2(float x)
+{
+    auto bitField = reinterpret_cast<uint32_t&>(x);
+    auto e = int8_t((bitField >> 23) + 1);
+    return e;
+}
+
+float floatFromExponent(int8_t e)
+{
+    uint32_t bitField = uint32_t(uint8_t(e)) << 23;
+    auto x = reinterpret_cast<float&>(bitField);
+    assert(nextPow2Log2(x) - 1 == e);
+    return x;
+}
+
 // TODO: test this version against above code
 unsigned int expandBits(unsigned int v)
 {
@@ -92,17 +112,35 @@ struct CWBVH::BranchNode
         return t;
     }
 
+    void setLocalAABB(const math::AABB& localAABB)
+    {
+        localOrigin = localAABB.min();
+        auto extent = localAABB.size();
+        localScaleExp[0] = nextPow2Log2(extent.x());
+        localScaleExp[1] = nextPow2Log2(extent.y());
+        localScaleExp[2] = nextPow2Log2(extent.z());
+    }
+
+    math::Vec3f getLocalScale() const
+    {
+        return math::Vec3f(
+            floatFromExponent(localScaleExp[0]),
+            floatFromExponent(localScaleExp[1]),
+            floatFromExponent(localScaleExp[2])
+        );
+    }
+
     math::AABB getChildAABB(int childIndex) const
     {
         const auto& compressed = childCompressedAABB[childIndex];
         // recover size
-        math::Vec3f parentExtent = localAABB.size();
-        math::Vec3f low = localAABB.min();
+        math::Vec3f parentExtent = getLocalScale();
+        math::Vec3f low = localOrigin;
         low.x() += compressed.low[0] * parentExtent.x() / 255;
         low.y() += compressed.low[1] * parentExtent.y() / 255;
         low.z() += compressed.low[2] * parentExtent.z() / 255;
 
-        math::Vec3f high = localAABB.min();
+        math::Vec3f high = localOrigin;
         high.x() += compressed.high[0] * parentExtent.x() / 255;
         high.y() += compressed.high[1] * parentExtent.y() / 255;
         high.z() += compressed.high[2] * parentExtent.z() / 255;
@@ -112,10 +150,10 @@ struct CWBVH::BranchNode
 
     void setChildAABB(const math::AABB& childAABB, int childIndex)
     {
-        math::Vec3f relMin = childAABB.min() - localAABB.min();
-        math::Vec3f relMax = childAABB.max() - localAABB.min();
+        math::Vec3f relMin = childAABB.min() - localOrigin;
+        math::Vec3f relMax = childAABB.max() - localOrigin;
         // Normalize range
-        auto localExtent = localAABB.size();
+        auto localExtent = getLocalScale();
         auto normMin = relMin / localExtent;
         auto normMax = relMax / localExtent;
 
@@ -133,13 +171,15 @@ struct CWBVH::BranchNode
         childCompressedAABB[childIndex] = aabb;
     }
 
+    math::Vec3f localOrigin;
+    uint8_t localScaleExp[3];
+    uint8_t childLeafMask = 0;
+    CompressedAABB childCompressedAABB[2];
+
     uint32_t childA = 0;
     uint32_t childB = 0;
-    math::AABB localAABB;
-    CompressedAABB childCompressedAABB[2];
-    uint8_t childLeafMask = 0;
 
-    //static_assert(sizeof(CWBVH::BranchNode) == 48);
+    //static_assert(sizeof(CWBVH::BranchNode) == 36);
 };
 
 // Out of line constructor for smart pointers
@@ -234,10 +274,10 @@ uint32_t CWBVH::generateHierarchy(
             split + 1, last, bboxB);
     }
 
-    branch->localAABB = math::AABB(bboxA, bboxB);
+    treeBB = math::AABB(bboxA, bboxB);
+    branch->setLocalAABB(treeBB);
     branch->setChildAABB(bboxA, 0);
     branch->setChildAABB(bboxB, 1);
-    treeBB = branch->localAABB;
     return branchNdx;
 }
 
