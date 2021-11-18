@@ -44,30 +44,47 @@ using namespace math;
 using namespace std;
 
 namespace {
-	constexpr int MAX_DEPTH = 10;
+	constexpr int MAX_BOUNCES = 9;
 }
 
 //--------------------------------------------------------------------------------------------------
-Vec3f color(const Ray& r, const Scene& world, int& depth, RandomGenerator& random)
+Vec3f color(Ray r, const Scene& world, RandomGenerator& random)
 {
-	assert(abs(r.direction().sqNorm()-1) < 1e-4f);
+	assert(abs(r.direction().sqNorm()-1) < 1e-4f); // Check ray direction
+
+    int depth = 0;
 	constexpr float farPlane = 1e3f;
+
+    Vec3f accumLight = Vec3f(0.f);
+    Vec3f accumAttenuation = Vec3f(1.f);
 	HitRecord hit;
-	if(world.hit(r, farPlane, hit))
-	{
-		Ray scattered;
-		Vec3f attenuation;
-		Vec3f emitted;
-		if(depth < MAX_DEPTH && hit.material->scatter(r, hit, attenuation, emitted, scattered, random))
-		{
-			return color(scattered, world, ++depth, random) * attenuation + emitted;
-		}
-		return Vec3f(0.f);
-	}
-	else
-	{
-		return world.background->sample(r.direction());
-	}
+
+    while(depth <= MAX_BOUNCES)
+    {
+        if (world.hit(r, farPlane, hit))
+        {
+            // Evaluate light bounce
+            Ray scatteredRay;
+            Vec3f attenuation;
+            Vec3f emitted;
+            hit.material->scatter(r, hit, attenuation, emitted, scatteredRay, random);
+            r = scatteredRay;
+
+            // Integrate path
+            accumLight += accumAttenuation * emitted;
+            accumAttenuation *= attenuation;
+
+            ++depth;
+        }
+        else
+        {
+            // Gather light from the background
+            accumLight += accumAttenuation * world.background->sample(r.direction());
+            break;
+        }
+    }
+
+    return accumLight;
 }
 
 using Rect = math::Rectangle<size_t>;
@@ -93,8 +110,8 @@ void renderTile(
 				float u = float(j+random.scalar())/totalNx;
 				float v = 1.f-float(i+random.scalar())/totalNy;
 				Ray r = cam.get_ray(u,v);
-				int depth = 0;
-				accum += color(r, world, depth, random);
+
+				accum += color(r, world, random);
 			}
 			accum /= float(nSamples);
 
