@@ -242,7 +242,7 @@ uint32_t CWBVH::generateHierarchy(
     // Single object => create a leaf node.
     assert(first != last && "Leafs are supposed to be solved in the parent node");
 
-    auto branchNdx = allocBranch();
+    auto branchNdx = allocBranch(1);
     // Determine where to split the range.
     int split = findSplit(sortedMortonCodes, first, last);
 
@@ -377,7 +377,9 @@ bool CWBVH::hitClosest(
     return tHit >= 0;
 }
 
-uint32_t CWBVH::allocBranch()
+uint32_t CWBVH::allocBranch(uint32_t numNodes)
 {
-    return m_branchCount++;
+    auto nextNode = m_branchCount;
+    m_branchCount += numNodes;
+    return nextNode;
 }

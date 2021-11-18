@@ -36,33 +36,27 @@ public:
 		, mMetrics(nWorkers)
 	{}
 
-	template<class TaskData, class ThreadData, class Op>
-	bool run(std::vector<ThreadData>& threadData, std::vector<TaskData>& taskData, const Op& operation, std::ostream& log)
+	template<class Op>
+	bool dispatch(size_t numTasks, const Op& operation, std::ostream& log)
 	{
-		// Validate input data
-		if(threadData.size() < mWorkers.size())
-		{
-			log << "Need at least as much thread data as worker threads (" << mWorkers.size() << "), but only " << threadData.size() << " provided\n";
-			return false;
-		}
-
-		// Reset counter and metrics
-		mTaskCounter = 0;
-		for(auto& metric : mMetrics)
-			metric.reset(taskData.size());
-
 		// Start global profiling
-		log << "Running " << mWorkers.size() << " worker threads for " << taskData.size() << " tasks\n";
+		log << "Running " << mWorkers.size() << " worker threads for " << numTasks << " tasks\n";
 		auto start = chrono::high_resolution_clock::now();
 
+		// Reset counter and metrics
+        const auto maxExpectedTasksPerThread = 2 * numTasks / mWorkers.size();
+		for(auto& metric : mMetrics)
+			metric.reset(maxExpectedTasksPerThread);
+
 		// Run jobs
+		mTaskCounter = 0;
 		for(int i = 0; i < mWorkers.size(); ++i)
 		{
 			mWorkers[i] = std::thread(
-				workerRoutine<TaskData,ThreadData,Op>,
+				workerRoutine<Op>,
+                i,
+                numTasks,
 				std::ref(mMetrics[i]),
-				std::ref(threadData[i]),
-				std::ref(taskData),
 				&mTaskCounter,
 				std::cref(operation));
 
@@ -71,6 +65,7 @@ public:
 				return false;
 			}
 		}
+
 		// Finish jobs
 		for(auto& worker : mWorkers)
 			worker.join();
@@ -99,20 +94,17 @@ private:
 		}
 	};
 
-	template<class TaskData, class ThreadData, class Op>
-	static void workerRoutine(ThreadMetrics& metrics, ThreadData& threadData, std::vector<TaskData>& taskData, AtomicCounter* globalCounter, const Op& operation)
+	template<class Op>
+	static void workerRoutine(size_t workerId, int numTasks, ThreadMetrics& metrics, AtomicCounter* globalCounter, const Op& operation)
 	{
 		assert(globalCounter);
 
 		size_t selfCounter = (*globalCounter)++;
-		while(selfCounter < taskData.size()) // There's still work to do, keep runing tasks
+		while(selfCounter < numTasks) // There's still work to do, keep runing tasks
 		{
-			// Grab a new task
-			auto& task = taskData[selfCounter];
-
 			// Run task
 			auto taskStart = std::chrono::high_resolution_clock::now();
-			operation(threadData, task);
+			operation(selfCounter, workerId);
 			std::chrono::duration<double> taskDuration = std::chrono::high_resolution_clock::now() - taskStart;
 			metrics.runTimes.push_back(taskDuration.count());
 

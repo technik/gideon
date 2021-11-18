@@ -82,7 +82,7 @@ private:
         uint8_t qHiZ[8];
     };
 
-    uint32_t allocBranch();
+    uint32_t allocBranch(uint32_t numNodes);
     uint32_t m_branchCount = 0;
 
     std::unique_ptr<BranchNode[]> m_internalNodes;

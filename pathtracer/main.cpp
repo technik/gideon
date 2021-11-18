@@ -72,20 +72,13 @@ Vec3f color(const Ray& r, const Scene& world, int& depth, RandomGenerator& rando
 
 using Rect = math::Rectangle<size_t>;
 
-struct TileMetrics
-{
-	int maxRecursion = 0;
-	int totalRecursion = 0;
-};
-
 //--------------------------------------------------------------------------------------------------
-void traceImageSegment(
-	const Scene& world,
+void renderTile(
 	Rect window,
+	const Scene& world,
 	Image& dst,
 	RandomGenerator& random,
-	unsigned nSamples,
-	TileMetrics& metrics)
+	unsigned nSamples)
 {
 	const auto totalNx = dst.width();
 	const auto totalNy = dst.height();
@@ -102,10 +95,6 @@ void traceImageSegment(
 				Ray r = cam.get_ray(u,v);
 				int depth = 0;
 				accum += color(r, world, depth, random);
-
-				// Save metrics
-				metrics.maxRecursion = std::max(depth, metrics.maxRecursion);
-				metrics.totalRecursion += depth;
 			}
 			accum /= float(nSamples);
 
@@ -116,7 +105,6 @@ void traceImageSegment(
 struct ThreadInfo
 {
 	RandomGenerator random;
-	int index;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -141,59 +129,38 @@ int main(int _argc, const char** _argv)
 		std::cout << "Incompatible tile and image size. Image size (" << size.x1 << "x" << size.y1 << ") must be an exact multiple of tile size (" << params.tileSize << ")\n";
 		return -1;
 	}
-    const auto xTiles = size.x1 / params.tileSize;
-    const auto yTiles = size.y1 / params.tileSize;
-	std::vector<Rect> tiles;
-	tiles.reserve(xTiles*yTiles);
-	for(size_t j = 0; j < yTiles; ++j)
-		for(size_t i = 0; i < xTiles; ++i)
-		{
-			tiles.emplace_back(i*params.tileSize, j*params.tileSize, params.tileSize*(i+1u), params.tileSize*(j+1u));
-		}
 
 	// Prepare independent data for each thread
 	std::vector<ThreadInfo> threadData(params.nThreads);
-	for(int i = 0; i < threadData.size(); ++i)
-	{
-		threadData[i].index = i;
-	}
-
-	// Debug images
-	Image threadMap(xTiles, yTiles);
-	Image depthMap(xTiles, yTiles);
-	Image timeMap(xTiles, yTiles);
 
 	// Allocate threads to consume
 	ThreadPool taskQueue(params.nThreads);
-	if(taskQueue.run(
-		threadData,
-		tiles,
-		[&world,
-		&outputImage,
-		&timeMap,
-		params]
-		(ThreadInfo& ti, Rect& window){
-			auto tileStart = std::chrono::high_resolution_clock::now();
 
-			TileMetrics metrics;
+    // Dispatch compute
+    const auto xTiles = (size.x1 + params.tileSize -1) / params.tileSize;
+    const auto yTiles = (size.y1 + params.tileSize -1) / params.tileSize;
 
-			traceImageSegment(world, window, outputImage, ti.random, params.ns, metrics);
-			auto x = window.x0 / params.tileSize;
-			auto y = window.y0 / params.tileSize;
+	if(taskQueue.dispatch(
+        xTiles * yTiles,
+		[xTiles, &threadData,
+        &world,
+		&outputImage, params]
+		(size_t taskIndex, size_t workerIndex){
+            // Compute the boundaries of the tile to be rendered by this thread
+            Rect tile;
+            auto tx = taskIndex % xTiles;
+            tile.x0 = tx * params.tileSize;
+            auto ty = taskIndex / xTiles;
+            tile.y0 = ty * params.tileSize;
+            tile.x1 = tile.x0 + params.tileSize;
+            tile.y1 = tile.y0 + params.tileSize;
 
-			std::chrono::duration<float> tileDuration = std::chrono::high_resolution_clock::now() - tileStart;
-
-			timeMap.pixel(x,y) = 10.f*tileDuration.count();
+            renderTile(tile, world, outputImage, threadData[workerIndex].random, params.ns);
 		},
 		cout))
 	{
 		// Save final image
 		outputImage.saveAsSRGB(params.output.c_str());
-
-		// Save debug images
-		threadMap.saveAsLinearRGB("threadMap.png");
-		depthMap.saveAsLinearRGB("depthMap.png");
-		timeMap.saveAsLinearRGB("timeMap.png");
 
         return 0;
 	};
