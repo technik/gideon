@@ -29,7 +29,7 @@
 #include "triangle.h"
 
 //-------------------------------------------------------------------------------------------------
-class TriangleMesh : public Shape
+class TriangleMesh
 {
 public:
 	TriangleMesh() = default;
@@ -50,7 +50,8 @@ public:
 		const std::vector<Idx>& indices,
         const std::shared_ptr<Material>& material);
 
-	bool hit(const math::Ray & r, float tMax, HitRecord & collision) const override;
+	bool hit(const math::Ray & r, float tMax, HitRecord & collision) const;
+    const auto& bbox() const { return mBBox; }
 
 private:
 
@@ -76,41 +77,11 @@ private:
 		normalize(hit.normal);
 	}
 
+    math::AABB mBBox; // Bounding box
 	AABBTree<2> mBVH;
 	std::vector<uint16_t> mIndices;
 	std::vector<VtxInfo> mVtxData;
     std::shared_ptr<Material> mMaterial;
-};
-
-class MultiMesh : public Shape
-{
-public:
-	MultiMesh(const std::vector<TriangleMesh>& mesh)
-		: mMeshes(mesh)
-	{
-		mBBox.clear();
-		for(auto& mesh : mMeshes)
-		{
-			mBBox.add(mesh.bbox().min());
-			mBBox.add(mesh.bbox().max());
-		}
-	}
-
-	bool hit(const math::Ray & r, float tMax, HitRecord & collision) const override
-	{
-		bool hit_any = false;
-		for(size_t i = 0; i < mMeshes.size(); ++i)
-		{
-			if(mMeshes[i].hit(r, tMax, collision))
-			{
-				tMax = collision.t;
-				hit_any = true;
-			}
-		}
-		return hit_any;
-	}
-
-	const std::vector<TriangleMesh> mMeshes;
 };
 
 //-------------------------------------------------------------------------------------------------
