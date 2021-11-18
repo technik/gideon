@@ -47,7 +47,8 @@ public:
 	template<typename Idx>
 	TriangleMesh(
 		const std::vector<VtxInfo>& vertices,
-		const std::vector<Idx>& indices);
+		const std::vector<Idx>& indices,
+        const std::shared_ptr<Material>& material);
 
 	bool hit(const math::Ray & r, float tMax, HitRecord & collision) const override;
 
@@ -78,14 +79,14 @@ private:
 	AABBTree<2> mBVH;
 	std::vector<uint16_t> mIndices;
 	std::vector<VtxInfo> mVtxData;
+    std::shared_ptr<Material> mMaterial;
 };
 
 class MultiMesh : public Shape
 {
 public:
-	MultiMesh(const std::vector<TriangleMesh>& mesh, const std::vector<std::shared_ptr<Material>>& mat)
+	MultiMesh(const std::vector<TriangleMesh>& mesh)
 		: mMeshes(mesh)
-		, mMaterials(mat)
 	{
 		mBBox.clear();
 		for(auto& mesh : mMeshes)
@@ -102,7 +103,6 @@ public:
 		{
 			if(mMeshes[i].hit(r, tMax, collision))
 			{
-				collision.material = mMaterials[i].get();
 				tMax = collision.t;
 				hit_any = true;
 			}
@@ -111,7 +111,6 @@ public:
 	}
 
 	const std::vector<TriangleMesh> mMeshes;
-	const std::vector<std::shared_ptr<Material>> mMaterials;
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -131,7 +130,9 @@ inline TriangleMesh::VtxInfo TriangleMesh::VtxInfo::lerp(const VtxInfo& b, float
 template<typename Idx>
 TriangleMesh::TriangleMesh(
 	const std::vector<VtxInfo>& vertices,
-	const std::vector<Idx>& indices)
+	const std::vector<Idx>& indices,
+    const std::shared_ptr<Material>& material)
+    : mMaterial(material)
 {
 	mVtxData = vertices;
 	auto nTris = indices.size() / 3;
@@ -160,5 +161,10 @@ TriangleMesh::TriangleMesh(
 //-------------------------------------------------------------------------------------------------
 inline bool TriangleMesh::hit(const math::Ray & r, float tMax, HitRecord & collision) const
 {
-	return mBVH.hit(r, r.implicitSimd(), math::float4(tMax), collision);
+    if (mBVH.hit(r, r.implicitSimd(), math::float4(tMax), collision))
+    {
+        collision.material = mMaterial.get();
+        return true;
+    }
+    return false;
 }

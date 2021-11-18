@@ -23,12 +23,11 @@
 #include <math/matrix.h>
 #include <math/ray.h>
 #include <memory>
-#include "shape.h"
 
 class MeshInstance
 {
 public:
-	MeshInstance(const std::shared_ptr<Shape>& mesh, const math::Matrix34f& x)
+	MeshInstance(const std::shared_ptr<TriangleMesh>& mesh, const math::Matrix34f& x)
 		: mMesh(mesh)
 	{
 		mXForm = x;
@@ -45,16 +44,12 @@ public:
 	{
 		math::Ray localRay (mXFormInv.transformPos(r.origin()), mXFormInv.transformDir(r.direction()));
 
-        float tout;
-		if(mMesh->bbox().intersect(localRay.implicit(), tMax, tout))
+		if(mMesh->hit(localRay, tMax, collision))
 		{
-			if(mMesh->hit(localRay, tMax, collision))
-			{
-				collision.normal = mXForm.transformDir(mXFormScaleSign * collision.normal);
-				auto localHitPoint = localRay.at(collision.t);
-				collision.p = mXForm.transformPos(localHitPoint);
-				return true;
-			}
+			collision.normal = mXForm.transformDir(mXFormScaleSign * collision.normal);
+			auto localHitPoint = localRay.at(collision.t);
+			collision.p = mXForm.transformPos(localHitPoint);
+			return true;
 		}
 
 		return false;
@@ -67,7 +62,7 @@ public:
 
 
 private:
-	std::shared_ptr<const Shape> mMesh;
+	std::shared_ptr<const TriangleMesh> mMesh;
 	math::Matrix34f mXForm;
 	math::Matrix34f mXFormInv;
 	float mXFormScaleSign;

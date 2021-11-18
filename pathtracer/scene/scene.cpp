@@ -105,6 +105,12 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 	}
 }
 
+uint32_t Scene::makeBLAS(const std::shared_ptr<TriangleMesh>& primitive)
+{
+    mTLASBuffer.push_back(primitive);
+    return uint32_t(mTLASBuffer.size() - 1);
+}
+
 void Scene::buildTLAS()
 {
     auto t0 = chrono::high_resolution_clock::now();

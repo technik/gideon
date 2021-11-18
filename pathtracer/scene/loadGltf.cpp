@@ -216,14 +216,15 @@ namespace { // Auxiliary functions
 	}
 
 	//----------------------------------------------------------------------------------------------
-	auto loadSingleMesh(
+    // Returns the list of BLAS ids for the loaded mesh's primitives
+    std::vector<uint32_t> loadSingleMesh(
 		const fx::gltf::Document& document,
+        Scene& dstScene,
 		const std::vector<uint8_t>& bufferData,
 		const fx::gltf::Mesh& meshDesc,
 		const std::vector<std::shared_ptr<Material>>& materials)
 	{
-		std::vector<TriangleMesh> primitives;
-		std::vector<std::shared_ptr<Material>> meshMaterials;
+		std::vector<uint32_t> primitives;
 		for(auto& primitiveDesc : meshDesc.primitives)
 		{
 			auto indices = readIndices(document, bufferData, primitiveDesc.indices);
@@ -254,11 +255,11 @@ namespace { // Auxiliary functions
 					vertices[i].tangent = tangents[i];
 			}
 
-			primitives.emplace_back(vertices, indices);
-			meshMaterials.push_back(materials[primitiveDesc.material]);
+            auto primitive = std::make_shared<TriangleMesh>(vertices, indices, materials[primitiveDesc.material]);
+            primitives.push_back(dstScene.makeBLAS(primitive));
 		}
 
-		return std::make_shared<MultiMesh>(primitives, meshMaterials);
+		return primitives;
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -275,16 +276,27 @@ namespace { // Auxiliary functions
 		}
 	}
 
+    struct MultiMesh
+    {
+        std::vector<uint32_t> primitives;
+    };
+
 	//----------------------------------------------------------------------------------------------
-	std::vector<std::shared_ptr<Shape>> loadMeshes(const std::string& _assetsFolder, const fx::gltf::Document& document, const std::vector<std::shared_ptr<Material>>& materials)
+    // Returns the list of BLAS created for the loaded meshes
+	std::vector<MultiMesh> loadMeshes(
+        const std::string& _assetsFolder, const fx::gltf::Document& document,
+        Scene& dstScene,
+        const std::vector<std::shared_ptr<Material>>& materials)
 	{
 		std::vector<uint8_t> bufferData;
 		loadRawBuffer((_assetsFolder+document.buffers[0].uri).c_str(), bufferData);
 
-		std::vector<std::shared_ptr<Shape>> meshes;
+		std::vector<MultiMesh> meshes;
 		for(auto& meshDesc : document.meshes)
 		{
-			meshes.push_back(loadSingleMesh(document, bufferData, meshDesc, materials));
+            MultiMesh mesh;
+            mesh.primitives = loadSingleMesh(document, dstScene, bufferData, meshDesc, materials);
+			meshes.push_back(mesh);
 		}
 
 		return meshes;
@@ -300,7 +312,7 @@ bool loadGltf(const char* fileName, Scene& dstScene, float aspectRatio, bool ove
 		return false;
 
 	// Load transforms for all nodes
-	std::vector<math::Matrix34f> transforms(document.nodes.size());
+	auto transforms = std::vector<math::Matrix34f>(document.nodes.size());
 	if(!loadTransforms(document, transforms))
 		return false;
 
@@ -330,13 +342,19 @@ bool loadGltf(const char* fileName, Scene& dstScene, float aspectRatio, bool ove
 		textures = loadTextures(folder, document);
 	}
 	auto materials = loadMaterials(document, textures, overrideMaterials);
-	auto meshes = loadMeshes(folder, document, materials);
+	auto meshes = loadMeshes(folder, document, dstScene, materials);
 	for(int i = 0; i < document.nodes.size(); ++i)
 	{
 		const auto& node = document.nodes[i];
+        auto& pose = transforms[i];
+
 		if(node.mesh >= 0)
 		{
-			dstScene.addRenderable(make_shared<MeshInstance>(meshes[node.mesh], transforms[i]));
+            auto& mesh = meshes[node.mesh];
+            for (auto& primitive : mesh.primitives)
+            {
+                dstScene.addRenderable(primitive, pose);
+            }
 		}
 	}
 

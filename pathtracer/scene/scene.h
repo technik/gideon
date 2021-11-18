@@ -33,15 +33,17 @@ class Scene
 public:
 	Scene() {}
 
-	void addRenderable(const std::shared_ptr<MeshInstance>& renderable) 
+	void addRenderable(uint32_t blasId, const math::Matrix34f& pose) 
 	{
-		mRenderables.emplace_back(renderable);
+		mRenderables.emplace_back(std::make_shared<MeshInstance>(mTLASBuffer[blasId], pose));
 	}
 
 	void addCamera(const std::shared_ptr<Camera>& cam)
 	{
 		mCameras.emplace_back(cam);
 	}
+
+    uint32_t makeBLAS(const std::shared_ptr<TriangleMesh>& primitive);
 
 	const std::vector<std::shared_ptr<Camera>>& cameras() const { return mCameras; }
 	std::vector<std::shared_ptr<Camera>>& cameras() { return mCameras; }
@@ -61,6 +63,7 @@ private:
     void buildTLAS();
 
     CWBVH mTlas;
+    std::vector<std::shared_ptr<TriangleMesh>> mTLASBuffer;
 	std::vector<std::shared_ptr<MeshInstance>>	mRenderables;
 	std::vector<std::shared_ptr<Camera>>	mCameras;
 };
