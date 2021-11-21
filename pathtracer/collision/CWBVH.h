@@ -20,6 +20,7 @@
 #pragma once
 
 #include <memory>
+#include <functional>
 #include <vector>
 
 #include <math/vector.h>
@@ -48,7 +49,38 @@ public:
         HitRecord& collision) const;
 
 private:
-    struct BranchNode;
+
+    struct BranchNode
+    {
+        using BlasCallback = std::function<float(uint32_t leafId, float tMax)>;
+
+        struct CompressedAABB
+        {
+            uint8_t low[3];
+            uint8_t high[3];
+        };
+
+        float hitClosest(
+            const BranchNode* nodeList,
+            math::Ray::Implicit& r,
+            float tMax,
+            uint32_t& hitId,
+            const BlasCallback& cb) const;
+
+        void setLocalAABB(const math::AABB& localAABB);
+        math::Vec3f getLocalScale() const;
+        math::AABB getChildAABB(int childIndex) const;
+        void setChildAABB(const math::AABB& childAABB, int childIndex);
+
+        math::Vec3f localOrigin;
+        uint8_t localScaleExp[3];
+        uint8_t childLeafMask = 0;
+        CompressedAABB childCompressedAABB[2];
+
+        uint32_t childNdx[2] = {};
+    };
+
+    static_assert(sizeof(BranchNode) == 36);
 
     BranchNode* m_binTreeRoot{};
     std::vector<std::shared_ptr<MeshInstance>>* m_instances{};
@@ -65,28 +97,9 @@ private:
         int           first,
         int           last);
 
-    struct InternalNode
-    {
-        math::Vec3f origin;
-        uint8_t scaleExp[3]; // Exponent bits of quantized bbox size
-        uint8_t imask;
-        uint32_t childBaseIndex;
-        uint32_t leafBaseIndex;
-        // Compressed children SOA
-        uint8_t meta[8];
-        uint8_t qLoX[8];
-        uint8_t qLoY[8];
-        uint8_t qLoZ[8];
-        uint8_t qHiX[8];
-        uint8_t qHiY[8];
-        uint8_t qHiZ[8];
-    };
-
     uint32_t allocBranch(uint32_t numNodes);
     uint32_t m_branchCount = 0;
 
     std::unique_ptr<BranchNode[]> m_internalNodes;
     math::AABB m_globalAABB;
-
-    static_assert(sizeof(InternalNode) == 80);
 };

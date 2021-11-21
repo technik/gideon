@@ -54,121 +54,101 @@ unsigned int expandBits(unsigned int v)
     return v;
 }
 
-struct CompressedAABB
+float CWBVH::BranchNode::hitClosest(
+    const BranchNode* nodeList,
+    math::Ray::Implicit& r,
+    float tMax,
+    uint32_t& hitId,
+    const BlasCallback& cb) const
 {
-    uint8_t low[3];
-    uint8_t high[3];
-};
-
-struct CWBVH::BranchNode
-{
-    using BlasCallback = std::function<float(uint32_t leafId, float tMax)>;
-
-    float hitClosest(
-        const BranchNode* nodeList,
-        math::Ray::Implicit& r,
-        float tMax,
-        uint32_t& hitId,
-        const BlasCallback& cb) const
+    float t = -1;
+    float maxEnter;
+    for (int i = 0; i < 2; ++i)
     {
-        float t = -1;
-        float maxEnter;
-        for (int i = 0; i < 2; ++i)
+        if (getChildAABB(i).intersect(r, tMax, maxEnter))
         {
-            if (getChildAABB(i).intersect(r, tMax, maxEnter))
+            if (childLeafMask & (1<<i))
             {
-                if (childLeafMask & (1<<i))
+                float tHit = cb(childNdx[i], tMax);
+                if (tHit >= 0)
                 {
-                    float tHit = cb(childNdx[i], tMax);
-                    if (tHit >= 0)
-                    {
-                        hitId = childNdx[i];
-                        t = tHit;
-                    }
+                    hitId = childNdx[i];
+                    t = tHit;
                 }
-                else
-                {
-                    float tChild = nodeList[childNdx[i]].hitClosest(nodeList, r, tMax, hitId, cb);
-                    if (tChild > -1)
-                    {
-                        t = tChild;
-                    }
-                }
-                if (t > -1)
-                    tMax = t;
             }
+            else
+            {
+                float tChild = nodeList[childNdx[i]].hitClosest(nodeList, r, tMax, hitId, cb);
+                if (tChild > -1)
+                {
+                    t = tChild;
+                }
+            }
+            if (t > -1)
+                tMax = t;
         }
-        return t;
     }
+    return t;
+}
 
-    void setLocalAABB(const math::AABB& localAABB)
-    {
-        localOrigin = localAABB.min();
-        auto extent = localAABB.size();
-        localScaleExp[0] = nextPow2Log2(extent.x());
-        localScaleExp[1] = nextPow2Log2(extent.y());
-        localScaleExp[2] = nextPow2Log2(extent.z());
-    }
+void CWBVH::BranchNode::setLocalAABB(const math::AABB& localAABB)
+{
+    localOrigin = localAABB.min();
+    auto extent = localAABB.size();
+    localScaleExp[0] = nextPow2Log2(extent.x());
+    localScaleExp[1] = nextPow2Log2(extent.y());
+    localScaleExp[2] = nextPow2Log2(extent.z());
+}
 
-    math::Vec3f getLocalScale() const
-    {
-        return math::Vec3f(
-            floatFromExponent(localScaleExp[0]),
-            floatFromExponent(localScaleExp[1]),
-            floatFromExponent(localScaleExp[2])
-        );
-    }
+math::Vec3f CWBVH::BranchNode::getLocalScale() const
+{
+    return math::Vec3f(
+        floatFromExponent(localScaleExp[0]),
+        floatFromExponent(localScaleExp[1]),
+        floatFromExponent(localScaleExp[2])
+    );
+}
 
-    math::AABB getChildAABB(int childIndex) const
-    {
-        const auto& compressed = childCompressedAABB[childIndex];
-        // recover size
-        math::Vec3f parentExtent = getLocalScale();
-        math::Vec3f low = localOrigin;
-        low.x() += compressed.low[0] * parentExtent.x() / 255;
-        low.y() += compressed.low[1] * parentExtent.y() / 255;
-        low.z() += compressed.low[2] * parentExtent.z() / 255;
+math::AABB CWBVH::BranchNode::getChildAABB(int childIndex) const
+{
+    const auto& compressed = childCompressedAABB[childIndex];
+    // recover size
+    math::Vec3f parentExtent = getLocalScale();
+    math::Vec3f low = localOrigin;
+    low.x() += compressed.low[0] * parentExtent.x() / 255;
+    low.y() += compressed.low[1] * parentExtent.y() / 255;
+    low.z() += compressed.low[2] * parentExtent.z() / 255;
 
-        math::Vec3f high = localOrigin;
-        high.x() += compressed.high[0] * parentExtent.x() / 255;
-        high.y() += compressed.high[1] * parentExtent.y() / 255;
-        high.z() += compressed.high[2] * parentExtent.z() / 255;
+    math::Vec3f high = localOrigin;
+    high.x() += compressed.high[0] * parentExtent.x() / 255;
+    high.y() += compressed.high[1] * parentExtent.y() / 255;
+    high.z() += compressed.high[2] * parentExtent.z() / 255;
 
-        return math::AABB(low, high);
-    }
+    return math::AABB(low, high);
+}
 
-    void setChildAABB(const math::AABB& childAABB, int childIndex)
-    {
-        math::Vec3f relMin = childAABB.min() - localOrigin;
-        math::Vec3f relMax = childAABB.max() - localOrigin;
-        // Normalize range
-        auto localExtent = getLocalScale();
-        auto normMin = relMin / localExtent;
-        auto normMax = relMax / localExtent;
+void CWBVH::BranchNode::setChildAABB(const math::AABB& childAABB, int childIndex)
+{
+    math::Vec3f relMin = childAABB.min() - localOrigin;
+    math::Vec3f relMax = childAABB.max() - localOrigin;
+    // Normalize range
+    auto localExtent = getLocalScale();
+    auto normMin = relMin / localExtent;
+    auto normMax = relMax / localExtent;
 
-        // Quantize coordinates
-        CompressedAABB aabb;
-        aabb.low[0] = uint8_t(normMin.x() * 255);
-        aabb.low[1] = uint8_t(normMin.y() * 255);
-        aabb.low[2] = uint8_t(normMin.z() * 255);
+    // Quantize coordinates
+    CompressedAABB aabb;
+    aabb.low[0] = uint8_t(normMin.x() * 255);
+    aabb.low[1] = uint8_t(normMin.y() * 255);
+    aabb.low[2] = uint8_t(normMin.z() * 255);
 
-        aabb.high[0] = (uint8_t)std::min((normMax.x() * 255)+1, 255.f);
-        aabb.high[1] = (uint8_t)std::min((normMax.y() * 255)+1, 255.f);
-        aabb.high[2] = (uint8_t)std::min((normMax.z() * 255)+1, 255.f);
+    aabb.high[0] = (uint8_t)std::min((normMax.x() * 255)+1, 255.f);
+    aabb.high[1] = (uint8_t)std::min((normMax.y() * 255)+1, 255.f);
+    aabb.high[2] = (uint8_t)std::min((normMax.z() * 255)+1, 255.f);
 
-        // Store compressed in the index
-        childCompressedAABB[childIndex] = aabb;
-    }
-
-    math::Vec3f localOrigin;
-    uint8_t localScaleExp[3];
-    uint8_t childLeafMask = 0;
-    CompressedAABB childCompressedAABB[2];
-
-    uint32_t childNdx[2] = {};
-
-    //static_assert(sizeof(CWBVH::BranchNode) == 36);
-};
+    // Store compressed in the index
+    childCompressedAABB[childIndex] = aabb;
+}
 
 // Out of line constructor for smart pointers
 CWBVH::CWBVH()
