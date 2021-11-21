@@ -73,40 +73,29 @@ struct CWBVH::BranchNode
     {
         float t = -1;
         float maxEnter;
-        if (getChildAABB(0).intersect(r, tMax, maxEnter))
+        for (int i = 0; i < 2; ++i)
         {
-            if (childLeafMask & 1)
+            if (getChildAABB(i).intersect(r, tMax, maxEnter))
             {
-                float tHit = cb(childA, tMax);
-                if (tHit >= 0)
+                if (childLeafMask & (1<<i))
                 {
-                    hitId = childA;
-                    t = tHit;
+                    float tHit = cb(childNdx[i], tMax);
+                    if (tHit >= 0)
+                    {
+                        hitId = childNdx[i];
+                        t = tHit;
+                    }
                 }
-            }
-            else
-            {
-                t = nodeList[childA].hitClosest(nodeList, r, tMax, hitId, cb);
-            }
-            if (t > -1)
-                tMax = t;
-        }
-        if (getChildAABB(1).intersect(r, tMax, maxEnter))
-        {
-            if (childLeafMask & 2)
-            {
-                float tHit = cb(childB, tMax);
-                if (tHit >= 0)
+                else
                 {
-                    hitId = childB;
-                    t = tHit;
+                    float tChild = nodeList[childNdx[i]].hitClosest(nodeList, r, tMax, hitId, cb);
+                    if (tChild > -1)
+                    {
+                        t = tChild;
+                    }
                 }
-            }
-            else
-            {
-                float tb = nodeList[childB].hitClosest(nodeList, r, tMax, hitId, cb);
-                if (tb > -1)
-                    t = tb;
+                if (t > -1)
+                    tMax = t;
             }
         }
         return t;
@@ -176,8 +165,7 @@ struct CWBVH::BranchNode
     uint8_t childLeafMask = 0;
     CompressedAABB childCompressedAABB[2];
 
-    uint32_t childA = 0;
-    uint32_t childB = 0;
+    uint32_t childNdx[2] = {};
 
     //static_assert(sizeof(CWBVH::BranchNode) == 36);
 };
@@ -254,11 +242,11 @@ uint32_t CWBVH::generateHierarchy(
     {
         bboxA = sortedLeafAABBs[first];
         branch->childLeafMask |= 1;
-        branch->childA = sortedObjectIDs[first];
+        branch->childNdx[0] = sortedObjectIDs[first];
     }
     else
     {
-        branch->childA = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
+        branch->childNdx[0] = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
             first, split, bboxA);
     }
 
@@ -266,11 +254,11 @@ uint32_t CWBVH::generateHierarchy(
     {
         bboxB = sortedLeafAABBs[last];
         branch->childLeafMask |= 2;
-        branch->childB = sortedObjectIDs[last];
+        branch->childNdx[1] = sortedObjectIDs[last];
     }
     else
     {
-        branch->childB = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
+        branch->childNdx[1] = generateHierarchy(sortedLeafAABBs, sortedMortonCodes, sortedObjectIDs,
             split + 1, last, bboxB);
     }
 
