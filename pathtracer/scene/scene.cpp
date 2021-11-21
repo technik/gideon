@@ -114,10 +114,10 @@ uint32_t Scene::makeBLAS(const std::shared_ptr<TriangleMesh>& primitive)
 void Scene::buildTLAS()
 {
     auto t0 = chrono::high_resolution_clock::now();
-    auto dt = chrono::high_resolution_clock::now() - t0;
 
     mTlas.build(mRenderables);
 
+    auto dt = chrono::high_resolution_clock::now() - t0;
     auto us = chrono::duration_cast<chrono::nanoseconds>(dt).count() * 0.001;
 
     if(us < 1)
