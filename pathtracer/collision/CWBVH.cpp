@@ -76,16 +76,16 @@ math::AABB CWBVH::BranchNode::getChildAABB(int childIndex) const
 {
     const auto& compressed = childCompressedAABB[childIndex];
     // recover size
-    math::Vec3f parentExtent = getLocalScale();
+    math::Vec3f parentNormExtent = getLocalScale() / 255;
     math::Vec3f low = localOrigin;
-    low.x() += compressed.low[0] * parentExtent.x() / 255;
-    low.y() += compressed.low[1] * parentExtent.y() / 255;
-    low.z() += compressed.low[2] * parentExtent.z() / 255;
+    low.x() += compressed.low[0] * parentNormExtent.x();
+    low.y() += compressed.low[1] * parentNormExtent.y();
+    low.z() += compressed.low[2] * parentNormExtent.z();
 
     math::Vec3f high = localOrigin;
-    high.x() += compressed.high[0] * parentExtent.x() / 255;
-    high.y() += compressed.high[1] * parentExtent.y() / 255;
-    high.z() += compressed.high[2] * parentExtent.z() / 255;
+    high.x() += compressed.high[0] * parentNormExtent.x();
+    high.y() += compressed.high[1] * parentNormExtent.y();
+    high.z() += compressed.high[2] * parentNormExtent.z();
 
     return math::AABB(low, high);
 }
