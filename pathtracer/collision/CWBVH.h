@@ -44,6 +44,7 @@ public:
 
     //bool hitAny(const math::Ray&, float tMax);
     bool hitClosest(
+        std::vector<uint32_t>& stack,
         const math::Ray&,
         float tMax,
         HitRecord& collision) const;
@@ -59,13 +60,6 @@ private:
             uint8_t low[3];
             uint8_t high[3];
         };
-
-        float hitClosest(
-            const BranchNode* nodeList,
-            math::Ray::Implicit& r,
-            float tMax,
-            uint32_t& hitId,
-            const BlasCallback& cb) const;
 
         void setLocalAABB(const math::AABB& localAABB);
         math::Vec3f getLocalScale() const;

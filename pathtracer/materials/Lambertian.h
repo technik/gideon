@@ -22,6 +22,25 @@
 #include "material.h"
 #include <math/ray.h>
 
+inline bool lambertScatter(
+    const math::Ray& in,
+    const math::Vec3f& pos,
+    const math::Vec3f& normal,
+    const math::Vec3f& albedo,
+    math::Vec3f& attenuation,
+    math::Vec3f& emitted,
+    math::Ray& out,
+    RandomGenerator& random
+)
+{
+    emitted = math::Vec3f(0.f);
+    bool normalSignFlip = dot(normal, in.direction()) > 0.f;
+    auto target = (normalSignFlip ? -normal : normal) + random.unit_vector();
+    out = math::Ray(pos, normalize(target));
+    attenuation = albedo;
+    return true;
+}
+
 class Lambertian : public Material
 {
 public:

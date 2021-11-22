@@ -49,6 +49,7 @@ public:
 	std::vector<std::shared_ptr<Camera>>& cameras() { return mCameras; }
 
 	bool hit(
+        std::vector<uint32_t>& nodeStack,
 		const math::Ray& r,
 		float tMax,
 		HitRecord& collision
