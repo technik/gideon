@@ -19,6 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
+#include <cassert>
 #include <memory>
 #include <functional>
 #include <vector>
@@ -44,7 +45,6 @@ public:
 
     //bool hitAny(const math::Ray&, float tMax);
     bool hitClosest(
-        std::vector<uint32_t>& stack,
         const math::Ray&,
         float tMax,
         HitRecord& collision) const;
@@ -72,6 +72,36 @@ private:
         CompressedAABB childCompressedAABB[2];
 
         uint32_t childNdx[2] = {};
+    };
+
+    class TraversalStack
+    {
+    public:
+        // Point stack to the root of the tree
+        void reset()
+        {
+            stack[0] = 0;
+            top = &stack[1];
+        }
+
+        bool empty() const { return stack == top; }
+
+        void push(uint32_t nodeId)
+        {
+            *top = nodeId;
+            ++top;
+        }
+
+        uint32_t pop() {
+            --top;
+            assert(top >= stack);
+            return *top;
+        }
+
+    private:
+        static constexpr uint32_t kMaxStackSize = 40;
+        uint32_t stack[kMaxStackSize];
+        uint32_t* top = stack;
     };
 
     static_assert(sizeof(BranchNode) == 36);

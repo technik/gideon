@@ -278,7 +278,6 @@ void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
 }
 
 bool CWBVH::hitClosest(
-    std::vector<uint32_t>& stack,
     const math::Ray& ray,
     float tMax,
     HitRecord& collision) const
@@ -307,14 +306,13 @@ bool CWBVH::hitClosest(
     };
 
     // Init traversal stack to the root
-    stack.clear();
-    stack.push_back(0);
+    TraversalStack stack;
+    stack.reset();
     float t = -1;
 
     while (!stack.empty())
     {
-        const auto& branch = m_internalNodes[stack.back()];
-        stack.pop_back();
+        const auto& branch = m_internalNodes[stack.pop()];
 
         for (int i = 0; i < 2; ++i)
         {
@@ -333,7 +331,7 @@ bool CWBVH::hitClosest(
                 }
                 else // Child is a branch. Add it to the stack
                 {
-                    stack.push_back(branch.childNdx[i]);
+                    stack.push(branch.childNdx[i]);
                 }
             }
         }

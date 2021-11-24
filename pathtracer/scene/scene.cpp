@@ -37,13 +37,12 @@ using namespace math;
 
 //--------------------------------------------------------------------------------------------------
 bool Scene::hit(
-    std::vector<uint32_t>& nodeStack,
 	const math::Ray& r,
 	float tMax,
 	HitRecord& collision
 ) const
 {
-    return mTlas.hitClosest(nodeStack, r, tMax, collision);
+    return mTlas.hitClosest(r, tMax, collision);
 }
 
 //--------------------------------------------------------------------------------------------------

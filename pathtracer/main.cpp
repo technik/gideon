@@ -49,7 +49,7 @@ namespace {
 }
 
 //--------------------------------------------------------------------------------------------------
-Vec3f color(std::vector<uint32_t>& nodeStack, Ray r, const Scene& world, RandomGenerator& random)
+Vec3f color(Ray r, const Scene& world, RandomGenerator& random)
 {
 	assert(abs(r.direction().sqNorm()-1) < 1e-4f); // Check ray direction
 
@@ -62,7 +62,7 @@ Vec3f color(std::vector<uint32_t>& nodeStack, Ray r, const Scene& world, RandomG
 
     while(depth <= MAX_BOUNCES)
     {
-        if (world.hit(nodeStack, r, farPlane, hit))
+        if (world.hit(r, farPlane, hit))
         {
             // Evaluate light bounce
             Ray scatteredRay;
@@ -92,7 +92,6 @@ using Rect = math::Rectangle<size_t>;
 
 //--------------------------------------------------------------------------------------------------
 void renderTile(
-    std::vector<uint32_t>& nodeStack,
 	Rect window,
 	const Scene& world,
 	Image& dst,
@@ -113,7 +112,7 @@ void renderTile(
 				float v = 1.f-float(i+random.scalar())/totalNy;
 				Ray r = cam.get_ray(u,v);
 
-				accum += color(nodeStack, r, world, random);
+				accum += color(r, world, random);
 			}
 			accum /= float(nSamples);
 
@@ -174,9 +173,7 @@ int main(int _argc, const char** _argv)
             tile.x1 = tile.x0 + params.tileSize;
             tile.y1 = tile.y0 + params.tileSize;
 
-            std::vector<uint32_t> nodeStack(40);
-
-            renderTile(nodeStack, tile, world, outputImage, threadData[workerIndex].random, params.ns);
+            renderTile(tile, world, outputImage, threadData[workerIndex].random, params.ns);
 		},
 		cout))
 	{
