@@ -24,8 +24,6 @@ uint32_t spaceBits(uint32_t x)
     return result;
 }
 
-float floatFromExponent(int8_t e);
-
 // Returns the log2(p) where p is the smallest power of two such that p > abs(x).
 // note that p can be < 0, in cases where 0<abs(x)<1.
 // Assumes non denormal floats.
