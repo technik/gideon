@@ -43,6 +43,12 @@ public:
     ~CWBVH();
     void build(std::vector<std::shared_ptr<MeshInstance>>& instances);
 
+    template<class LeafOp>
+    inline bool traceRay(
+        const math::Ray::Implicit& ray,
+        float tMax,
+        const LeafOp& leafCallback) const;
+
     //bool hitAny(const math::Ray&, float tMax);
     bool hitClosest(
         const math::Ray&,
@@ -106,6 +112,8 @@ private:
 
     static_assert(sizeof(BranchNode) == 36);
 
+    bool continueTraverse(TraversalStack& stack, uint32_t& hitNodeIndex);
+
     BranchNode* m_binTreeRoot{};
     std::vector<std::shared_ptr<MeshInstance>>* m_instances{};
 
@@ -127,3 +135,49 @@ private:
     std::unique_ptr<BranchNode[]> m_internalNodes;
     math::AABB m_globalAABB;
 };
+
+// Inline implementation
+template<class LeafOp>
+inline bool CWBVH::traceRay(
+    const math::Ray::Implicit& r,
+    float tMax,
+    const LeafOp& leafCallback) const
+{
+    assert(m_binTreeRoot != nullptr);
+
+    // Check against global aabb. This should be moved outside for Two level AS to be efficient.
+    if (!m_globalAABB.intersect(r, tMax))
+        return false;
+
+    // Init traversal stack to the root
+    TraversalStack stack;
+    stack.reset();
+    float t = -1;
+
+    while (!stack.empty())
+    {
+        const auto& branch = m_internalNodes[stack.pop()];
+
+        for (int i = 0; i < 2; ++i)
+        {
+            if (branch.getChildAABB(i).intersect(r, tMax))
+            {
+                if (branch.childLeafMask & (1 << i)) // Child is a leaf, perform leaf test
+                {
+                    if(float tHit = leafCallback(branch.childNdx[i], tMax); tHit >= 0)
+                    {
+                        hitId = branch.childNdx[i];
+                        t = tHit;
+                        tMax = t;
+                    }
+                }
+                else // Child is a branch. Add it to the stack
+                {
+                    stack.push(branch.childNdx[i]);
+                }
+            }
+        }
+    }
+
+    return t >= 0;
+}

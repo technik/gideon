@@ -287,9 +287,8 @@ bool CWBVH::hitClosest(
 
     // Prepare implicit ray for fast intersection tests
     math::Ray::Implicit r = ray.implicit();
-    float maxEnter;
     // Check against global aabb
-    if (!m_globalAABB.intersect(r, tMax, maxEnter))
+    if (!m_globalAABB.intersect(r, tMax))
         return false;
 
     // Leaf callback
@@ -316,8 +315,7 @@ bool CWBVH::hitClosest(
 
         for (int i = 0; i < 2; ++i)
         {
-            float maxEnter;
-            if (branch.getChildAABB(i).intersect(r, tMax, maxEnter))
+            if (branch.getChildAABB(i).intersect(r, tMax))
             {
                 if (branch.childLeafMask & (1 << i)) // Child is a leaf, perform leaf test
                 {

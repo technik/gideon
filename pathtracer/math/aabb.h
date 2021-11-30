@@ -106,6 +106,19 @@ namespace math
 			auto minLeave = math::min(tLeave.x(), math::min(tLeave.y(), math::min(tLeave.z(), _tmax)));
 			return minLeave >= _maxEnter;
 		}
+
+        // Intersection and distance
+        /// find intersection between this box and a ray, in the ray's parametric interval [_tmin, _tmax]
+        bool intersect(const Ray::Implicit& _r, float _tmax) const {
+            Vector t1 = (mMin - _r.o) * _r.n;
+            Vector t2 = (mMax - _r.o) * _r.n;
+            // Swapping the order of comparison is important because of NaN behavior
+            auto tEnter = math::min(t1, t2);
+            auto tLeave = math::max(t2, t1);
+            auto maxEnter = math::max(tEnter.x(), math::max(tEnter.y(), math::max(tEnter.z(), 0.f)));
+            auto minLeave = math::min(tLeave.x(), math::min(tLeave.y(), math::min(tLeave.z(), _tmax)));
+            return minLeave >= maxEnter;
+        }
 	private:
 		Vector mMin;
 		Vector mMax;
