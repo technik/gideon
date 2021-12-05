@@ -55,6 +55,50 @@ public:
         float tMax,
         HitRecord& collision) const;
 
+    class TraversalState
+    {
+    public:
+        // Point stack to the root of the tree
+        void reset(math::Ray::Implicit& _r, float _tMax)
+        {
+            // Init ray
+            r = _r;
+            tMax = _tMax;
+            // Reset stack
+            stack[0] = 0;
+            top = &stack[1];
+        }
+
+        bool empty() const { return stack == top; }
+
+        void push(uint32_t nodeId)
+        {
+            // Store nodeId together with the index of the next branch that needs parsing,
+            // which is always 0 when pushing a brand new node.
+            assert(((nodeId << 1) >> 1) == nodeId);
+            *top = nodeId << 1;
+            ++top;
+        }
+
+        uint32_t pop() {
+            auto nodeAndChildNdx = *(top - 1);
+            if ((nodeAndChildNdx & 1) > 0) // This is the second and last time we pop this node
+                --top;
+            else
+                (*(top - 1))++; // Prepare for next iteration
+            assert(top >= stack);
+            return nodeAndChildNdx;
+        }
+
+        math::Ray::Implicit r;
+        float tMax;
+
+    private:
+        static constexpr uint32_t kMaxStackSize = 40;
+        uint32_t stack[kMaxStackSize];
+        uint32_t* top = stack;
+    };
+
 private:
 
     struct BranchNode
@@ -80,39 +124,12 @@ private:
         uint32_t childNdx[2] = {};
     };
 
-    class TraversalStack
-    {
-    public:
-        // Point stack to the root of the tree
-        void reset()
-        {
-            stack[0] = 0;
-            top = &stack[1];
-        }
-
-        bool empty() const { return stack == top; }
-
-        void push(uint32_t nodeId)
-        {
-            *top = nodeId;
-            ++top;
-        }
-
-        uint32_t pop() {
-            --top;
-            assert(top >= stack);
-            return *top;
-        }
-
-    private:
-        static constexpr uint32_t kMaxStackSize = 40;
-        uint32_t stack[kMaxStackSize];
-        uint32_t* top = stack;
-    };
-
     static_assert(sizeof(BranchNode) == 36);
 
-    bool continueTraverse(TraversalStack& stack, uint32_t& hitNodeIndex);
+    bool continueTraverse(
+        TraversalState& stack,
+        uint32_t& hitId
+) const;
 
     BranchNode* m_binTreeRoot{};
     std::vector<std::shared_ptr<MeshInstance>>* m_instances{};

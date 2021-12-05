@@ -277,6 +277,34 @@ void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
     m_binTreeRoot = &m_internalNodes[binTreeRootId];
 }
 
+bool CWBVH::continueTraverse(
+    TraversalState& stack,
+    uint32_t& hitId) const
+{
+    while (!stack.empty())
+    {
+        auto branchAndChildNdx = stack.pop();
+        const auto& branch = m_internalNodes[branchAndChildNdx>>1];
+
+        int i = branchAndChildNdx & 1;
+        if (branch.getChildAABB(i).intersect(stack.r, stack.tMax))
+        {
+            auto childNdx = branch.childNdx[i];
+            if (branch.childLeafMask & (1 << i)) // Child is a leaf, perform leaf test
+            {
+                hitId = childNdx;
+                return true;
+            }
+            else // Child is a branch. Add it to the stack
+            {
+                stack.push(childNdx);
+            }
+        }
+    }
+
+    return false;
+}
+
 bool CWBVH::hitClosest(
     const math::Ray& ray,
     float tMax,
@@ -285,57 +313,29 @@ bool CWBVH::hitClosest(
     if (!m_binTreeRoot)
         return false;
 
-    // Prepare implicit ray for fast intersection tests
-    math::Ray::Implicit r = ray.implicit();
+    // Init traversal stack to the root
+    TraversalState stack;
+    stack.reset(ray.implicit(), tMax);
+
     // Check against global aabb
-    if (!m_globalAABB.intersect(r, tMax))
+    if (!m_globalAABB.intersect(stack.r, stack.tMax))
         return false;
 
-    // Leaf callback
-    uint32_t hitId;
-    auto cb = [this,&ray,&collision](uint32_t leafId, float tMax)
+    collision.t = -1;
+    uint32_t closestHitId;
+
+    while (continueTraverse(stack, closestHitId))
     {
+        // Closest hit logic
         HitRecord hitInfo;
-        if((*m_instances)[leafId]->hit(ray, tMax, hitInfo))
+        if((*m_instances)[closestHitId]->hit(ray, stack.tMax, hitInfo))
         {
             collision = hitInfo;
-            return hitInfo.t;
-        }
-        return -1.f;
-    };
-
-    // Init traversal stack to the root
-    TraversalStack stack;
-    stack.reset();
-    float t = -1;
-
-    while (!stack.empty())
-    {
-        const auto& branch = m_internalNodes[stack.pop()];
-
-        for (int i = 0; i < 2; ++i)
-        {
-            if (branch.getChildAABB(i).intersect(r, tMax))
-            {
-                if (branch.childLeafMask & (1 << i)) // Child is a leaf, perform leaf test
-                {
-                    float tHit = cb(branch.childNdx[i], tMax);
-                    if (tHit >= 0)
-                    {
-                        hitId = branch.childNdx[i];
-                        t = tHit;
-                        tMax = t;
-                    }
-                }
-                else // Child is a branch. Add it to the stack
-                {
-                    stack.push(branch.childNdx[i]);
-                }
-            }
+            stack.tMax = hitInfo.t;
         }
     }
 
-    return t >= 0;
+    return collision.t >= 0;
 }
 
 uint32_t CWBVH::allocBranch(uint32_t numNodes)

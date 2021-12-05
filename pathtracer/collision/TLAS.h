@@ -12,7 +12,6 @@ public:
     float anyHit();
 
 private:
-    uint16_t
 };
 
 class TLAS
