@@ -46,29 +46,6 @@ bool Scene::hit(
 }
 
 //--------------------------------------------------------------------------------------------------
-void Scene::generateRandomScene(RandomGenerator& random)
-{
-	// TODO: Recover this functionality
-	/*mShapes.reserve(1+21*21);
-	for(int i = 0; i < 21; ++i)
-	for(int j = 0; j < 21; ++j)
-	{
-	math::Vec3f albedo = {random.scalar(), random.scalar(), random.scalar()};
-	Material* mat = nullptr;
-	float p = random.scalar();
-	if(p > 0.2f)
-	mat = new Lambertian(albedo);
-	else
-	mat = new Metal(albedo, random.scalar()*0.2f);
-	float h = 0.2f;
-	math::Vec3f center = math::Vec3f(float(i-10), h-0.5f, float(j-10)+-2.f) + math::Vec3f(0.8f*random.scalar(),0.f,0.8f*random.scalar());
-	// Add the sphere
-	mShapes.push_back(new Sphere(center, h, mat));
-	}
-	mShapes.emplace_back(new Sphere(math::Vec3f(0.f, -1000.5f, 0.f), 1000.f, new Lambertian(math::Vec3f(0.5f))));*/
-}
-
-//--------------------------------------------------------------------------------------------------
 void Scene::loadFromCommandLine(const CmdLineParams& params)
 {
 	// Geometry
@@ -107,8 +84,8 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 
 uint32_t Scene::makeBLAS(const std::shared_ptr<TriangleMesh>& primitive)
 {
-    mTLASBuffer.push_back(primitive);
-    return uint32_t(mTLASBuffer.size() - 1);
+    mBLASBuffer.push_back(primitive);
+    return uint32_t(mBLASBuffer.size() - 1);
 }
 
 void Scene::buildTLAS()

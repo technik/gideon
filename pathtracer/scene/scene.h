@@ -35,7 +35,7 @@ public:
 
 	void addRenderable(uint32_t blasId, const math::Matrix34f& pose) 
 	{
-		mRenderables.emplace_back(std::make_shared<MeshInstance>(mTLASBuffer[blasId], pose));
+		mRenderables.emplace_back(std::make_shared<MeshInstance>(mBLASBuffer[blasId], pose));
 	}
 
 	void addCamera(const std::shared_ptr<Camera>& cam)
@@ -54,7 +54,6 @@ public:
 		HitRecord& collision
 	) const;
 
-	void generateRandomScene(RandomGenerator& random);
 	void loadFromCommandLine(const CmdLineParams&);
 
 	Background* background = nullptr;
@@ -63,7 +62,7 @@ private:
     void buildTLAS();
 
     CWBVH mTlas;
-    std::vector<std::shared_ptr<TriangleMesh>> mTLASBuffer;
+    std::vector<std::shared_ptr<TriangleMesh>> mBLASBuffer;
 	std::vector<std::shared_ptr<MeshInstance>>	mRenderables;
 	std::vector<std::shared_ptr<Camera>>	mCameras;
 };
