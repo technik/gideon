@@ -78,6 +78,10 @@ public:
 			float tMax,
 			HitRecord& collision
 		) const;
+
+        // Returns the intersection distance, or -1 if there is no intersection.
+        // Ignores back-facing triangles
+        float hitNoBackface(const math::Ray::Simd& r) const;
 	};
 
 	Simd simd() const {
@@ -161,4 +165,30 @@ inline bool Triangle::Simd::hit(
 	}
 
 	return false;
+}
+
+// Returns the intersection distance, or -1 if there is no intersection.
+// Ignores back-facing triangles
+float Triangle::Simd::hitNoBackface(const math::Ray::Simd& r) const
+{
+    auto rd = r.d;
+    auto h = v - r.o;
+
+    auto hTo = math::Vec3f4(
+        h.x().shuffle<1, 2, 0, 0>(),
+        h.y().shuffle<1, 2, 0, 0>(),
+        h.z().shuffle<1, 2, 0, 0>()
+    );
+
+    auto a = cross(h, hTo);
+    auto zero = math::float4(0.f);
+
+    if ((dot(a, rd) >= zero).none())
+    {
+        float t = (dot(normal, h) / dot(rd, normal)).x();
+
+        return t;
+    }
+
+    return -1;
 }
