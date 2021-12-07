@@ -43,6 +43,7 @@ public:
     ~CWBVH();
     void build(
         const std::vector<math::AABB>& aabbs);
+    auto aabb() const { return m_globalAABB; }
 
     template<class LeafOp>
     inline bool traceRay(
