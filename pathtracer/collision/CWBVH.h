@@ -41,7 +41,8 @@ class CWBVH
 public:
     CWBVH();
     ~CWBVH();
-    void build(std::vector<std::shared_ptr<MeshInstance>>& instances);
+    void build(
+        const std::vector<math::AABB>& aabbs);
 
     template<class LeafOp>
     inline bool traceRay(
@@ -49,11 +50,19 @@ public:
         float tMax,
         const LeafOp& leafCallback) const;
 
-    //bool hitAny(const math::Ray&, float tMax);
+    class TraversalState;
+
     bool hitClosest(
         const math::Ray&,
         float tMax,
-        HitRecord& collision) const;
+        HitRecord& collision,
+        const std::vector<std::shared_ptr<MeshInstance>>& instances) const;
+
+    bool continueTraverse(
+        TraversalState& stack,
+        uint32_t& hitId
+    ) const;
+    //bool hitAny(const math::Ray&, float tMax);
 
     class TraversalState
     {
@@ -126,13 +135,8 @@ private:
 
     static_assert(sizeof(BranchNode) == 36);
 
-    bool continueTraverse(
-        TraversalState& stack,
-        uint32_t& hitId
-) const;
-
     BranchNode* m_binTreeRoot{};
-    std::vector<std::shared_ptr<MeshInstance>>* m_instances{};
+    //std::vector<std::shared_ptr<MeshInstance>>* m_instances{};
 
     uint32_t generateHierarchy(
         const math::AABB* sortedLeafAABBs,

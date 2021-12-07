@@ -42,7 +42,7 @@ bool Scene::hit(
 	HitRecord& collision
 ) const
 {
-    return mTlas.hitClosest(r, tMax, collision);
+    return mTlas.hitClosest(r, tMax, collision, mRenderables);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -115,7 +115,11 @@ void Scene::buildTLAS()
 {
     auto t0 = chrono::high_resolution_clock::now();
 
-    mTlas.build(mRenderables);
+    std::vector<math::AABB> instanceAABBs; instanceAABBs.reserve(mRenderables.size());
+    for (auto& instance : mRenderables)
+        instanceAABBs.push_back(instance->aabb());
+
+    mTlas.build(instanceAABBs);
 
     auto dt = chrono::high_resolution_clock::now() - t0;
     auto us = chrono::duration_cast<chrono::nanoseconds>(dt).count() * 0.001;

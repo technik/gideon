@@ -210,30 +210,28 @@ uint32_t CWBVH::generateHierarchy(
     return branchNdx;
 }
 
-void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
+void CWBVH::build(
+    const std::vector<math::AABB>& aabbs)
 {
-    m_instances = &instances;
-
     // Find the absolute bounding box of all triangles
     // and store their centers
     // TODO: Maybe extend the bounding box to the centers only for improved quantization precision
     std::vector<math::Vec3f> centers;
-    centers.reserve(instances.size());
+    centers.reserve(aabbs.size());
     
     m_globalAABB.clear();
-    for (auto& t : instances)
+    for (auto& box : aabbs)
     {
-        auto instanceBB = t->aabb();
-        m_globalAABB.add(instanceBB.min());
-        m_globalAABB.add(instanceBB.max());
+        m_globalAABB.add(box.min());
+        m_globalAABB.add(box.max());
 
-        centers.push_back(instanceBB.origin());
+        centers.push_back(box.origin());
     }
     math::Vec3f invGlobalAABBSize = math::Vec3f(1.f,1.f,1.f) / m_globalAABB.size();
 
     // Assign morton code quadrants to each centroid
     std::vector<uint32_t> mortonSections;
-    mortonSections.reserve(instances.size());
+    mortonSections.reserve(aabbs.size());
     for (auto& trianglePos : centers)
     {
         math::Vec3f normalizedPos = (trianglePos - m_globalAABB.min()) * invGlobalAABBSize;
@@ -249,22 +247,22 @@ void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
     }
 
     // Sort triangles based on their morton codes
-    std::vector<uint32_t> indices(instances.size());
+    std::vector<uint32_t> indices(aabbs.size());
     std::iota(indices.begin(), indices.end(), 0);
     std::sort(indices.begin(), indices.end(), [&](auto a, auto b) {
         return mortonSections[a] < mortonSections[b];
         });
-    std::vector<uint32_t> sortedMortonCodes(instances.size());
-    std::vector<math::AABB> sortedLeafAABBs(instances.size());
-    for (size_t i = 0; i < instances.size(); ++i)
+    std::vector<uint32_t> sortedMortonCodes(aabbs.size());
+    std::vector<math::AABB> sortedLeafAABBs(aabbs.size());
+    for (size_t i = 0; i < aabbs.size(); ++i)
     {
         auto ndx = indices[i];
         sortedMortonCodes[i] = mortonSections[ndx];
-        sortedLeafAABBs[i] = instances[ndx]->aabb();
+        sortedLeafAABBs[i] = aabbs[ndx];
     }
 
     // Allocate enough nodes to hold the tree
-    m_internalNodes = std::unique_ptr<BranchNode[]>(new BranchNode[instances.size()-1]());
+    m_internalNodes = std::unique_ptr<BranchNode[]>(new BranchNode[aabbs.size()-1]());
 
     // Build a binary tree out of the sorted nodes
     math::AABB treeAABB;
@@ -273,7 +271,7 @@ void CWBVH::build(std::vector<std::shared_ptr<MeshInstance>>& instances)
         sortedMortonCodes.data(),
         indices.data(),
         0,
-        instances.size() - 1, treeAABB);
+        aabbs.size() - 1, treeAABB);
     m_binTreeRoot = &m_internalNodes[binTreeRootId];
 }
 
@@ -308,7 +306,8 @@ bool CWBVH::continueTraverse(
 bool CWBVH::hitClosest(
     const math::Ray& ray,
     float tMax,
-    HitRecord& collision) const
+    HitRecord& collision,
+    const std::vector<std::shared_ptr<MeshInstance>>& instances) const
 {
     if (!m_binTreeRoot)
         return false;
@@ -328,7 +327,7 @@ bool CWBVH::hitClosest(
     {
         // Closest hit logic
         HitRecord hitInfo;
-        if((*m_instances)[closestHitId]->hit(ray, stack.tMax, hitInfo))
+        if(instances[closestHitId]->hit(ray, stack.tMax, hitInfo))
         {
             collision = hitInfo;
             stack.tMax = hitInfo.t;

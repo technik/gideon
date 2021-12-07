@@ -169,7 +169,7 @@ inline bool Triangle::Simd::hit(
 
 // Returns the intersection distance, or -1 if there is no intersection.
 // Ignores back-facing triangles
-float Triangle::Simd::hitNoBackface(const math::Ray::Simd& r) const
+inline float Triangle::Simd::hitNoBackface(const math::Ray::Simd& r) const
 {
     auto rd = r.d;
     auto h = v - r.o;
