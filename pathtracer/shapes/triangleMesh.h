@@ -38,8 +38,6 @@ public:
 	{
 		math::Vec3f position;
 		math::Vec3f normal;
-		math::Vec4f tangent;
-		math::Vec2f uv;
 
 		VtxInfo lerp(const VtxInfo& b, float x) const;
 	};
@@ -57,22 +55,18 @@ private:
 
 	struct TriangleHit
 	{
-		size_t ndx;
-		math::Vec3f pos;
-		math::Vec3f normal;
 		float t;
-		float f0, f1; // Interpolation factors
+		float u, v; // Barycentrics
 	};
 
-	void interpolateData(const TriangleHit& tri, HitRecord& hit) const
+	void interpolateData(uint32_t triNdx, const TriangleHit& tri, HitRecord& hit) const
 	{
-		auto& v0 = mVtxData[3*tri.ndx];
-		auto& v1 = mVtxData[3*tri.ndx+1];
-		auto& v2 = mVtxData[3*tri.ndx+2];
-		auto a = v0.lerp(v1,tri.f0);
-		auto res = a.lerp(v2,tri.f1);
+		auto& v0 = mVtxData[3*triNdx];
+		auto& v1 = mVtxData[3*triNdx+1];
+		auto& v2 = mVtxData[3*triNdx+2];
+		auto a = v0.lerp(v1,tri.u);
+		auto res = a.lerp(v2,tri.v);
 		
-		hit.uv = res.uv;
 		hit.normal = res.normal;
 		normalize(hit.normal);
 	}
@@ -93,7 +87,6 @@ inline TriangleMesh::VtxInfo TriangleMesh::VtxInfo::lerp(const VtxInfo& b, float
 	auto x0 = 1-x;
 	res.position = position*x0+b.position*x;
 	res.normal = math::lerp(normal,b.normal, x);
-	res.uv = math::lerp(uv,b.uv, x);
 	return res;
 }
 

@@ -241,19 +241,19 @@ namespace { // Auxiliary functions
 				v.normal = normals[i];
 			}
 
-			if(primitiveDesc.attributes.find("TEXCOORD_0") != primitiveDesc.attributes.end())
-			{
-				auto uvs = readAttribute<math::Vec2f>(document, bufferData, primitiveDesc.attributes.at("TEXCOORD_0"));
-				for(size_t i = 0; i < vertices.size(); ++i)
-					vertices[i].uv = uvs[i];
-			}
+			//if(primitiveDesc.attributes.find("TEXCOORD_0") != primitiveDesc.attributes.end())
+			//{
+			//	auto uvs = readAttribute<math::Vec2f>(document, bufferData, primitiveDesc.attributes.at("TEXCOORD_0"));
+			//	for(size_t i = 0; i < vertices.size(); ++i)
+			//		vertices[i].uv = uvs[i];
+			//}
 
-			if(primitiveDesc.attributes.find("TANGENT") != primitiveDesc.attributes.end())
-			{
-				auto tangents = readAttribute<math::Vec4f>(document, bufferData, primitiveDesc.attributes.at("TANGENT"));
-				for(size_t i = 0; i < vertices.size(); ++i)
-					vertices[i].tangent = tangents[i];
-			}
+			//if(primitiveDesc.attributes.find("TANGENT") != primitiveDesc.attributes.end())
+			//{
+			//	auto tangents = readAttribute<math::Vec4f>(document, bufferData, primitiveDesc.attributes.at("TANGENT"));
+			//	for(size_t i = 0; i < vertices.size(); ++i)
+			//		vertices[i].tangent = tangents[i];
+			//}
 
             auto primitive = std::make_shared<TriangleMesh>(vertices, indices, materials[primitiveDesc.material]);
             primitives.push_back(dstScene.makeBLAS(primitive));

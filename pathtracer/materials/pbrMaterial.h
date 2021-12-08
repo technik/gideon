@@ -49,14 +49,14 @@ public:
 	{
 		emitted = math::Vec3f(0.f);
 		//auto ao = aoMap->sample(hit.u, hit.v).r(); // b is metalness
-		auto physics = physicsMap ? physicsMap->sample(hit.uv) : math::Vec3f(1.f);
+		auto physics = math::Vec3f(1.f);
 		auto roughness = physics.y();
 		auto metalness = physics.z();
 
 		math::Vec3f baseColor;
-		if(albedoMap)
-			baseColor = albedoMap->sample(hit.uv);
-		else
+		//if(albedoMap)
+		//	baseColor = albedoMap->sample(hit.uv);
+		//else
 			baseColor = albedo;
 
 		math::Vec3f specColor = lerp(math::Vec3f(0.04f), baseColor, metalness);

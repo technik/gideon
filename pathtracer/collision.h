@@ -32,5 +32,4 @@ struct HitRecord
 	math::Vec3f p;
 	float t;
 	math::Vec3f normal;
-	math::Vec2f uv;
 };
