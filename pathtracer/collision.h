@@ -28,7 +28,6 @@ class Material;
 
 struct HitRecord
 {
-	const Material* material;
 	math::Vec3f p;
 	float t;
 	math::Vec3f normal;

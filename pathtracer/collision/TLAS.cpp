@@ -39,7 +39,9 @@ bool TLAS::closestHit(const math::Ray& ray, float tMax) const
 
         // Closest hit logic
         uint32_t triHitId;
-        if (m_BLASBuffer[instance.BlasIndex].closestHit(localRay, stack.tMax, triHitId))
+        float tHit;
+        math::Vec3f hitNormal;
+        if (m_BLASBuffer[instance.BlasIndex].closestHit(localRay, stack.tMax, triHitId, tHit, hitNormal))
         {
             // TODO: Compute intersection details
             assert(false && "Not implemented"); return false; // Return false for obvious break

@@ -127,7 +127,6 @@ inline bool TriangleMesh::hit(const math::Ray & r, float tMax, HitRecord & colli
 {
     if (mBVH.hit(r, r.implicitSimd(), math::float4(tMax), collision))
     {
-        collision.material = mMaterial.get();
         return true;
     }
     return false;

@@ -30,7 +30,7 @@ public:
     auto aabb() const { return m_bvh.aabb(); }
 
     // This method will assume you already checked against the AABB, and won't repeat that test.
-    bool closestHit(const math::Ray& ray, float tMax, uint32_t& closestHitId)
+    bool closestHit(const math::Ray& ray, float tMax, uint32_t& closestHitId, float& tOut, math::Vec3f& outNormal)
     {
         // Init traversal stack to the root
         auto implicitRay = ray.implicit();
@@ -47,9 +47,12 @@ public:
             if (tHit >= 0.f && tHit <= stack.tMax)
             {
                 stack.tMax = tHit;
-                closestHitId = triangleHitId;
+                tOut = tHit;
             }
         }
+
+        closestHitId = triangleHitId;
+        outNormal = m_triangles[triangleHitId].mNormal;
 
         return triangleHitId != uint32_t(-1);
     }

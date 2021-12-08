@@ -1,4 +1,5 @@
 #include "CWBVH.h"
+#include "BLAS.h"
 
 #include <math/aabb.h>
 #include <math/ray.h>
@@ -331,6 +332,52 @@ bool CWBVH::hitClosest(
         {
             collision = hitInfo;
             stack.tMax = hitInfo.t;
+        }
+    }
+
+    return collision.t >= 0;
+}
+
+bool CWBVH::hitClosest(
+    const math::Ray& ray,
+    float tMax,
+    HitRecord& collision,
+    BLAS* blasBuffer,
+    Instance* instances,
+    uint32_t numInstances) const
+{
+    if (!m_binTreeRoot)
+        return false;
+
+    // Init traversal stack to the root
+    TraversalState stack;
+    stack.reset(ray.implicit(), tMax);
+
+    // Check against global aabb
+    if (!m_globalAABB.intersect(stack.r, stack.tMax))
+        return false;
+
+    collision.t = -1;
+    uint32_t instanceHitId;
+
+    while (continueTraverse(stack, instanceHitId))
+    {
+        const auto& instance = instances[instanceHitId];
+        // Transform ray to the local space
+        math::Ray localRay(
+            instance.pose.transformPos(ray.origin()),
+            instance.pose.transformDir(ray.direction()));
+
+        // Closest hit logic
+        uint32_t triHitId;
+        float tHit;
+        math::Vec3f hitNormal;
+        if (blasBuffer[instance.BlasIndex].closestHit(localRay, stack.tMax, triHitId, tHit, hitNormal))
+        {
+            collision.p = ray.at(tHit);
+            collision.t = tHit;
+            collision.normal = hitNormal;
+            stack.tMax = tHit;
         }
     }
 

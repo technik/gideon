@@ -24,6 +24,7 @@
 #include <functional>
 #include <vector>
 
+#include <math/matrix.h>
 #include <math/vector.h>
 #include <math/aabb.h>
 
@@ -33,6 +34,7 @@ namespace math
 }
 
 class MeshInstance;
+class BLAS;
 struct HitRecord;
 
 // Compressed wide BVH based on Karras 2017
@@ -58,6 +60,20 @@ public:
         float tMax,
         HitRecord& collision,
         const std::vector<std::shared_ptr<MeshInstance>>& instances) const;
+
+    struct Instance
+    {
+        math::Matrix34f pose;
+        uint32_t BlasIndex;
+    };
+
+    bool hitClosest(
+        const math::Ray&,
+        float tMax,
+        HitRecord& collision,
+        BLAS* blasBuffer,
+        Instance* instances,
+        uint32_t numInstances) const;
 
     bool continueTraverse(
         TraversalState& stack,
