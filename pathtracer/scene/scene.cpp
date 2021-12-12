@@ -30,6 +30,7 @@
 #include <math/vector.h>
 #include <camera/sphericalCamera.h>
 #include <camera/frustumCamera.h>
+#include <collision/BLAS.h>
 #include "scene.h"
 
 using namespace std;
@@ -42,7 +43,7 @@ bool Scene::hit(
 	HitRecord& collision
 ) const
 {
-    return mTlas.hitClosest(r, tMax, collision, mRenderables);
+    return mTlas.hitClosest( r, tMax, collision, mBLASBuffer.data(), mInstances.data(), (uint32_t)mInstances.size());
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -82,9 +83,9 @@ void Scene::loadFromCommandLine(const CmdLineParams& params)
 	}
 }
 
-uint32_t Scene::makeBLAS(const std::shared_ptr<TriangleMesh>& primitive)
+uint32_t Scene::addBlas(const math::Vec3f* vertices, const uint16_t* indices, uint32_t numTris)
 {
-    mBLASBuffer.push_back(primitive);
+    mBLASBuffer.push_back(BLAS(vertices, indices, numTris));
     return uint32_t(mBLASBuffer.size() - 1);
 }
 
@@ -92,9 +93,9 @@ void Scene::buildTLAS()
 {
     auto t0 = chrono::high_resolution_clock::now();
 
-    std::vector<math::AABB> instanceAABBs; instanceAABBs.reserve(mRenderables.size());
-    for (auto& instance : mRenderables)
-        instanceAABBs.push_back(instance->aabb());
+    std::vector<math::AABB> instanceAABBs; instanceAABBs.reserve(mInstances.size());
+    for (int i = 0; i < mInstances.size(); ++i)
+        instanceAABBs.push_back(instanceAABB(i));
 
     mTlas.build(instanceAABBs);
 
@@ -105,4 +106,11 @@ void Scene::buildTLAS()
         std::cout << "BVH construction: " << us << " micros\n";
     else
         std::cout << "BVH construction: " << us*0.001 << " ms\n";
+}
+
+math::AABB Scene::instanceAABB(uint32_t instanceId) const
+{
+    auto& instance = mInstances[instanceId];
+    auto& blas = mBLASBuffer[instance.BlasIndex];
+    return instance.pose * blas.aabb();
 }

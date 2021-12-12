@@ -7,30 +7,16 @@
 class BLAS
 {
 public:
-    void build(const math::Vec3f* vertices, const uint32_t* indices, uint32_t numTris)
+    BLAS() = default;
+    BLAS(const math::Vec3f* vertices, const uint16_t* indices, uint32_t numTris)
     {
-        // Compute triangle BBoxes
-        std::vector<math::AABB> aabbs(numTris);
-        for (uint32_t i = 0; i < numTris; ++i)
-        {
-            auto& triBBox = aabbs[i];
-            triBBox.clear();
-            auto i0 = indices[3 * i + 0];
-            auto i1 = indices[3 * i + 1];
-            auto i2 = indices[3 * i + 2];
-
-            triBBox.add(vertices[i0]);
-            triBBox.add(vertices[i1]);
-            triBBox.add(vertices[i2]);
-        }
-
-        m_bvh.build(aabbs);
+        build(vertices, indices, numTris);
     }
 
     auto aabb() const { return m_bvh.aabb(); }
 
     // This method will assume you already checked against the AABB, and won't repeat that test.
-    bool closestHit(const math::Ray& ray, float tMax, uint32_t& closestHitId, float& tOut, math::Vec3f& outNormal)
+    bool closestHit(const math::Ray& ray, float tMax, uint32_t& closestHitId, float& tOut, math::Vec3f& outNormal) const
     {
         // Init traversal stack to the root
         auto implicitRay = ray.implicit();
@@ -48,11 +34,11 @@ public:
             {
                 stack.tMax = tHit;
                 tOut = tHit;
+                outNormal = m_triangles[triangleHitId].mNormal;
             }
         }
 
         closestHitId = triangleHitId;
-        outNormal = m_triangles[triangleHitId].mNormal;
 
         return triangleHitId != uint32_t(-1);
     }
@@ -81,6 +67,34 @@ public:
     }
 
 private:
+    void build(const math::Vec3f* vertices, const uint16_t* indices, uint32_t numTris)
+    {
+        // Compute triangles and its bounding boxes
+        m_triangles.reserve(numTris);
+        std::vector<math::AABB> aabbs(numTris);
+
+        for (uint32_t i = 0; i < numTris; ++i)
+        {
+            auto& triBBox = aabbs[i];
+            triBBox.clear();
+            auto i0 = indices[3 * i + 0];
+            auto i1 = indices[3 * i + 1];
+            auto i2 = indices[3 * i + 2];
+
+            auto& v0 = vertices[i0];
+            auto& v1 = vertices[i1];
+            auto& v2 = vertices[i2];
+
+            auto t = Triangle(v0, v1, v2);
+            m_triangles.push_back(t.simd());
+            triBBox.add(v0);
+            triBBox.add(v1);
+            triBBox.add(v2);
+        }
+
+        m_bvh.build(aabbs);
+    }
+
     CWBVH m_bvh;
     std::vector<Triangle::Simd> m_triangles; // I.e. bvh leafs
 };

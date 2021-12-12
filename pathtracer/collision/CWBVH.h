@@ -71,8 +71,8 @@ public:
         const math::Ray&,
         float tMax,
         HitRecord& collision,
-        BLAS* blasBuffer,
-        Instance* instances,
+        const BLAS* blasBuffer,
+        const Instance* instances,
         uint32_t numInstances) const;
 
     bool continueTraverse(
@@ -170,7 +170,7 @@ private:
     uint32_t allocBranch(uint32_t numNodes);
     uint32_t m_branchCount = 0;
 
-    std::unique_ptr<BranchNode[]> m_internalNodes;
+    std::shared_ptr<BranchNode[]> m_internalNodes;
     math::AABB m_globalAABB;
 };
 

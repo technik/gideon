@@ -229,34 +229,9 @@ namespace { // Auxiliary functions
 		{
 			auto indices = readIndices(document, bufferData, primitiveDesc.indices);
 			auto position = readAttribute<math::Vec3f>(document, bufferData, primitiveDesc.attributes.at("POSITION"));
-			auto normals = readAttribute<math::Vec3f>(document, bufferData, primitiveDesc.attributes.at("NORMAL"));
 
-			// Copy vertex data
-			using Vtx = TriangleMesh::VtxInfo;
-			std::vector<Vtx> vertices(position.size());
-			for(size_t i = 0; i < vertices.size(); ++i)
-			{
-				auto& v = vertices[i];
-				v.position = position[i];
-				v.normal = normals[i];
-			}
-
-			//if(primitiveDesc.attributes.find("TEXCOORD_0") != primitiveDesc.attributes.end())
-			//{
-			//	auto uvs = readAttribute<math::Vec2f>(document, bufferData, primitiveDesc.attributes.at("TEXCOORD_0"));
-			//	for(size_t i = 0; i < vertices.size(); ++i)
-			//		vertices[i].uv = uvs[i];
-			//}
-
-			//if(primitiveDesc.attributes.find("TANGENT") != primitiveDesc.attributes.end())
-			//{
-			//	auto tangents = readAttribute<math::Vec4f>(document, bufferData, primitiveDesc.attributes.at("TANGENT"));
-			//	for(size_t i = 0; i < vertices.size(); ++i)
-			//		vertices[i].tangent = tangents[i];
-			//}
-
-            auto primitive = std::make_shared<TriangleMesh>(vertices, indices, materials[primitiveDesc.material]);
-            primitives.push_back(dstScene.makeBLAS(primitive));
+            auto numTris = indices.size() / 3;
+            primitives.push_back(dstScene.addBlas(position.data(), indices.data(), numTris));
 		}
 
 		return primitives;
@@ -353,7 +328,7 @@ bool loadGltf(const char* fileName, Scene& dstScene, float aspectRatio, bool ove
             auto& mesh = meshes[node.mesh];
             for (auto& primitive : mesh.primitives)
             {
-                dstScene.addRenderable(primitive, pose);
+                dstScene.addInstance(primitive, pose);
             }
 		}
 	}

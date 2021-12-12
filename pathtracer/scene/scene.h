@@ -21,7 +21,9 @@
 
 #include <camera/camera.h>
 #include "shapes/meshInstance.h"
+#include <collision/BLAS.h>
 #include <collision/CWBVH.h>
+#include <collision/TLAS.h>
 #include <vector>
 
 struct CmdLineParams;
@@ -33,17 +35,17 @@ class Scene
 public:
 	Scene() {}
 
-	void addRenderable(uint32_t blasId, const math::Matrix34f& pose) 
-	{
-		mRenderables.emplace_back(std::make_shared<MeshInstance>(mBLASBuffer[blasId], pose));
-	}
+    void addInstance(uint32_t blasId, const math::Matrix34f& pose)
+    {
+        mInstances.push_back({ pose, blasId });
+    }
 
 	void addCamera(const std::shared_ptr<Camera>& cam)
 	{
 		mCameras.emplace_back(cam);
 	}
 
-    uint32_t makeBLAS(const std::shared_ptr<TriangleMesh>& primitive);
+    uint32_t addBlas(const math::Vec3f* vertices, const uint16_t* indices, uint32_t numTris);
 
 	const std::vector<std::shared_ptr<Camera>>& cameras() const { return mCameras; }
 	std::vector<std::shared_ptr<Camera>>& cameras() { return mCameras; }
@@ -60,9 +62,10 @@ public:
 
 private:
     void buildTLAS();
+    math::AABB instanceAABB(uint32_t instanceId) const;
 
     CWBVH mTlas;
-    std::vector<std::shared_ptr<TriangleMesh>> mBLASBuffer;
-	std::vector<std::shared_ptr<MeshInstance>>	mRenderables;
+    std::vector<BLAS> mBLASBuffer;
+    std::vector<CWBVH::Instance> mInstances;
 	std::vector<std::shared_ptr<Camera>>	mCameras;
 };

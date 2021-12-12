@@ -25,19 +25,19 @@ uint32_t spaceBits(uint32_t x)
     return result;
 }
 
-// Returns the log2(p) where p is the smallest power of two such that p > abs(x).
+// Returns the log2(p)+128 where p is the smallest power of two such that p > abs(x).
 // note that p can be < 0, in cases where 0<abs(x)<1.
 // Assumes non denormal floats.
-int8_t nextPow2Log2(float x)
+uint8_t nextPow2Log2(float x)
 {
     auto bitField = reinterpret_cast<uint32_t&>(x);
-    auto e = int8_t((bitField >> 23) + 1);
+    auto e = uint8_t((bitField >> 23) + 1);
     return e;
 }
 
-float floatFromExponent(int8_t e)
+float floatFromExponent(uint8_t e)
 {
-    uint32_t bitField = uint32_t(uint8_t(e)) << 23;
+    uint32_t bitField = uint32_t(e) << 23;
     auto x = reinterpret_cast<float&>(bitField);
     assert(nextPow2Log2(x) - 1 == e);
     return x;
@@ -214,7 +214,7 @@ uint32_t CWBVH::generateHierarchy(
 void CWBVH::build(
     const std::vector<math::AABB>& aabbs)
 {
-    // Find the absolute bounding box of all triangles
+    // Find the absolute bounding box of all elements (leafs)
     // and store their centers
     // TODO: Maybe extend the bounding box to the centers only for improved quantization precision
     std::vector<math::Vec3f> centers;
@@ -247,7 +247,7 @@ void CWBVH::build(
         mortonSections.push_back(mortonCode);
     }
 
-    // Sort triangles based on their morton codes
+    // Sort elements based on their morton codes
     std::vector<uint32_t> indices(aabbs.size());
     std::iota(indices.begin(), indices.end(), 0);
     std::sort(indices.begin(), indices.end(), [&](auto a, auto b) {
@@ -263,7 +263,7 @@ void CWBVH::build(
     }
 
     // Allocate enough nodes to hold the tree
-    m_internalNodes = std::unique_ptr<BranchNode[]>(new BranchNode[aabbs.size()-1]());
+    m_internalNodes = std::shared_ptr<BranchNode[]>(new BranchNode[aabbs.size()-1]());
 
     // Build a binary tree out of the sorted nodes
     math::AABB treeAABB;
@@ -342,8 +342,8 @@ bool CWBVH::hitClosest(
     const math::Ray& ray,
     float tMax,
     HitRecord& collision,
-    BLAS* blasBuffer,
-    Instance* instances,
+    const BLAS* blasBuffer,
+    const Instance* instances,
     uint32_t numInstances) const
 {
     if (!m_binTreeRoot)
