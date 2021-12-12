@@ -344,6 +344,7 @@ bool CWBVH::hitClosest(
     HitRecord& collision,
     const BLAS* blasBuffer,
     const Instance* instances,
+    const math::Matrix34f* invPoses,
     uint32_t numInstances) const
 {
     if (!m_binTreeRoot)
@@ -362,16 +363,17 @@ bool CWBVH::hitClosest(
 
     while (continueTraverse(stack, instanceHitId))
     {
-        const auto& instance = instances[instanceHitId];
+        const auto& invPose = invPoses[instanceHitId];
         // Transform ray to the local space
         math::Ray localRay(
-            instance.pose.transformPos(ray.origin()),
-            instance.pose.transformDir(ray.direction()));
+            invPose.transformPos(ray.origin()),
+            invPose.transformDir(ray.direction()));
 
         // Closest hit logic
         uint32_t triHitId;
         float tHit;
         math::Vec3f hitNormal;
+        const auto& instance = instances[instanceHitId];
         if (blasBuffer[instance.BlasIndex].closestHit(localRay, stack.tMax, triHitId, tHit, hitNormal))
         {
             collision.p = ray.at(tHit);

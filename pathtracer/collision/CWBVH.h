@@ -73,6 +73,7 @@ public:
         HitRecord& collision,
         const BLAS* blasBuffer,
         const Instance* instances,
+        const math::Matrix34f* invPoses,
         uint32_t numInstances) const;
 
     bool continueTraverse(

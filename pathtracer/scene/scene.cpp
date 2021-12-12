@@ -43,7 +43,7 @@ bool Scene::hit(
 	HitRecord& collision
 ) const
 {
-    return mTlas.hitClosest( r, tMax, collision, mBLASBuffer.data(), mInstances.data(), (uint32_t)mInstances.size());
+    return mTlas.hitClosest( r, tMax, collision, mBLASBuffer.data(), mInstances.data(), mInvInstancePoses.data(), (uint32_t)mInstances.size());
 }
 
 //--------------------------------------------------------------------------------------------------

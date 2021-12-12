@@ -37,6 +37,7 @@ public:
 
     void addInstance(uint32_t blasId, const math::Matrix34f& pose)
     {
+        mInvInstancePoses.push_back(pose.inverse());
         mInstances.push_back({ pose, blasId });
     }
 
@@ -67,5 +68,6 @@ private:
     CWBVH mTlas;
     std::vector<BLAS> mBLASBuffer;
     std::vector<CWBVH::Instance> mInstances;
+    std::vector<math::Matrix34f> mInvInstancePoses;
 	std::vector<std::shared_ptr<Camera>>	mCameras;
 };
