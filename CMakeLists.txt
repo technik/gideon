@@ -44,6 +44,17 @@ target_include_directories (pathtracer PUBLIC "pathtracer")
 ################################################################################
 # tests code
 ################################################################################
+enable_testing()
+
+include_directories ("include")
+include_directories ("pathtracer")
+
 add_executable(algebraTest test/unit/algebraTest.cpp)
 set_target_properties(algebraTest PROPERTIES FOLDER test)
 add_test(algebra_unit_test algebraTest)
+
+add_executable(collisionTest
+    test/unit/collisionTest.cpp
+    pathtracer/collision/CWBVH.cpp)
+set_target_properties(collisionTest PROPERTIES FOLDER test)
+add_test(collision_unit_test collisionTest)

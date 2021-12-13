@@ -35,8 +35,10 @@ namespace math
 			, mDirection(rd)
 		{};
 
-		const Vec3f& origin() const { return mOrigin; }
-		const Vec3f& direction() const { return mDirection; }
+                Vec3f& origin() { return mOrigin; }
+        const   Vec3f& origin() const { return mOrigin; }
+		        Vec3f& direction() { return mDirection; }
+		const   Vec3f& direction() const { return mDirection; }
 		Vec3f at(float t) const { return mOrigin + t * mDirection; }
 
 		// Implicit ray

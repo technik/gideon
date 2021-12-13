@@ -64,6 +64,7 @@ Vec3f color(Ray r, const Scene& world, RandomGenerator& random)
     {
         if (world.hit(r, farPlane, hit))
         {
+            //return Vec3f(0, 1, 0);
             // Evaluate light bounce
             Ray scatteredRay;
             Vec3f attenuation;

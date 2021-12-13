@@ -363,8 +363,8 @@ bool CWBVH::hitClosest(
 
     while (continueTraverse(stack, instanceHitId))
     {
-        const auto& invPose = invPoses[instanceHitId];
         // Transform ray to the local space
+        const auto& invPose = invPoses[instanceHitId];
         math::Ray localRay(
             invPose.transformPos(ray.origin()),
             invPose.transformDir(ray.direction()));

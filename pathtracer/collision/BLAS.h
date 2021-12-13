@@ -1,8 +1,9 @@
 #pragma once
 
 #include "CWBVH.h"
-#include "shapes/triangle.h"
-#include "math/matrix.h"
+#include "../shapes/triangle.h"
+#include "../math/matrix.h"
+#include "../math/vector.h"
 
 class BLAS
 {
@@ -35,10 +36,10 @@ public:
                 stack.tMax = tHit;
                 tOut = tHit;
                 outNormal = m_triangles[triangleHitId].mNormal;
+                closestHitId = triangleHitId;
             }
         }
 
-        closestHitId = triangleHitId;
 
         return triangleHitId != uint32_t(-1);
     }
