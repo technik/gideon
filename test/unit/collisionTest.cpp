@@ -32,7 +32,7 @@ void TraceEmptyBVH()
     const float tMax = 100.f;
 
     // The leaf op should never be called here
-    bool anyHit = bvh.closestHit(ray, tMax, [&](auto) { assert(false); return 0.f; });
+    bool anyHit = bvh.closestHit(ray, tMax, [&](const Ray&, float, int32_t) { assert(false); return 0.f; });
     assert(!anyHit);
 }
 
@@ -48,7 +48,7 @@ void TraceSingleElementBVH()
     const float tMax = 100.f;
 
     // There is only one node we can hit
-    auto leafOp = [&](auto nodeId) { assert(nodeId == 0); return 0.f; };
+    auto leafOp = [&](const Ray&, float, int32_t nodeId) { assert(nodeId == 0); return 0.f; };
 
     // Expected hit
     bool anyHit = bvh.closestHit(ray, tMax, leafOp);

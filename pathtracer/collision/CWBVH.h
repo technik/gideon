@@ -106,7 +106,7 @@ public:
         uint32_t instanceHitId;
         while (continueTraverse(stack, instanceHitId))
         {
-            float tHit = leafOp(ray, instanceHitId, stack.tMax);
+            float tHit = leafOp(ray, stack.tMax, instanceHitId);
             if (tHit >= 0) // Intersection found, reduce testing distance
             {
                 closestHit = instanceHitId;
