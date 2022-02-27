@@ -21,6 +21,13 @@
 
 using namespace math;
 
+void TestCWBVH()
+{
+    // Trace against a BVH with an AABB at each corner, non intersecting
+    // Trace against a BVH with an AABB at each corner, all intersecting at the center
+    // Trace against a BVH with multiple BVHs embedded in one another.
+}
+
 int main()
 {
     const size_t numTris = 4;

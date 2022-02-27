@@ -40,7 +40,6 @@ public:
             }
         }
 
-
         return triangleHitId != uint32_t(-1);
     }
 
