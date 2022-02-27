@@ -66,7 +66,7 @@ public:
     // and returns a boolean: true when traversal can be finished early (e.g. collision found),
     // false otherwise.
     template<class LeafOp>
-    bool closestHit(const math::Ray& ray, float tMax, const LeafOp& leafOp) const
+    bool anyHit(const math::Ray& ray, float tMax, const LeafOp& leafOp) const
     {
         // Check against global aabb
         auto implicitRay = ray.implicit();
@@ -86,6 +86,36 @@ public:
 
         // Exhausted traversal
         return false;
+    }
+
+    // Leaf Op takes a ray, max distance and a node index (in the order provided at build time),
+    // and returns an intersection distance, or -1 if no intersection was found.
+    template<class LeafOp>
+    bool closestHit(const math::Ray& ray, float tMax, const LeafOp& leafOp) const
+    {
+        // Check against global aabb
+        auto implicitRay = ray.implicit();
+        if (!m_globalAABB.intersect(implicitRay, tMax))
+            return false;
+
+        // Init traversal stack to the root
+        CWBVH::TraversalState stack;
+        stack.reset(implicitRay, tMax);
+
+        int32_t closestHit = -1;
+        uint32_t instanceHitId;
+        while (continueTraverse(stack, instanceHitId))
+        {
+            float tHit = leafOp(ray, instanceHitId, stack.tMax);
+            if (tHit >= 0) // Intersection found, reduce testing distance
+            {
+                closestHit = instanceHitId;
+                stack.tMax = std::min(stack.tMax, tHit);
+            }
+        }
+
+        // Exhausted traversal
+        return closestHit >= 0;
     }
 
     // Deprecated. Use the traversal state API, or the LeafOp API instead.

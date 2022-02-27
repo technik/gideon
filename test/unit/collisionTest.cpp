@@ -32,7 +32,7 @@ void TraceEmptyBVH()
     const float tMax = 100.f;
 
     // The leaf op should never be called here
-    bool anyHit = bvh.closestHit(ray, tMax, [&](auto) { assert(false); return false; });
+    bool anyHit = bvh.closestHit(ray, tMax, [&](auto) { assert(false); return 0.f; });
     assert(!anyHit);
 }
 
@@ -48,7 +48,7 @@ void TraceSingleElementBVH()
     const float tMax = 100.f;
 
     // There is only one node we can hit
-    auto leafOp = [&](auto nodeId) { assert(nodeId == 0); return true; };
+    auto leafOp = [&](auto nodeId) { assert(nodeId == 0); return 0.f; };
 
     // Expected hit
     bool anyHit = bvh.closestHit(ray, tMax, leafOp);
@@ -65,6 +65,60 @@ void TraceSingleElementBVH()
     assert(!anyHit);
 }
 
+void TraceTwoSeparateElementsBVH()
+{
+    CWBVH bvh;
+
+    AABB aabbs[2] = {
+        AABB(Vec3f(0.f), 1.f),
+        AABB(Vec3f(0.f, 5, 0), 1.f)
+    };
+
+    bvh.build(aabbs);
+
+    Ray ray({ 0, -2, 0 }, { 0, 1, 0 });
+    const float tMax = 100.f;
+
+    // There is only one node we can hit
+    int expectedNode = 0;
+    auto leafOp = [&](const Ray& r, float _tMax, int32_t nodeId) {
+        float tHit = -1;
+        if (aabbs[nodeId].intersect(r.implicit(), _tMax, tHit))
+            return tHit;
+        return -1.f;
+    };
+
+    // Expected hit against the first node
+    bool anyHit = bvh.closestHit(ray, tMax, leafOp);
+    assert(anyHit);
+
+    // Expected hit against the second node
+    expectedNode = 1;
+    ray.origin() = Vec3f(0, 5, 0);
+    anyHit = bvh.closestHit(ray, tMax, leafOp);
+    assert(anyHit);
+
+    // Expected no hit, ray parallel to the AABB
+    expectedNode = -1;
+    ray.origin() = Vec3f(2, 0, 0);
+    anyHit = bvh.closestHit(ray, tMax, leafOp);
+    assert(!anyHit);
+
+    // Test hits from one side
+    ray.origin() = Vec3f(-2, 0, 0);
+    ray.direction() = Vec3f(1, 0, 0);
+    expectedNode = 0;
+    anyHit = bvh.closestHit(ray, tMax, leafOp);
+    assert(anyHit);
+
+    // Test hits from the other side
+    ray.origin() = Vec3f(10, 0, 0);
+    ray.direction() = Vec3f(-1, 0, 0);
+    expectedNode = 1;
+    anyHit = bvh.closestHit(ray, tMax, leafOp);
+    assert(anyHit);
+}
+
 void TestCWBVH()
 {
     // Trace against an empty BVH
@@ -72,6 +126,7 @@ void TestCWBVH()
     // Trace against a BVH with a single AABB inside
     TraceSingleElementBVH();
     // Trace against a BVH with two AABBs side by side, non intersecting
+    TraceTwoSeparateElementsBVH();
     // Trace against a BVH with two AABBs side by side, intersecting in the middle
     // Trace against a BVH with an AABB at each corner, non intersecting
     // Trace against a BVH with an AABB at each corner, all intersecting at the center
