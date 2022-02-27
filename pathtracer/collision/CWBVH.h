@@ -49,6 +49,7 @@ public:
 
     class TraversalState;
 
+    // Deprecated. Use the traversal state API, or the LeafOp API instead.
     bool hitClosest(
         const math::Ray&,
         float tMax,
@@ -61,6 +62,33 @@ public:
         uint32_t BlasIndex;
     };
 
+    // Leaf Op takes a node index (in the order provided at build time),
+    // and returns a boolean: true when traversal can be finished early (e.g. collision found),
+    // false otherwise.
+    template<class LeafOp>
+    bool closestHit(const math::Ray& ray, float tMax, const LeafOp& leafOp) const
+    {
+        // Check against global aabb
+        auto implicitRay = ray.implicit();
+        if (!m_globalAABB.intersect(implicitRay, tMax))
+            return false;
+
+        // Init traversal stack to the root
+        CWBVH::TraversalState stack;
+        stack.reset(implicitRay, tMax);
+
+        uint32_t instanceHitId;
+        while (continueTraverse(stack, instanceHitId))
+        {
+            if (leafOp(instanceHitId))
+                return true;
+        }
+
+        // Exhausted traversal
+        return false;
+    }
+
+    // Deprecated. Use the traversal state API, or the LeafOp API instead.
     bool hitClosest(
         const math::Ray&,
         float tMax,

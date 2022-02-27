@@ -213,6 +213,10 @@ uint32_t CWBVH::generateHierarchy(
 
 void CWBVH::build(std::span<const math::AABB> aabbs)
 {
+    // Earlt out for empty BVHs
+    if (aabbs.empty())
+        return;
+
     // Find the absolute bounding box of all elements (leafs)
     // and store their centers
     // TODO: Maybe extend the bounding box to the centers only for improved quantization precision

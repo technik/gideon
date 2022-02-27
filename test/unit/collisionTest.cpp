@@ -18,16 +18,28 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "../../pathtracer/collision/BLAS.h"
+#include "../../pathtracer/collision/CWBVH.h"
 
 using namespace math;
 
-void TraceEmtyBVH()
+void TraceEmptyBVH()
 {
+    CWBVH bvh;
+
+    bvh.build({});
+
+    Ray ray({ 0, 0, 0 }, { 0, 1, 0 });
+    const float tMax = 100.f;
+
+    // The leaf op should never be called here
+    bool anyHit = bvh.closestHit(ray, tMax, [&](auto) { assert(false); return false; });
+    assert(!anyHit);
 }
 
 void TestCWBVH()
 {
     // Trace against an empty BVH
+    TraceEmptyBVH();
     // Trace against a BVH with a single AABB inside
     // Trace against a BVH with two AABBs side by side, non intersecting
     // Trace against a BVH with two AABBs side by side, intersecting in the middle
@@ -38,6 +50,9 @@ void TestCWBVH()
 
 int main()
 {
+    TestCWBVH();
+
+    // Other tests
     const size_t numTris = 4;
     std::vector<Vec3f> vertices(3 * numTris);
     std::vector<uint16_t> indices(3 * numTris);
