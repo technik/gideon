@@ -23,6 +23,7 @@
 #include <memory>
 #include <functional>
 #include <vector>
+#include <span>
 
 #include <math/matrix.h>
 #include <math/vector.h>
@@ -43,15 +44,8 @@ class CWBVH
 public:
     CWBVH();
     ~CWBVH();
-    void build(
-        const std::vector<math::AABB>& aabbs);
+    void build(std::span<const math::AABB> aabbs);
     auto aabb() const { return m_globalAABB; }
-
-    template<class LeafOp>
-    inline bool traceRay(
-        const math::Ray::Implicit& ray,
-        float tMax,
-        const LeafOp& leafCallback) const;
 
     class TraversalState;
 
@@ -80,13 +74,12 @@ public:
         TraversalState& stack,
         uint32_t& hitId
     ) const;
-    //bool hitAny(const math::Ray&, float tMax);
 
     class TraversalState
     {
     public:
         // Point stack to the root of the tree
-        void reset(math::Ray::Implicit& _r, float _tMax)
+        void reset(const math::Ray::Implicit& _r, float _tMax)
         {
             // Init ray
             r = _r;
@@ -174,49 +167,3 @@ private:
     std::shared_ptr<BranchNode[]> m_internalNodes;
     math::AABB m_globalAABB;
 };
-
-// Inline implementation
-template<class LeafOp>
-inline bool CWBVH::traceRay(
-    const math::Ray::Implicit& r,
-    float tMax,
-    const LeafOp& leafCallback) const
-{
-    assert(m_binTreeRoot != nullptr);
-
-    // Check against global aabb. This should be moved outside for Two level AS to be efficient.
-    if (!m_globalAABB.intersect(r, tMax))
-        return false;
-
-    // Init traversal stack to the root
-    TraversalStack stack;
-    stack.reset();
-    float t = -1;
-
-    while (!stack.empty())
-    {
-        const auto& branch = m_internalNodes[stack.pop()];
-
-        for (int i = 0; i < 2; ++i)
-        {
-            if (branch.getChildAABB(i).intersect(r, tMax))
-            {
-                if (branch.childLeafMask & (1 << i)) // Child is a leaf, perform leaf test
-                {
-                    if(float tHit = leafCallback(branch.childNdx[i], tMax); tHit >= 0)
-                    {
-                        hitId = branch.childNdx[i];
-                        t = tHit;
-                        tMax = t;
-                    }
-                }
-                else // Child is a branch. Add it to the stack
-                {
-                    stack.push(branch.childNdx[i]);
-                }
-            }
-        }
-    }
-
-    return t >= 0;
-}

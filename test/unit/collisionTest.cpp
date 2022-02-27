@@ -21,8 +21,16 @@
 
 using namespace math;
 
+void TraceEmtyBVH()
+{
+}
+
 void TestCWBVH()
 {
+    // Trace against an empty BVH
+    // Trace against a BVH with a single AABB inside
+    // Trace against a BVH with two AABBs side by side, non intersecting
+    // Trace against a BVH with two AABBs side by side, intersecting in the middle
     // Trace against a BVH with an AABB at each corner, non intersecting
     // Trace against a BVH with an AABB at each corner, all intersecting at the center
     // Trace against a BVH with multiple BVHs embedded in one another.

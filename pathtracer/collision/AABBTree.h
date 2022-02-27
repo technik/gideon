@@ -49,7 +49,7 @@ public:
 		return hitNode(mNodes[0], r, ri, tMax, collision);
 	}
 
-	const math::AABBSimd& bbox() const { return mRoot.mBbox; }
+	const math::AABBSimd& bbox() const { return mNodes[0].mBbox; }
 
 private:
 
@@ -104,7 +104,7 @@ private:
 		node.isLeaf = true;
 		node.mChildA = triangleBegin-triangles.begin();
 		node.mChildB = triangleEnd-triangles.begin();
-		AABB rawBBox = triangleRangeBounds(triangleBegin, triangleEnd);
+		auto rawBBox = triangleRangeBounds(triangleBegin, triangleEnd);
 		node.mBbox = AABBSimd(rawBBox.min(), rawBBox.max());
 	}
 
@@ -126,7 +126,7 @@ private:
 	math::AABB triangleBounds(const Triangle& t)
 	{
 		math::AABB bounds(
-			math::min(t.v[0],t.v[1])
+			math::min(t.v[0],t.v[1]),
 			math::max(t.v[1],t.v[2])
 		);
 		bounds.add(t.v[2]);

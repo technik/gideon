@@ -211,8 +211,7 @@ uint32_t CWBVH::generateHierarchy(
     return branchNdx;
 }
 
-void CWBVH::build(
-    const std::vector<math::AABB>& aabbs)
+void CWBVH::build(std::span<const math::AABB> aabbs)
 {
     // Find the absolute bounding box of all elements (leafs)
     // and store their centers
@@ -238,9 +237,9 @@ void CWBVH::build(
         math::Vec3f normalizedPos = (trianglePos - m_globalAABB.min()) * invGlobalAABBSize;
 
         // Quantize position. 11 bits x, 11 bits y, 10 bits z.
-        uint32_t quantX = std::min<uint32_t>(normalizedPos.x() * (1 << 11), (1 << 11) - 1);
-        uint32_t quantY = std::min<uint32_t>(normalizedPos.y() * (1 << 11), (1 << 11) - 1);
-        uint32_t quantZ = std::min<uint32_t>(normalizedPos.z() * (1 << 10), (1 << 10) - 1);
+        uint32_t quantX = std::min<uint32_t>(static_cast<uint32_t>(normalizedPos.x() * (1 << 11)), (1 << 11) - 1);
+        uint32_t quantY = std::min<uint32_t>(static_cast<uint32_t>(normalizedPos.y() * (1 << 11)), (1 << 11) - 1);
+        uint32_t quantZ = std::min<uint32_t>(static_cast<uint32_t>(normalizedPos.z() * (1 << 10)), (1 << 10) - 1);
 
         // Interlace morton codes
         uint32_t mortonCode = spaceBits<2, 11>(quantX) | (spaceBits<2, 11>(quantY)<<1) | (spaceBits<2, 10>(quantZ)<<2);
@@ -266,13 +265,15 @@ void CWBVH::build(
     m_internalNodes = std::shared_ptr<BranchNode[]>(new BranchNode[aabbs.size()-1]());
 
     // Build a binary tree out of the sorted nodes
+    assert(aabbs.size() < std::numeric_limits<int>::max());
+
     math::AABB treeAABB;
     auto binTreeRootId = generateHierarchy(
         sortedLeafAABBs.data(),
         sortedMortonCodes.data(),
         indices.data(),
         0,
-        aabbs.size() - 1, treeAABB);
+        int(aabbs.size() - 1), treeAABB);
     m_binTreeRoot = &m_internalNodes[binTreeRootId];
 }
 

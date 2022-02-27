@@ -41,7 +41,7 @@ public:
 	{
 		// Start global profiling
 		log << "Running " << mWorkers.size() << " worker threads for " << numTasks << " tasks\n";
-		auto start = chrono::high_resolution_clock::now();
+		auto start = std::chrono::high_resolution_clock::now();
 
 		// Reset counter and metrics
         const auto maxExpectedTasksPerThread = 2 * numTasks / mWorkers.size();
@@ -71,7 +71,7 @@ public:
 			worker.join();
 
 		// Close global profiling
-		chrono::duration<double> runningTime = chrono::high_resolution_clock::now() - start;
+		const auto runningTime = std::chrono::high_resolution_clock::now() - start;
 		auto seconds = runningTime.count();
 		log << "Running time: " << seconds << " seconds\n";
 
