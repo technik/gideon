@@ -190,6 +190,7 @@ private:
         int           last);
 
     uint32_t allocBranch(uint32_t numNodes);
+    void createSingleLeafHierarchy(const math::AABB& leaf);
     uint32_t m_branchCount = 0;
 
     std::shared_ptr<BranchNode[]> m_internalNodes;

@@ -36,11 +36,41 @@ void TraceEmptyBVH()
     assert(!anyHit);
 }
 
+void TraceSingleElementBVH()
+{
+    CWBVH bvh;
+
+    auto aabb = AABB(Vec3f(0.f), 1.f);
+
+    bvh.build({ &aabb, 1 });
+
+    Ray ray({ 0, -2, 0 }, { 0, 1, 0 });
+    const float tMax = 100.f;
+
+    // There is only one node we can hit
+    auto leafOp = [&](auto nodeId) { assert(nodeId == 0); return true; };
+
+    // Expected hit
+    bool anyHit = bvh.closestHit(ray, tMax, leafOp);
+    assert(anyHit);
+
+    // Expected no hit, ray pointing outwards
+    ray.origin() = Vec3f( 0, 2, 0 );
+    anyHit = bvh.closestHit(ray, tMax, leafOp);
+    assert(!anyHit);
+
+    // Expected no hit, ray parallel to the AABB
+    ray.origin() = Vec3f(2, 0, 0);
+    anyHit = bvh.closestHit(ray, tMax, leafOp);
+    assert(!anyHit);
+}
+
 void TestCWBVH()
 {
     // Trace against an empty BVH
     TraceEmptyBVH();
     // Trace against a BVH with a single AABB inside
+    TraceSingleElementBVH();
     // Trace against a BVH with two AABBs side by side, non intersecting
     // Trace against a BVH with two AABBs side by side, intersecting in the middle
     // Trace against a BVH with an AABB at each corner, non intersecting

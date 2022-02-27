@@ -217,6 +217,13 @@ void CWBVH::build(std::span<const math::AABB> aabbs)
     if (aabbs.empty())
         return;
 
+    // Handle special case of just one node
+    if (aabbs.size() == 1)
+    {
+        createSingleLeafHierarchy(aabbs[0]);
+        return;
+    }
+
     // Find the absolute bounding box of all elements (leafs)
     // and store their centers
     // TODO: Maybe extend the bounding box to the centers only for improved quantization precision
@@ -270,7 +277,6 @@ void CWBVH::build(std::span<const math::AABB> aabbs)
 
     // Build a binary tree out of the sorted nodes
     assert(aabbs.size() < std::numeric_limits<int>::max());
-
     math::AABB treeAABB;
     auto binTreeRootId = generateHierarchy(
         sortedLeafAABBs.data(),
@@ -396,4 +402,19 @@ uint32_t CWBVH::allocBranch(uint32_t numNodes)
     auto nextNode = m_branchCount;
     m_branchCount += numNodes;
     return nextNode;
+}
+
+void CWBVH::createSingleLeafHierarchy(const math::AABB& leaf)
+{
+    m_globalAABB = leaf;
+    m_internalNodes = std::shared_ptr<BranchNode[]>(new BranchNode[1]());
+    m_internalNodes.get()->setLocalAABB(leaf);
+    m_internalNodes.get()->setChildAABB(leaf, 0);
+    m_internalNodes.get()->setChildAABB(leaf, 1);
+    m_internalNodes.get()->childNdx[0] = 0;
+    m_internalNodes.get()->childNdx[1] = 0;
+
+    m_binTreeRoot = m_internalNodes.get();
+    m_binTreeRoot->childLeafMask = 0x03;
+    m_branchCount = 1;
 }
