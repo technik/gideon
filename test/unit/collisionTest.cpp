@@ -96,7 +96,7 @@ void TraceTwoSeparateElementsBVH()
     ray.origin() = Vec3f(0, 5, 0);
     hit = bvh.closestHit(ray, tMax, leafOp);
     assert(!hit.empty());
-    assert(hit.mNodeId == 0);
+    assert(hit.mNodeId == 1);
 
     // Expected no hit, ray parallel to the AABB
     ray.origin() = Vec3f(2, 0, 0);
@@ -111,8 +111,8 @@ void TraceTwoSeparateElementsBVH()
     assert(hit.mNodeId == 0);
 
     // Test hits from the other side
-    ray.origin() = Vec3f(10, 0, 0);
-    ray.direction() = Vec3f(-1, 0, 0);
+    ray.origin() = Vec3f(0, 10, 0);
+    ray.direction() = Vec3f(0, -1, 0);
     hit = bvh.closestHit(ray, tMax, leafOp);
     assert(!hit.empty());
     assert(hit.mNodeId == 1);

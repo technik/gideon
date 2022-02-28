@@ -25,12 +25,11 @@ public:
     // Queries
     bool closestHit(const math::Ray& ray, float tMax, HitRecord& dst) const;
 
-    bool anyHit() const;
-
 private:
     CWBVH m_bvh;
 
     // Needs an array of BLASs
     std::vector<Instance> m_instances;
+    std::vector<math::Matrix34f> m_invInstancePoses;
     std::vector<BLAS> m_BLASBuffer;
 };

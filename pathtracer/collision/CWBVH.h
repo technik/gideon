@@ -58,7 +58,7 @@ public:
 
     struct HitInfo
     {
-        bool empty() const { return mNodeId >= 0; }
+        bool empty() const { return mNodeId < 0; }
         int32_t mNodeId = -1;
         float t = -1.f;
     };

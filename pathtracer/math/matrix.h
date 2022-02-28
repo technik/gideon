@@ -45,7 +45,7 @@ namespace math
 		static Matrix34f identity()
 		{
 			Matrix34f x;
-			for(int i = 0; i < 4; ++i)
+			for(int i = 0; i < 3; ++i)
 				for(int j = 0; j < 4; ++j)
 					x(i,j) = float(i==j?1:0);
 			return x;
@@ -53,7 +53,7 @@ namespace math
 
 		Vec3f& position() { return reinterpret_cast<Vec3f&>((*this)(0,3)); }
 		Vec3f position() const {
-			return reinterpret_cast<const Vec3f&>(m[4*3]);
+			return col<3>();
 		}
 
 		Matrix34f operator*(const Matrix34f& b) const

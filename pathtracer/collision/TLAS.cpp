@@ -10,10 +10,12 @@ void TLAS::build(
     // Transform instance bboxes to the common frame of reference
     std::vector<math::AABB> aabbs;
     aabbs.reserve(instances.size());
+    m_invInstancePoses.reserve(instances.size());
     
     for (auto& instance : instances)
     {
         aabbs.push_back(instance.pose * blasBuffer[instance.BlasIndex].aabb());
+        m_invInstancePoses.push_back(instance.pose.inverse());
     }
 
     // Keep references
@@ -37,11 +39,12 @@ bool TLAS::closestHit(const math::Ray& ray, float tMax, HitRecord& dst) const
 
     auto hitInfo = m_bvh.closestHit(ray, tMax, [this,&closestT,&closestNormal](const math::Ray& ray, float tMax, uint32_t& closestHitId) {
         const auto& instance = m_instances[closestHitId];
+        const auto& invPose = m_invInstancePoses[closestHitId];
 
         // Transform the ray to local coordinates
         math::Ray localRay;
-        localRay.origin() = instance.pose.transformPos(ray.origin());
-        localRay.direction() = instance.pose.transformDir(ray.direction());
+        localRay.origin() = invPose.transformPos(ray.origin());
+        localRay.direction() = invPose.transformDir(ray.direction());
 
         // Intersect ray with the BLAS
         auto& blas = m_BLASBuffer[instance.BlasIndex];
