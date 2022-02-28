@@ -53,7 +53,7 @@ bool TLAS::closestHit(const math::Ray& ray, float tMax, HitRecord& dst) const
         if (blas.closestHit(localRay, tMax, closestHitTriId, tHit, hitNormal))
         {
             closestT = tHit;
-            closestNormal = hitNormal;
+            closestNormal = instance.pose.transformDir(hitNormal);
             return tHit;
         }
 
