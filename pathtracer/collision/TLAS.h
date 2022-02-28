@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BLAS.h"
 #include "CWBVH.h"
 #include "shapes/triangle.h"
 #include "math/matrix.h"
@@ -18,12 +19,11 @@ public:
     // Construction
     // TODO: Add different construction methods: Embree, Morton codes, Surface area heuristic
     void build(
-        std::shared_ptr <BLAS[]> blasBuffer,
-        std::shared_ptr<Instance[]> instances,
-        uint32_t numInstances);
+        std::vector<BLAS>&& blasBuffer,
+        std::vector<Instance>&& instances);
 
     // Queries
-    bool closestHit(const math::Ray& ray, float tMax) const;
+    bool closestHit(const math::Ray& ray, float tMax, HitRecord& dst) const;
 
     bool anyHit() const;
 
@@ -31,6 +31,6 @@ private:
     CWBVH m_bvh;
 
     // Needs an array of BLASs
-    std::shared_ptr<Instance[]> m_instances;
-    std::shared_ptr<BLAS[]> m_BLASBuffer;
+    std::vector<Instance> m_instances;
+    std::vector<BLAS> m_BLASBuffer;
 };

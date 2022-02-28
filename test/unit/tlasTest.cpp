@@ -17,53 +17,34 @@
 // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#pragma once
+#include "../../pathtracer/collision/TLAS.h"
 
-#include <camera/camera.h>
-#include "shapes/meshInstance.h"
-#include <collision/BLAS.h>
-#include <collision/TLAS.h>
-#include <vector>
+using namespace math;
 
-struct CmdLineParams;
-class RandomGenerator;
-class Background;
-
-class Scene
+void TestEmptyTLAS()
 {
-public:
-	Scene() {}
+    std::vector<BLAS> blas;
+    std::vector<TLAS::Instance> instances;
 
-    void addInstance(uint32_t blasId, const math::Matrix34f& pose)
-    {
-        mInstances.push_back({ pose, blasId });
-    }
+    TLAS tlas;
+    tlas.build(std::move(blas), std::move(instances));
 
-	void addCamera(const std::shared_ptr<Camera>& cam)
-	{
-		mCameras.emplace_back(cam);
-	}
+    const Ray r({ 0,0,0 }, { 0,1,0 });
+    const float tMax = 100;
 
-    uint32_t addBlas(const math::Vec3f* vertices, const uint16_t* indices, uint32_t numTris);
+    HitRecord hit;
+    bool anyHit = tlas.closestHit(r, tMax, hit);
+    assert(!anyHit);
+}
 
-	const std::vector<std::shared_ptr<Camera>>& cameras() const { return mCameras; }
-	std::vector<std::shared_ptr<Camera>>& cameras() { return mCameras; }
+void TestTLAS()
+{
+    TestEmptyTLAS();
+}
 
-	bool hit(
-		const math::Ray& r,
-		float tMax,
-		HitRecord& collision
-	) const;
+int main()
+{
+    TestTLAS();
 
-	void loadFromCommandLine(const CmdLineParams&);
-
-	Background* background = nullptr;
-
-private:
-    void buildTLAS();
-
-    TLAS mTlas;
-    std::vector<BLAS> mBLASBuffer;
-    std::vector<TLAS::Instance> mInstances;
-    std::vector<std::shared_ptr<Camera>>	mCameras;
-};
+	return 0;
+}

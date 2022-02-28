@@ -71,7 +71,7 @@ public:
 			worker.join();
 
 		// Close global profiling
-		const auto runningTime = std::chrono::high_resolution_clock::now() - start;
+		const auto runningTime = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::high_resolution_clock::now() - start);
 		auto seconds = runningTime.count();
 		log << "Running time: " << seconds << " seconds\n";
 

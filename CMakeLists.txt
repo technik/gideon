@@ -58,3 +58,11 @@ add_executable(collisionTest
     pathtracer/collision/CWBVH.cpp)
 set_target_properties(collisionTest PROPERTIES FOLDER test)
 add_test(collision_unit_test collisionTest)
+
+
+add_executable(tlasTest
+    test/unit/tlasTest.cpp
+    pathtracer/collision/CWBVH.cpp
+    pathtracer/collision/TLAS.cpp)
+set_target_properties(tlasTest PROPERTIES FOLDER test)
+add_test(tlas_unit_test tlasTest)

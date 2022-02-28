@@ -43,7 +43,7 @@ bool Scene::hit(
 	HitRecord& collision
 ) const
 {
-    return mTlas.hitClosest( r, tMax, collision, mBLASBuffer.data(), mInstances.data(), mInvInstancePoses.data(), (uint32_t)mInstances.size());
+    return mTlas.closestHit(r, tMax, collision);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -93,11 +93,7 @@ void Scene::buildTLAS()
 {
     auto t0 = chrono::high_resolution_clock::now();
 
-    std::vector<math::AABB> instanceAABBs; instanceAABBs.reserve(mInstances.size());
-    for (int i = 0; i < mInstances.size(); ++i)
-        instanceAABBs.push_back(instanceAABB(i));
-
-    mTlas.build(instanceAABBs);
+    mTlas.build(std::move(mBLASBuffer), std::move(mInstances));
 
     auto dt = chrono::high_resolution_clock::now() - t0;
     auto us = chrono::duration_cast<chrono::nanoseconds>(dt).count() * 0.001;
@@ -106,11 +102,4 @@ void Scene::buildTLAS()
         std::cout << "BVH construction: " << us << " micros\n";
     else
         std::cout << "BVH construction: " << us*0.001 << " ms\n";
-}
-
-math::AABB Scene::instanceAABB(uint32_t instanceId) const
-{
-    auto& instance = mInstances[instanceId];
-    auto& blas = mBLASBuffer[instance.BlasIndex];
-    return instance.pose * blas.aabb();
 }

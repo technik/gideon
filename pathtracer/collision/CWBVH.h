@@ -56,6 +56,13 @@ public:
         HitRecord& collision,
         const std::vector<std::shared_ptr<MeshInstance>>& instances) const;
 
+    struct HitInfo
+    {
+        bool empty() const { return mNodeId >= 0; }
+        int32_t mNodeId = -1;
+        float t = -1.f;
+    };
+
     struct Instance
     {
         math::Matrix34f pose;
@@ -91,12 +98,13 @@ public:
     // Leaf Op takes a ray, max distance and a node index (in the order provided at build time),
     // and returns an intersection distance, or -1 if no intersection was found.
     template<class LeafOp>
-    bool closestHit(const math::Ray& ray, float tMax, const LeafOp& leafOp) const
+    HitInfo closestHit(const math::Ray& ray, float tMax, const LeafOp& leafOp) const
     {
+        HitInfo hitInfo;
         // Check against global aabb
         auto implicitRay = ray.implicit();
         if (!m_globalAABB.intersect(implicitRay, tMax))
-            return false;
+            return hitInfo;
 
         // Init traversal stack to the root
         CWBVH::TraversalState stack;
@@ -115,7 +123,13 @@ public:
         }
 
         // Exhausted traversal
-        return closestHit >= 0;
+        if (closestHit >= 0)
+        {
+            hitInfo.mNodeId = closestHit;
+            hitInfo.t = stack.tMax;
+        }
+
+        return hitInfo;
     }
 
     // Deprecated. Use the traversal state API, or the LeafOp API instead.
