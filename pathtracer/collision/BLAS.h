@@ -40,7 +40,7 @@ public:
             }
         }
 
-        return triangleHitId != uint32_t(-1);
+        return closestHitId != uint32_t(-1);
     }
 
     float anyHit(const math::Ray& ray, float tMax)

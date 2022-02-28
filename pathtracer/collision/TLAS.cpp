@@ -37,20 +37,19 @@ bool TLAS::closestHit(const math::Ray& ray, float tMax, HitRecord& dst) const
     float closestT = std::numeric_limits<float>::max();
     math::Vec3f closestNormal;
 
-    auto hitInfo = m_bvh.closestHit(ray, tMax, [this,&closestT,&closestNormal](const math::Ray& ray, float tMax, uint32_t& closestHitId) {
-        const auto& instance = m_instances[closestHitId];
-        const auto& invPose = m_invInstancePoses[closestHitId];
-
+    auto blasTest = [this, &closestT, &closestNormal](const math::Ray& globalRay, float tMax, uint32_t& closestHitId) {
         // Transform the ray to local coordinates
+        const auto& invPose = m_invInstancePoses[closestHitId];
         math::Ray localRay;
-        localRay.origin() = invPose.transformPos(ray.origin());
-        localRay.direction() = invPose.transformDir(ray.direction());
+        localRay.origin() = invPose.transformPos(globalRay.origin());
+        localRay.direction() = invPose.transformDir(globalRay.direction());
 
         // Intersect ray with the BLAS
+        const auto& instance = m_instances[closestHitId];
         auto& blas = m_BLASBuffer[instance.BlasIndex];
         float tHit;
         math::Vec3f hitNormal;
-        uint32_t closestHitTriId;
+        uint32_t closestHitTriId = -1;
         if (blas.closestHit(localRay, tMax, closestHitTriId, tHit, hitNormal))
         {
             closestT = tHit;
@@ -59,7 +58,9 @@ bool TLAS::closestHit(const math::Ray& ray, float tMax, HitRecord& dst) const
         }
 
         return -1.f;
-    });
+    };
+
+    auto hitInfo = m_bvh.closestHit(ray, tMax, blasTest);
 
     if (hitInfo.empty())
         return false;
