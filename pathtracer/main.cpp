@@ -45,7 +45,7 @@ using namespace math;
 using namespace std;
 
 namespace {
-    constexpr int MAX_BOUNCES = 0;// 9;
+    constexpr int MAX_BOUNCES = 9;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -64,19 +64,16 @@ Vec3f color(Ray r, const Scene& world, RandomGenerator& random)
     {
         if (world.hit(r, farPlane, hit))
         {
-            //return Vec3f(0, 1, 0);
             // Evaluate light bounce
-            //Ray scatteredRay;
-            //Vec3f attenuation;
-            //Vec3f emitted;
-            //lambertScatter(r, hit.p, hit.normal, Vec3f(0.75), attenuation, emitted, scatteredRay, random);
-            //r = scatteredRay;
+            Ray scatteredRay;
+            Vec3f attenuation;
+            Vec3f emitted;
+            lambertScatter(r, hit.p, hit.normal, Vec3f(0.75), attenuation, emitted, scatteredRay, random);
+            r = scatteredRay;
 
             // Integrate path
-            //accumLight += accumAttenuation * emitted;
-            //accumAttenuation *= attenuation;
-
-            accumLight = 0.5 * hit.normal + Vec3f(0.5);
+            accumLight += accumAttenuation * emitted;
+            accumAttenuation *= attenuation;
 
             ++depth;
         }
@@ -111,8 +108,8 @@ void renderTile(
 			Vec3f accum(0.f);
 			for(size_t s = 0; s < nSamples; ++s)
 			{
-				float u = float(j+0.5f+0*random.scalar())/totalNx;
-				float v = 1.f-float(i+0.5f+0*random.scalar())/totalNy;
+				float u = float(j+random.scalar())/totalNx;
+				float v = 1.f-float(i+random.scalar())/totalNy;
 				Ray r = cam.get_ray(u,v);
 
 				accum += color(r, world, random);
