@@ -49,7 +49,9 @@ enable_testing()
 include_directories ("include")
 include_directories ("pathtracer")
 
-add_executable(algebraTest test/unit/algebraTest.cpp)
+add_executable(algebraTest
+	test/unit/algebraTest.cpp
+	pathtracer/math/matrix.cpp)
 set_target_properties(algebraTest PROPERTIES FOLDER test)
 add_test(algebra_unit_test algebraTest)
 
@@ -62,6 +64,7 @@ add_test(collision_unit_test collisionTest)
 
 add_executable(tlasTest
     test/unit/tlasTest.cpp
+	pathtracer/math/matrix.cpp
     pathtracer/collision/CWBVH.cpp
     pathtracer/collision/TLAS.cpp)
 set_target_properties(tlasTest PROPERTIES FOLDER test)

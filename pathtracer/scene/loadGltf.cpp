@@ -47,21 +47,20 @@ namespace { // Auxiliary functions
 	//--------------------------------------------------------------------------------------------------
 	math::Matrix34f readTransform(const gltf::Node& node)
 	{
-        std::array<float, 12> affineTransform;
+		// Directly use the matrix when available
+		auto xForm = Matrix34f();
         for (int i = 0; i < 3; ++i)
             for (int j = 0; j < 4; ++j)
-                affineTransform[3 * j + i] = node.matrix[4 * j + i];
+				xForm(i,j) = node.matrix[4 * j + i];
 
-		// Directly use the matrix when available
-		auto xForm = Matrix34f(affineTransform);
 		// Default values
 		auto rot = Quatf({0.f, 0.f, 0.f, 1.f});
 		auto trans = Vec3f(0.f);
 		auto scale = Vec3f(1.f);
 		// Read from the node
-		trans = node.translation;
-		rot = node.rotation;
-		scale = node.scale;
+		rot = *reinterpret_cast<const Quatf*>(&node.rotation);
+		trans = *reinterpret_cast<const Vec3f*>(&node.translation);
+		scale = *reinterpret_cast<const Vec3f*>(&node.scale);
 		// Reconstruct matrix
 		auto scaleMatrix = Matrix34f(0.f);
 		scaleMatrix(0,0) = scale[0];

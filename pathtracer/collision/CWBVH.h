@@ -22,7 +22,6 @@
 #include <cassert>
 #include <memory>
 #include <functional>
-#include <vector>
 #include <span>
 
 #include <math/matrix.h>
@@ -48,13 +47,6 @@ public:
     auto aabb() const { return m_globalAABB; }
 
     class TraversalState;
-
-    // Deprecated. Use the traversal state API, or the LeafOp API instead.
-    bool hitClosest(
-        const math::Ray&,
-        float tMax,
-        HitRecord& collision,
-        const std::vector<std::shared_ptr<MeshInstance>>& instances) const;
 
     struct HitInfo
     {
@@ -219,7 +211,6 @@ private:
     static_assert(sizeof(BranchNode) == 36);
 
     BranchNode* m_binTreeRoot{};
-    //std::vector<std::shared_ptr<MeshInstance>>* m_instances{};
 
     uint32_t generateHierarchy(
         const math::AABB* sortedLeafAABBs,

@@ -19,12 +19,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include <algorithm>
+#include <initializer_list>
 #include <cmath>
 
 namespace math
 {
-
 	template<class T, int n>
 	struct Vector
 	{
@@ -44,18 +43,18 @@ namespace math
 		constexpr Vector(T x, T y, T z) : m {x,y,z} {}
 		constexpr Vector(T x, T y, T z, T w) : m {x,y,z,w} {}
 
-		Vector(const std::array<T,n>& v) {
+		/*Vector(const std::array<T, n>& v) {
 			for(auto i = 0; i < n; ++i)
 				m[i] = v[i];
 			return *this;
-		}
+		}*/
 
 		Vector& operator=(const Vector& v) = default;
-		Vector& operator=(const std::array<T,n>& v) {
+		/*Vector& operator=(const std::array<T, n>& v) {
 			for(auto i = 0; i < n; ++i)
 				m[i] = v[i];
 			return *this;
-		}
+		}*/
 
 		// Vector accessors
 		T x() const { return m[0]; }

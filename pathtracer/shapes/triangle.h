@@ -22,7 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include <array>
 #include <math/ray.h>
 #include <math/vector.h>
 #include "collision.h"
@@ -35,7 +34,7 @@ public:
 		const math::Vec3f& v0,
 		const math::Vec3f& v1,
 		const math::Vec3f& v2)
-		: v({v0,v1,v2})
+		: v{v0,v1,v2}
 	{
 		auto edge0 = v[1]-v[0];
 		auto edge1 = v[2]-v[1];
@@ -64,7 +63,7 @@ public:
 	math::Vec3f centroid() const { return (v[0]+v[1]+v[2])/3.f; }
 
 public:
-	std::array<math::Vec3f,3> v;
+	math::Vec3f v[3];
 	math::Vec3f mNormal;
 
 	struct Simd

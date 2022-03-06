@@ -19,9 +19,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
-#include <array>
 #include <cassert>
-#include "vector.h"
+#include <initializer_list>
 #include "aabb.h"
 
 namespace math
@@ -30,9 +29,14 @@ namespace math
 	{
 	public:
 		Matrix34f() = default;
-		Matrix34f(const std::array<float,12>& x)
-			: m(x)
-		{}
+		Matrix34f(std::initializer_list<float> il)
+		{
+			assert(il.size() == 12);
+
+			auto iter = il.begin();
+			for (size_t i = 0; i < il.size(); ++i)
+				m[i] = *iter++;
+		}
 
 		Matrix34f(float x)
 		{
@@ -143,16 +147,21 @@ namespace math
 		}
 
 	private:
-		std::array<float,12> m;
+		float m[12];
 	};
 
 	class Matrix44f
 	{
 	public:
 		Matrix44f() = default;
-		Matrix44f(const std::array<float,16>& x)
-			: m(x)
-		{}
+		Matrix44f(std::initializer_list<float> il)
+		{
+			assert(il.size() == 16);
+
+			auto iter = il.begin();
+			for (size_t i = 0; i < il.size(); ++i)
+				m[i] = *iter++;
+		}
 
 		static auto lowSolve(const Matrix44f& L, const Vec4f& y)
 		{
@@ -276,66 +285,10 @@ namespace math
 		}
 
 		// Apply gauss elimination with partial pivoting
-		void factorizationLU(Matrix44f& L, Matrix44f& U, std::array<int,4>& P) const
-		{
-			P = {0, 1, 2, 3};
-			L = identity();
-			U = *this;
-			// For each column
-			for(auto k = 0; k < 4; k++)
-			{
-				// Find best pivot
-				auto maxA = std::abs(U.element(k,k));
-				auto bestI = k;
-				for(auto i = k+1; i < 4; ++i) // Find best pivot in the column
-				{
-					auto absA = std::abs(U.element(i,k));
-					if(absA > maxA)
-					{
-						maxA = absA;
-						bestI = i;
-					}
-				}
-				constexpr float tolerance = 1e-4f;
-				assert(maxA > tolerance); // Ensure minimun conditioning of the matrices
-
-				// permutate pivot row
-				if(k != bestI)
-				{
-					auto tk = P[bestI];
-					P[bestI] = P[k];
-					P[k] = tk;
-					for(auto j = k; j < 4; ++j) // Swap all elements to the right of the pivot, in both rows k and p[k]
-					{
-						auto a = U(k,j);
-						U(k,j) = U(bestI,j);
-						U(bestI,j) = a;
-					}
-					for(auto j = 0; j < k; ++j) // Swap all elements to the right of the pivot, in both rows k and p[k]
-					{
-						auto a = L(k,j);
-						L(k,j) = L(bestI,j);
-						L(bestI,j) = a;
-					}
-				}
-
-				// Partially solve all rows below the pivot
-				auto pivot = U(k,k);
-				for(auto i = k+1; i < 4; ++i)
-				{
-					auto L_ik = U(i,k) / pivot; // Multiplier coefficient for row i
-					L(i,k) = L_ik;
-					for(auto j = k+1; j < 4; ++j)
-					{
-						U(i,j) = U(i,j) - L_ik*U(k,j);
-					}
-					U(i,k) = 0; // U is upper triangular, so all elements below the diagonal must be 0
-				}
-			}
-		}
+		void factorizationLU(Matrix44f& L, Matrix44f& U, std::array<int, 4>& P) const;
 
 	private:
-		std::array<float,16> m;
+		float m[16];
 	};
 
 	inline Matrix34f Matrix34f::inverse() const
@@ -348,4 +301,5 @@ namespace math
 				inv(i,j) = xi(i,j);
 		return inv;
 	}
-}
+
+} // namespace math

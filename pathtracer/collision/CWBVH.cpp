@@ -319,40 +319,6 @@ bool CWBVH::hitClosest(
     const math::Ray& ray,
     float tMax,
     HitRecord& collision,
-    const std::vector<std::shared_ptr<MeshInstance>>& instances) const
-{
-    if (!m_binTreeRoot)
-        return false;
-
-    // Init traversal stack to the root
-    TraversalState stack;
-    stack.reset(ray.implicit(), tMax);
-
-    // Check against global aabb
-    if (!m_globalAABB.intersect(stack.r, stack.tMax))
-        return false;
-
-    collision.t = -1;
-    uint32_t closestHitId;
-
-    while (continueTraverse(stack, closestHitId))
-    {
-        // Closest hit logic
-        HitRecord hitInfo;
-        if(instances[closestHitId]->hit(ray, stack.tMax, hitInfo))
-        {
-            collision = hitInfo;
-            stack.tMax = hitInfo.t;
-        }
-    }
-
-    return collision.t >= 0;
-}
-
-bool CWBVH::hitClosest(
-    const math::Ray& ray,
-    float tMax,
-    HitRecord& collision,
     const BLAS* blasBuffer,
     const Instance* instances,
     const math::Matrix34f* invPoses,
