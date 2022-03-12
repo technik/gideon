@@ -184,17 +184,19 @@ private:
             uint8_t high[3];
         };
 
+        static_assert(sizeof(CompressedAABB) == 6);
+
         void setLocalAABB(const math::AABB& localAABB);
         math::Vec3f getLocalScale() const;
         math::AABB getChildAABB(int childIndex) const;
         void setChildAABB(const math::AABB& childAABB, int childIndex);
 
-        math::Vec3f localOrigin;
-        uint8_t localScaleExp[3];
-        uint8_t childLeafMask = 0;
-        CompressedAABB childCompressedAABB[2];
+        math::Vec3f localOrigin; // 12 bytes
+        uint8_t localScaleExp[3]; // 3 bytes
+        uint8_t childLeafMask = 0; // 1 byte
+        CompressedAABB childCompressedAABB[2]; // 12 bytes
 
-        uint32_t childNdx[2] = {};
+        uint32_t childNdx[2] = {}; // 8 bytes
     };
 
     static_assert(sizeof(BranchNode) == 36);
