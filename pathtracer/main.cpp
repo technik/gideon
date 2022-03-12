@@ -122,6 +122,7 @@ struct ThreadInfo
 int main(int _argc, const char** _argv)
 {
 	CmdLineParams params(_argc, _argv);
+	params.overrideMaterials = true;
 	Rect size {0, 0, params.sx, params.sy };
 
 	Image outputImage(params.sx, params.sy);
