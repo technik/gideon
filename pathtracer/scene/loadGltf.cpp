@@ -280,7 +280,11 @@ namespace { // Auxiliary functions
 //--------------------------------------------------------------------------------------------------
 bool loadGltf(const char* fileName, Scene& dstScene, float aspectRatio, bool overrideMaterials)
 {
-	fx::gltf::Document document = fx::gltf::LoadFromText(fileName);
+	fx::gltf::ReadQuotas limits;
+	limits.MaxBufferByteLength = 256 * 1024 * 1024; // 256Mb
+	limits.MaxFileSize = limits.MaxBufferByteLength;
+	limits.MaxBufferCount = 1;
+	fx::gltf::Document document = fx::gltf::LoadFromText(fileName, limits);
 
 	if(document.scene < 0)
 		return false;
