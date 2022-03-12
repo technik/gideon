@@ -7,6 +7,7 @@
 #include <math/vectorFloat.h>
 
 #include <numeric>
+#include <iostream>
 
 template<uint32_t numSpaces, uint32_t numBits>
 uint32_t spaceBits(uint32_t x)
@@ -211,6 +212,12 @@ uint32_t CWBVH::generateHierarchy(
     return branchNdx;
 }
 
+void CWBVH::printStats() const
+{
+    std::cout << "nodes: " << m_internalNodes.size() << "\n";
+    std::cout << "tree memory: " << m_internalNodes.size() * sizeof(BranchNode) << "\n";
+}
+
 void CWBVH::build(std::span<const math::AABB> aabbs)
 {
     // Earlt out for empty BVHs
@@ -273,7 +280,7 @@ void CWBVH::build(std::span<const math::AABB> aabbs)
     }
 
     // Allocate enough nodes to hold the tree
-    m_internalNodes = std::shared_ptr<BranchNode[]>(new BranchNode[aabbs.size()-1]());
+    m_internalNodes.resize(aabbs.size() - 1);
 
     // Build a binary tree out of the sorted nodes
     assert(aabbs.size() < std::numeric_limits<int>::max());
@@ -325,14 +332,14 @@ uint32_t CWBVH::allocBranch(uint32_t numNodes)
 void CWBVH::createSingleLeafHierarchy(const math::AABB& leaf)
 {
     m_globalAABB = leaf;
-    m_internalNodes = std::shared_ptr<BranchNode[]>(new BranchNode[1]());
-    m_internalNodes.get()->setLocalAABB(leaf);
-    m_internalNodes.get()->setChildAABB(leaf, 0);
-    m_internalNodes.get()->setChildAABB(leaf, 1);
-    m_internalNodes.get()->childNdx[0] = 0;
-    m_internalNodes.get()->childNdx[1] = 0;
+    m_internalNodes.resize(1);
+    m_internalNodes[0].setLocalAABB(leaf);
+    m_internalNodes[0].setChildAABB(leaf, 0);
+    m_internalNodes[0].setChildAABB(leaf, 1);
+    m_internalNodes[0].childNdx[0] = 0;
+    m_internalNodes[0].childNdx[1] = 0;
 
-    m_binTreeRoot = m_internalNodes.get();
+    m_binTreeRoot = &m_internalNodes[0];
     m_binTreeRoot->childLeafMask = 0x03;
     m_branchCount = 1;
 }

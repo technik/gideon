@@ -2,6 +2,8 @@
 
 #include "BLAS.h"
 
+#include <iostream>
+
 //--------------------------------------------------------------------------------------------------
 void TLAS::build(
     std::vector<BLAS>&& blasBuffer,
@@ -24,6 +26,8 @@ void TLAS::build(
 
     // Build the TLAS bvh
     m_bvh.build(aabbs);
+    std::cout << "TLAS stats:\n";
+    m_bvh.printStats();
 }
 
 //--------------------------------------------------------------------------------------------------

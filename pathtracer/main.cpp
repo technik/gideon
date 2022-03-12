@@ -42,7 +42,7 @@ namespace {
 }
 
 //--------------------------------------------------------------------------------------------------
-Vec3f color(Ray r, const Scene& world, RandomGenerator& random)
+Vec3f color(Ray r, const Scene& world, RandomGenerator& random, size_t& numRays)
 {
 	assert(abs(r.direction().sqNorm()-1) < 1e-4f); // Check ray direction
 
@@ -55,6 +55,7 @@ Vec3f color(Ray r, const Scene& world, RandomGenerator& random)
 
     while(depth <= MAX_BOUNCES)
     {
+		++numRays;
         if (world.hit(r, farPlane, hit))
         {
             // Evaluate light bounce
@@ -89,7 +90,8 @@ void renderTile(
 	const Scene& world,
 	Image& dst,
 	RandomGenerator& random,
-	unsigned nSamples)
+	unsigned nSamples,
+	size_t& totalNumRays)
 {
 	const auto totalNx = dst.width();
 	const auto totalNy = dst.height();
@@ -105,7 +107,7 @@ void renderTile(
 				float v = 1.f-float(i+random.scalar())/totalNy;
 				Ray r = cam.get_ray(u,v);
 
-				accum += color(r, world, random);
+				accum += color(r, world, random, totalNumRays);
 			}
 			accum /= float(nSamples);
 
@@ -116,6 +118,7 @@ void renderTile(
 struct ThreadInfo
 {
 	RandomGenerator random;
+	size_t totalTracedRays = 0;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -167,12 +170,18 @@ int main(int _argc, const char** _argv)
             tile.x1 = tile.x0 + params.tileSize;
             tile.y1 = tile.y0 + params.tileSize;
 
-            renderTile(tile, world, outputImage, threadData[workerIndex].random, params.ns);
+            renderTile(tile, world, outputImage, threadData[workerIndex].random, params.ns, threadData[workerIndex].totalTracedRays);
 		},
 		cout))
 	{
 		// Save final image
 		outputImage.saveAsSRGB(params.output.c_str());
+
+		size_t numTracesRays = 0;
+		for (auto& t : threadData)
+			numTracesRays += t.totalTracedRays;
+
+		std::cout << "Num rays: " << numTracesRays << "\n";
 
         return 0;
 	};

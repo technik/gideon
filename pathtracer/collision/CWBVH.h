@@ -20,9 +20,9 @@
 #pragma once
 
 #include <cassert>
-#include <memory>
 #include <functional>
 #include <span>
+#include <vector>
 
 #include <math/matrix.h>
 #include <math/vector.h>
@@ -45,6 +45,8 @@ public:
     ~CWBVH();
     void build(std::span<const math::AABB> aabbs);
     auto aabb() const { return m_globalAABB; }
+
+    void printStats() const;
 
     class TraversalState;
 
@@ -219,6 +221,6 @@ private:
     void createSingleLeafHierarchy(const math::AABB& leaf);
     uint32_t m_branchCount = 0;
 
-    std::shared_ptr<BranchNode[]> m_internalNodes;
+    std::vector<BranchNode> m_internalNodes;
     math::AABB m_globalAABB;
 };
