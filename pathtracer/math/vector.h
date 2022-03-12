@@ -314,4 +314,31 @@ namespace math
 		return v * (1/v.norm());
 	}
 
+	// Vec3f specializations
+	__forceinline Vector<float, 3> operator+(const Vector<float, 3>& a, const Vector<float, 3>& b)
+	{
+		return Vector<float, 3>(a.x() + b.x(), a.y() + b.y(), a.z() + b.z());
+	}
+
+	__forceinline Vector<float, 3> operator-(const Vector<float, 3>& a, const Vector<float, 3>& b)
+	{
+		return Vector<float, 3>(a.x() - b.x(), a.y() - b.y(), a.z() - b.z());
+	}
+
+	__forceinline Vector<float, 3> operator*(const Vector<float, 3>& a, const Vector<float, 3>& b)
+	{
+		return Vector<float, 3>(a.x() * b.x(), a.y() * b.y(), a.z() * b.z());
+	}
+
+	__forceinline Vector<float, 3> operator*(const Vector<float, 3>& a, float b)
+	{
+		return Vector<float, 3>(a.x() * b, a.y() * b, a.z() * b);
+	}
+
+	__forceinline Vector<float, 3> operator/(const Vector<float, 3>& a, float b)
+	{
+		auto rcp = 1.f / b;
+		return Vector<float, 3>(a.x() * rcp, a.y() * rcp, a.z() * rcp);
+	}
+
 }	// namespace math
