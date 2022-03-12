@@ -315,54 +315,6 @@ bool CWBVH::continueTraverse(
     return false;
 }
 
-bool CWBVH::hitClosest(
-    const math::Ray& ray,
-    float tMax,
-    HitRecord& collision,
-    const BLAS* blasBuffer,
-    const Instance* instances,
-    const math::Matrix34f* invPoses,
-    uint32_t numInstances) const
-{
-    if (!m_binTreeRoot)
-        return false;
-
-    // Init traversal stack to the root
-    TraversalState stack;
-    stack.reset(ray.implicit(), tMax);
-
-    // Check against global aabb
-    if (!m_globalAABB.intersect(stack.r, stack.tMax))
-        return false;
-
-    collision.t = -1;
-    uint32_t instanceHitId;
-
-    while (continueTraverse(stack, instanceHitId))
-    {
-        // Transform ray to the local space
-        const auto& invPose = invPoses[instanceHitId];
-        math::Ray localRay(
-            invPose.transformPos(ray.origin()),
-            invPose.transformDir(ray.direction()));
-
-        // Closest hit logic
-        uint32_t triHitId;
-        float tHit;
-        math::Vec3f hitNormal;
-        const auto& instance = instances[instanceHitId];
-        if (blasBuffer[instance.BlasIndex].closestHit(localRay, stack.tMax, triHitId, tHit, hitNormal))
-        {
-            collision.p = ray.at(tHit);
-            collision.t = tHit;
-            collision.normal = hitNormal;
-            stack.tMax = tHit;
-        }
-    }
-
-    return collision.t >= 0;
-}
-
 uint32_t CWBVH::allocBranch(uint32_t numNodes)
 {
     auto nextNode = m_branchCount;

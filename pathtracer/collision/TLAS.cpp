@@ -60,7 +60,7 @@ bool TLAS::closestHit(const math::Ray& ray, float tMax, HitRecord& dst) const
         return -1.f;
     };
 
-    auto hitInfo = m_bvh.closestHit(ray, tMax, blasTest);
+    auto hitInfo = m_bvh.closestHit(ray, implicitRay, tMax, blasTest);
 
     if (hitInfo.empty())
         return false;

@@ -90,11 +90,10 @@ public:
     // Leaf Op takes a ray, max distance and a node index (in the order provided at build time),
     // and returns an intersection distance, or -1 if no intersection was found.
     template<class LeafOp>
-    HitInfo closestHit(const math::Ray& ray, float tMax, const LeafOp& leafOp) const
+    HitInfo closestHit(const math::Ray& ray, const math::Ray::Implicit& implicitRay, float tMax, const LeafOp& leafOp) const
     {
         HitInfo hitInfo;
         // Check against global aabb
-        auto implicitRay = ray.implicit();
         if (!m_globalAABB.intersect(implicitRay, tMax))
             return hitInfo;
 
@@ -123,16 +122,6 @@ public:
 
         return hitInfo;
     }
-
-    // Deprecated. Use the traversal state API, or the LeafOp API instead.
-    bool hitClosest(
-        const math::Ray&,
-        float tMax,
-        HitRecord& collision,
-        const BLAS* blasBuffer,
-        const Instance* instances,
-        const math::Matrix34f* invPoses,
-        uint32_t numInstances) const;
 
     bool continueTraverse(
         TraversalState& stack,

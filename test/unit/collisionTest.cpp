@@ -32,7 +32,7 @@ void TraceEmptyBVH()
     const float tMax = 100.f;
 
     // The leaf op should never be called here
-    auto hit = bvh.closestHit(ray, tMax, [&](const Ray&, float, int32_t) { assert(false); return 0.f; });
+    auto hit = bvh.closestHit(ray, ray.implicit(), tMax, [&](const Ray&, float, int32_t) { assert(false); return 0.f; });
     assert(hit.empty());
 }
 
@@ -51,17 +51,17 @@ void TraceSingleElementBVH()
     auto leafOp = [&](const Ray&, float, int32_t nodeId) { assert(nodeId == 0); return 0.f; };
 
     // Expected hit
-    auto hit = bvh.closestHit(ray, tMax, leafOp);
+    auto hit = bvh.closestHit(ray, ray.implicit(), tMax, leafOp);
     assert(!hit.empty());
 
     // Expected no hit, ray pointing outwards
     ray.origin() = Vec3f( 0, 2, 0 );
-    hit = bvh.closestHit(ray, tMax, leafOp);
+    hit = bvh.closestHit(ray, ray.implicit(), tMax, leafOp);
     assert(hit.empty());
 
     // Expected no hit, ray parallel to the AABB
     ray.origin() = Vec3f(2, 0, 0);
-    hit = bvh.closestHit(ray, tMax, leafOp);
+    hit = bvh.closestHit(ray, ray.implicit(), tMax, leafOp);
     assert(hit.empty());
 }
 
@@ -88,32 +88,32 @@ void TraceTwoSeparateElementsBVH()
     };
 
     // Expected hit against the first node
-    auto hit = bvh.closestHit(ray, tMax, leafOp);
+    auto hit = bvh.closestHit(ray, ray.implicit(), tMax, leafOp);
     assert(!hit.empty());
     assert(hit.mNodeId == 0);
 
     // Expected hit against the second node
     ray.origin() = Vec3f(0, 5, 0);
-    hit = bvh.closestHit(ray, tMax, leafOp);
+    hit = bvh.closestHit(ray, ray.implicit(), tMax, leafOp);
     assert(!hit.empty());
     assert(hit.mNodeId == 1);
 
     // Expected no hit, ray parallel to the AABB
     ray.origin() = Vec3f(2, 0, 0);
-    hit = bvh.closestHit(ray, tMax, leafOp);
+    hit = bvh.closestHit(ray, ray.implicit(), tMax, leafOp);
     assert(hit.empty());
 
     // Test hits from one side
     ray.origin() = Vec3f(-2, 0, 0);
     ray.direction() = Vec3f(1, 0, 0);
-    hit = bvh.closestHit(ray, tMax, leafOp);
+    hit = bvh.closestHit(ray, ray.implicit(), tMax, leafOp);
     assert(!hit.empty());
     assert(hit.mNodeId == 0);
 
     // Test hits from the other side
     ray.origin() = Vec3f(0, 10, 0);
     ray.direction() = Vec3f(0, -1, 0);
-    hit = bvh.closestHit(ray, tMax, leafOp);
+    hit = bvh.closestHit(ray, ray.implicit(), tMax, leafOp);
     assert(!hit.empty());
     assert(hit.mNodeId == 1);
 }
