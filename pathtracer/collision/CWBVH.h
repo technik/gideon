@@ -196,9 +196,9 @@ private:
         math::Vec3f localOrigin; // 12 bytes
         uint8_t localScaleExp[3]; // 3 bytes
         uint8_t childLeafMask = 0; // 1 byte
-        CompressedAABB childCompressedAABB[2]; // 12 bytes
+        CompressedAABB childCompressedAABB[2]; // 2x6 = 12 bytes
 
-        uint16_t childNdx[2] = {}; // 8 bytes
+        uint16_t childNdx[2] = {}; // 4 bytes
     };
 
     static_assert(sizeof(BranchNode) == 32);
