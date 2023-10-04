@@ -22,6 +22,7 @@
 #include "vector.h"
 #include "ray.h"
 #include "linear.h"
+#include <limits>
 
 namespace math
 {
